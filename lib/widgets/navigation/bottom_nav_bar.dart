@@ -3,9 +3,9 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/navigation_controller.dart';
 import '../../constants/app_constants.dart';
-import 'dart:ui';
+import '../../theme/app_theme.dart';
 
-class BottomGlassSimpleNavBar extends StatefulWidget {
+class BottomGlassSimpleNavBar extends StatelessWidget {
   final NavigationController navigationController;
   final VoidCallback? onHowToTapOverride;
   final VoidCallback? onHelpTapOverride;
@@ -14,85 +14,53 @@ class BottomGlassSimpleNavBar extends StatefulWidget {
   final void Function(String?)? onRelayChanged;
 
   const BottomGlassSimpleNavBar({
-    Key? key,
+    super.key,
     required this.navigationController,
     this.onHowToTapOverride,
     this.onHelpTapOverride,
     this.dark = true,
     this.selectedRelayIp,
     this.onRelayChanged,
-  }) : super(key: key);
+  });
 
-  @override
-  State<BottomGlassSimpleNavBar> createState() =>
-      _BottomGlassSimpleNavBarState();
-}
-
-class _BottomGlassSimpleNavBarState extends State<BottomGlassSimpleNavBar> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-
-    final iconColor = widget.dark
-        ? Colors.white.withOpacity(0.80)
-        : Colors.black87;
-    final labelColor = widget.dark
-        ? Colors.white.withOpacity(0.45)
-        : Colors.black38;
-
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        border: Border(
-          top: BorderSide(color: Colors.white.withOpacity(0.07), width: 1),
-        ),
+      decoration: const BoxDecoration(
+        color: AppTheme.surface,
+        border: Border(top: BorderSide(color: AppTheme.borderGray, width: 0.5)),
       ),
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.only(bottom: 8.0, top: 4.0),
+          padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _NavButton(
+              _NavItem(
                 icon: FontAwesomeIcons.discord,
                 label: loc.discord,
-                onTap: () => widget.navigationController.openDiscord(context),
-                iconColor: iconColor,
-                labelColor: labelColor,
+                accentColor: const Color(0xFF5865F2),
+                onTap: () => navigationController.openDiscord(context),
               ),
-              _NavButton(
-                icon: FontAwesomeIcons.circleQuestion,
+              _NavItem(
+                icon: FontAwesomeIcons.bookOpen,
                 label: loc.howToUseMenu,
-                onTap: () {
-                  if (widget.onHowToTapOverride != null) {
-                    widget.onHowToTapOverride!();
-                  } else {
-                    widget.navigationController.showHowToMenu(context);
-                  }
-                },
-                iconColor: iconColor,
-                labelColor: labelColor,
+                onTap: () => onHowToTapOverride != null
+                    ? onHowToTapOverride!()
+                    : navigationController.showHowToMenu(context),
               ),
-              _NavButton(
-                icon: FontAwesomeIcons.lifeRing,
+              _NavItem(
+                icon: FontAwesomeIcons.headset,
                 label: loc.support,
-                onTap: () {
-                  if (widget.onHelpTapOverride != null) {
-                    widget.onHelpTapOverride!();
-                  } else {
-                    widget.navigationController.showHelpMenu(context);
-                  }
-                },
-                iconColor: iconColor,
-                labelColor: labelColor,
+                onTap: () => onHelpTapOverride != null
+                    ? onHelpTapOverride!()
+                    : navigationController.showHelpMenu(context),
               ),
-              _NavButton(
+              _NavItem(
                 icon: FontAwesomeIcons.ellipsis,
                 label: loc.more,
-                onTap: () => _showMoreModal(context),
-                iconColor: iconColor,
-                labelColor: labelColor,
+                onTap: () => _showMoreSheet(context),
               ),
             ],
           ),
@@ -101,146 +69,234 @@ class _BottomGlassSimpleNavBarState extends State<BottomGlassSimpleNavBar> {
     );
   }
 
-  void _showMoreModal(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-
+  void _showMoreSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (ctx) {
-        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+      builder: (_) => _MoreSheet(
+        navigationController: navigationController,
+        selectedRelayIp: selectedRelayIp,
+        onRelayChanged: onRelayChanged,
+      ),
+    );
+  }
+}
 
-        return ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+class _NavItem extends StatelessWidget {
+  final FaIconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  final Color? accentColor;
+
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    this.onTap,
+    this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = accentColor ?? AppTheme.textSecondary;
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FaIcon(icon, size: 18, color: color),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MoreSheet extends StatelessWidget {
+  final NavigationController navigationController;
+  final String? selectedRelayIp;
+  final void Function(String?)? onRelayChanged;
+
+  const _MoreSheet({
+    required this.navigationController,
+    this.selectedRelayIp,
+    this.onRelayChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppTheme.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(top: BorderSide(color: AppTheme.borderGray)),
+      ),
+      padding: EdgeInsets.fromLTRB(16, 0, 16, 20 + bottom),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
             child: Container(
-              color: const Color(0xFF140D20).withOpacity(0.95),
-              padding: EdgeInsets.fromLTRB(16, 12, 16, 20 + bottomInset),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  _RegionSelector(
-                    selectedIp: widget.selectedRelayIp,
-                    onChanged: (ip) {
-                      widget.onRelayChanged?.call(ip);
-                      Navigator.of(ctx).pop();
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    height: 1,
-                    color: Colors.white.withOpacity(0.07),
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                  ),
-                  _moreTile(
-                    ctx,
-                    icon: FontAwesomeIcons.terminal,
-                    color: const Color(0xFF3B82F6),
-                    label: loc.console,
-                    onTap: () {
-                      Navigator.of(ctx).pop();
-                      widget.navigationController.showConsole(context);
-                    },
-                  ),
-                  const SizedBox(height: 6),
-                  _moreTile(
-                    ctx,
-                    icon: FontAwesomeIcons.earthEurope,
-                    color: const Color(0xFF10B981),
-                    label: loc.website,
-                    onTap: () {
-                      Navigator.of(ctx).pop();
-                      widget.navigationController.openWebsite(context);
-                    },
-                  ),
-                  const SizedBox(height: 6),
-                  _moreTile(
-                    ctx,
-                    icon: FontAwesomeIcons.language,
-                    color: const Color(0xFFF59E0B),
-                    label: loc.changeLanguage,
-                    onTap: () {
-                      Navigator.of(ctx).pop();
-                      widget.navigationController.showLanguageDialog(context);
-                    },
-                  ),
-                  const SizedBox(height: 6),
-                  _moreTile(
-                    ctx,
-                    customIcon: Image.asset(
-                      'assets/icons/aternos.png',
-                      width: 20,
-                      height: 20,
-                    ),
-                    color: const Color(0xFF52CAFF),
-                    label: 'Aternos',
-                    subtext: loc.aternosSubtext,
-                    onTap: () {
-                      Navigator.of(ctx).pop();
-                      widget.navigationController.openWebsiteWithCustomUrl(
-                        context,
-                        'https://aternos.org/',
-                      );
-                    },
-                  ),
-                ],
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                color: AppTheme.borderLight,
+                borderRadius: BorderRadius.circular(4),
               ),
             ),
           ),
-        );
-      },
+
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppTheme.accent.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(11),
+                  border: Border.all(color: AppTheme.accent.withOpacity(0.25)),
+                ),
+                child: const Center(
+                  child: FaIcon(
+                    FontAwesomeIcons.ellipsis,
+                    color: AppTheme.accent,
+                    size: 15,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                loc.more,
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+
+          _RegionSelector(
+            selectedIp: selectedRelayIp,
+            onChanged: (ip) {
+              onRelayChanged?.call(ip);
+              Navigator.of(context).pop();
+            },
+          ),
+          const SizedBox(height: 16),
+          const Divider(color: AppTheme.borderDim, height: 1),
+          const SizedBox(height: 12),
+
+          _SheetTile(
+            icon: FontAwesomeIcons.terminal,
+            color: AppTheme.info,
+            label: loc.console,
+            onTap: () {
+              Navigator.of(context).pop();
+              navigationController.showConsole(context);
+            },
+          ),
+          const SizedBox(height: 8),
+          _SheetTile(
+            icon: FontAwesomeIcons.globe,
+            color: AppTheme.success,
+            label: loc.website,
+            onTap: () {
+              Navigator.of(context).pop();
+              navigationController.openWebsite(context);
+            },
+          ),
+          const SizedBox(height: 8),
+          _SheetTile(
+            icon: FontAwesomeIcons.language,
+            color: AppTheme.warning,
+            label: loc.changeLanguage,
+            onTap: () {
+              Navigator.of(context).pop();
+              navigationController.showLanguageDialog(context);
+            },
+          ),
+          const SizedBox(height: 8),
+          _SheetTile(
+            icon: FontAwesomeIcons.server,
+            color: const Color(0xFF52CAFF),
+            label: 'Aternos',
+            subtitle: loc.aternosSubtext,
+            onTap: () {
+              Navigator.of(context).pop();
+              navigationController.openWebsiteWithCustomUrl(
+                context,
+                'https://aternos.org/',
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
+}
 
-  Widget _moreTile(
-    BuildContext ctx, {
-    FaIconData? icon,
-    Widget? customIcon,
-    required Color color,
-    required String label,
-    String? subtext,
-    required VoidCallback onTap,
-  }) {
+class _SheetTile extends StatelessWidget {
+  final FaIconData icon;
+  final Color color;
+  final String label;
+  final String? subtitle;
+  final VoidCallback onTap;
+
+  const _SheetTile({
+    required this.icon,
+    required this.color,
+    required this.label,
+    this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(13),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
           decoration: BoxDecoration(
-            color: const Color(0xFF1B132C),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.08)),
+            color: color.withOpacity(0.06),
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(color: color.withOpacity(0.20)),
           ),
           child: Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: color.withOpacity(0.35)),
+                  color: color.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(11),
                 ),
-                child: Center(
-                  child:
-                      customIcon ??
-                      (icon != null
-                          ? FaIcon(icon, color: color, size: 15)
-                          : const SizedBox.shrink()),
-                ),
+                child: Center(child: FaIcon(icon, color: color, size: 15)),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -250,32 +306,30 @@ class _BottomGlassSimpleNavBarState extends State<BottomGlassSimpleNavBar> {
                     Text(
                       label,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.textPrimary,
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
                     ),
-                    if (subtext != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Text(
-                          subtext,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.57),
-                            fontWeight: FontWeight.w400,
-                            fontSize: 11,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: const TextStyle(
+                          color: AppTheme.textMuted,
+                          fontSize: 11,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                    ],
                   ],
                 ),
               ),
               Icon(
-                Icons.chevron_right_rounded,
-                color: Colors.white.withOpacity(0.25),
-                size: 18,
+                Icons.arrow_forward_ios_rounded,
+                color: color.withOpacity(0.45),
+                size: 13,
               ),
             ],
           ),
@@ -296,13 +350,13 @@ class _RegionSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
+        const Text(
           'NETHERLINK SERVER',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.35),
+            color: AppTheme.textMuted,
             fontSize: 10,
             fontWeight: FontWeight.w600,
-            letterSpacing: 1.2,
+            letterSpacing: 1.4,
           ),
         ),
         const SizedBox(height: 8),
@@ -311,6 +365,7 @@ class _RegionSelector extends StatelessWidget {
             final ip = relay['ip'] as String;
             final name = relay['name'] as String;
             final isSelected = selectedIp == ip;
+            final isFirst = relay == AppConstants.relayServers.first;
 
             return Expanded(
               child: GestureDetector(
@@ -318,45 +373,45 @@ class _RegionSelector extends StatelessWidget {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   margin: EdgeInsets.only(
-                    right: relay == AppConstants.relayServers.first ? 6 : 0,
-                    left: relay == AppConstants.relayServers.last ? 6 : 0,
+                    right: isFirst ? 6 : 0,
+                    left: isFirst ? 0 : 6,
                   ),
                   padding: const EdgeInsets.symmetric(
-                    vertical: 12,
-                    horizontal: 14,
+                    vertical: 13,
+                    horizontal: 12,
                   ),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? Colors.white.withOpacity(0.10)
-                        : Colors.white.withOpacity(0.04),
+                        ? AppTheme.accent.withOpacity(0.10)
+                        : AppTheme.surface,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isSelected
-                          ? Colors.white.withOpacity(0.30)
-                          : Colors.white.withOpacity(0.08),
+                          ? AppTheme.accent.withOpacity(0.45)
+                          : AppTheme.borderGray,
                       width: isSelected ? 1.5 : 1.0,
                     ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      if (isSelected) ...[
-                        Container(
-                          width: 7,
-                          height: 7,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF4ADE80),
-                            shape: BoxShape.circle,
-                          ),
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppTheme.success
+                              : AppTheme.textDisabled,
+                          shape: BoxShape.circle,
                         ),
-                        const SizedBox(width: 7),
-                      ],
+                      ),
+                      const SizedBox(width: 7),
                       Text(
                         name,
                         style: TextStyle(
                           color: isSelected
-                              ? Colors.white
-                              : Colors.white.withOpacity(0.45),
+                              ? AppTheme.textPrimary
+                              : AppTheme.textSecondary,
                           fontWeight: isSelected
                               ? FontWeight.w700
                               : FontWeight.w400,
@@ -371,54 +426,6 @@ class _RegionSelector extends StatelessWidget {
           }).toList(),
         ),
       ],
-    );
-  }
-}
-
-class _NavButton extends StatelessWidget {
-  final FaIconData icon;
-  final String label;
-  final VoidCallback? onTap;
-  final Color iconColor;
-  final Color labelColor;
-
-  const _NavButton({
-    Key? key,
-    required this.icon,
-    required this.label,
-    this.onTap,
-    required this.iconColor,
-    required this.labelColor,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(10),
-      onTap: onTap,
-      splashColor: Colors.white.withOpacity(0.08),
-      highlightColor: Colors.white.withOpacity(0.04),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            FaIcon(icon, size: 20, color: iconColor),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: labelColor,
-                fontSize: 10,
-                fontWeight: FontWeight.w400,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

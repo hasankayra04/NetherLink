@@ -2,7 +2,7 @@ name: NetherLink
 description: "Broadcast a remote server as a local server ."
 
 publish_to: 'none'
-version: 3.5.4+21
+version: 4.0.0+22
 
 environment:
   sdk: ^3.8.1
@@ -22,6 +22,7 @@ dependencies:
   package_info_plus: ^9.0.0
   font_awesome_flutter: ^11.0.0
   flutter_svg: ^2.2.4
+  mc_server_info: ^1.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -33,6 +34,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icons/aternos.png
+    - assets/images/splash.png
+    - assets/images/logo.png
 
 msix_config:
   display_name: NetherLink

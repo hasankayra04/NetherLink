@@ -1,7 +1,6 @@
-import 'dart:math' as math;
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
+import '../../theme/app_theme.dart';
 import '../buttons/themed_button.dart';
 
 class InfoDialog {
@@ -14,208 +13,132 @@ class InfoDialog {
   }) {
     final loc = AppLocalizations.of(context)!;
 
-    const Color dialogPurple = Color.fromARGB(255, 20, 13, 32);
-    const Color dialogPurpleDark = Color.fromARGB(255, 19, 14, 38);
-
-    final defaultActions = [
-      ThemedButton(
-        onPressed: () => Navigator.of(context).pop(),
-        variant: ThemedButtonVariant.primary,
-        child: Text(
-          loc.ok,
-          style: const TextStyle(fontWeight: FontWeight.w800),
-        ),
-      ),
-    ];
-
-    List<Widget> buildActions() {
-      final raw = actions ?? defaultActions;
-      return raw.map((w) => _convertAction(w)).toList();
-    }
-
     return showDialog(
       context: context,
       barrierDismissible: barrierDismissible,
+      barrierColor: Colors.black.withOpacity(0.65),
       builder: (_) => Dialog(
         backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: _InfoDialogContent(
-              title: title,
-              content: content,
-              actions: buildActions(),
-              dialogPurple: dialogPurple,
-              dialogPurpleDark: dialogPurpleDark,
-            ),
-          ),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+        child: _InfoContent(
+          title: title,
+          content: content,
+          actions:
+              actions ??
+              [
+                ThemedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  variant: ThemedButtonVariant.primary,
+                  child: Text(
+                    loc.ok,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
         ),
       ),
     );
   }
-
-  static Widget _convertAction(Widget w) {
-    if (w is ThemedButton) return w;
-    if (w is ElevatedButton) return w;
-    if (w is OutlinedButton) return w;
-    if (w is TextButton) {
-      final child = w.child;
-      String label = '';
-      if (child is Text) label = child.data ?? '';
-      final onPressed = w.onPressed;
-      return ThemedButton(
-        onPressed: onPressed,
-        variant: ThemedButtonVariant.subtle,
-        child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
-      );
-    }
-    if (w is Text) {
-      return ThemedButton(
-        onPressed: null,
-        variant: ThemedButtonVariant.subtle,
-        child: w,
-      );
-    }
-    return w;
-  }
 }
 
-class _InfoDialogContent extends StatefulWidget {
+class _InfoContent extends StatelessWidget {
   final String title;
   final String content;
   final List<Widget> actions;
-  final Color dialogPurple;
-  final Color dialogPurpleDark;
 
-  const _InfoDialogContent({
-    Key? key,
+  const _InfoContent({
     required this.title,
     required this.content,
     required this.actions,
-    required this.dialogPurple,
-    required this.dialogPurpleDark,
-  }) : super(key: key);
-
-  @override
-  State<_InfoDialogContent> createState() => _InfoDialogContentState();
-}
-
-class _InfoDialogContentState extends State<_InfoDialogContent> {
-  static const double _horizontalPadding = 18.0;
-  static const double _headerBottomGap = 12.0;
-  static const double _actionsTopGap = 14.0;
-  static const double _titleFontSize = 18.5;
-  static const double _bodyFontSize = 15.0;
+  });
 
   @override
   Widget build(BuildContext context) {
-    final screenW = MediaQuery.of(context).size.width;
-    final screenH = MediaQuery.of(context).size.height;
-    final maxDialogWidth = math.min(760.0, screenW - 40.0);
-
-    final maxDialogHeight = screenH * 0.78;
-    final bodyMaxHeight = screenH * 0.48;
-
     return Container(
-      padding: const EdgeInsets.all(_horizontalPadding),
       constraints: BoxConstraints(
-        maxWidth: maxDialogWidth,
-        maxHeight: maxDialogHeight,
-        minWidth: 220.0,
-        minHeight: 0.0,
+        maxWidth: 520,
+        maxHeight: MediaQuery.of(context).size.height * 0.82,
       ),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            widget.dialogPurple.withOpacity(0.98),
-            widget.dialogPurpleDark.withOpacity(0.98),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: widget.dialogPurpleDark.withOpacity(0.24)),
+        color: AppTheme.surfaceRaised,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.borderGray),
         boxShadow: [
           BoxShadow(
-            color: widget.dialogPurpleDark.withOpacity(0.20),
-            blurRadius: 28,
-            offset: const Offset(0, 10),
+            color: Colors.black.withOpacity(0.45),
+            blurRadius: 36,
+            offset: const Offset(0, 14),
           ),
         ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  widget.title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: _titleFontSize,
-                    fontWeight: FontWeight.w800,
-                    height: 1.1,
-                  ),
-                ),
-              ),
-              Material(
-                color: Colors.white12,
-                shape: const CircleBorder(),
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Padding(
-                    padding: const EdgeInsets.all(6.0),
-                    child: Icon(
-                      Icons.close,
-                      color: Colors.white.withOpacity(0.95),
-                      size: 20,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(22, 20, 16, 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
-              ),
-            ],
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceLight,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppTheme.borderGray),
+                    ),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      color: AppTheme.textSecondary,
+                      size: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
 
-          const SizedBox(height: _headerBottomGap),
+          const Divider(height: 1, color: AppTheme.borderDim),
 
           Flexible(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: bodyMaxHeight,
-                minHeight: 0,
-              ),
-              child: SingleChildScrollView(
-                child: DefaultTextStyle(
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: _bodyFontSize,
-                    height: 1.6,
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 4.0),
-                    child: Text(widget.content),
-                  ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(22, 18, 22, 8),
+              child: Text(
+                content,
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 14,
+                  height: 1.7,
                 ),
               ),
             ),
           ),
 
-          const SizedBox(height: _actionsTopGap),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: widget.actions
-                .map(
-                  (w) => Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: w,
-                  ),
-                )
-                .toList(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: actions
+                  .map(
+                    (w) => Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: w,
+                    ),
+                  )
+                  .toList(),
+            ),
           ),
         ],
       ),

@@ -1,15 +1,46 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:ui';
+import 'dart:math' show Random, pi, sin;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../services/region_detector.dart';
 import 'home_screen.dart';
+
+class _TipData {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String body;
+  const _TipData({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.body,
+  });
+}
+
+const _tips = [
+  _TipData(
+    icon: Icons.wifi_rounded,
+    color: AppTheme.info,
+    title: 'Same Wi-Fi Network',
+    body:
+        'The device running NetherLink MUST be on the same Wi-Fi network as the console you play Minecraft on.',
+  ),
+  _TipData(
+    icon: Icons.card_membership_rounded,
+    color: AppTheme.modeFriends,
+    title: 'Online Subscription Required',
+    body:
+        'Each console needs its own active online subscription (Xbox Live, PS Plus, NSO). Without it, NetherLink won\'t appear.',
+  ),
+];
+
+bool get _isMobile => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -21,20 +52,13 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
-  late AnimationController _scaleController;
-  late AnimationController _pulseController;
-  late AnimationController _bgController;
-  late AnimationController _shimmerController;
-
   late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _pulseAnimation;
-  late Animation<double> _bgAnimation;
-  late Animation<double> _shimmerAnimation;
+
+  final List<AnimationController> _tipControllers = [];
+  final List<Animation<double>> _tipAnimations = [];
 
   RelayPingResult? _detectedRelay;
   String _appVersion = '';
-  bool _isCheckingUpdate = false;
   bool _pendingUpdate = false;
 
   static const String _androidStoreUrl =
@@ -50,62 +74,42 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
 
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 700),
       vsync: this,
     );
-    _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeIn,
     );
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    )..repeat(reverse: true);
-    _bgController = AnimationController(
-      duration: const Duration(seconds: 5),
-      vsync: this,
-    )..repeat(reverse: true);
-    _shimmerController = AnimationController(
-      duration: const Duration(milliseconds: 1800),
-      vsync: this,
-    )..repeat();
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeIn));
-    _scaleAnimation = Tween<double>(begin: 0.6, end: 1.0).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.easeOutCubic),
-    );
-    _pulseAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-    _bgAnimation = CurvedAnimation(
-      parent: _bgController,
-      curve: Curves.easeInOut,
-    );
-    _shimmerAnimation = Tween<double>(begin: -2.0, end: 2.0).animate(
-      CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut),
-    );
+    for (int i = 0; i < _tips.length; i++) {
+      final ctrl = AnimationController(
+        duration: const Duration(milliseconds: 500),
+        vsync: this,
+      );
+      _tipControllers.add(ctrl);
+      _tipAnimations.add(CurvedAnimation(parent: ctrl, curve: Curves.easeOut));
+    }
 
     _startSequence();
   }
 
   Future<void> _startSequence() async {
     _fadeController.forward();
-    await Future.delayed(const Duration(milliseconds: 200));
-    _scaleController.forward();
 
     final info = await PackageInfo.fromPlatform();
-    if (mounted) {
-      setState(() => _appVersion = info.version);
+    if (mounted) setState(() => _appVersion = info.version);
+
+    for (int i = 0; i < _tips.length; i++) {
+      await Future.delayed(Duration(milliseconds: i == 0 ? 600 : 1400));
+      if (mounted) _tipControllers[i].forward();
     }
 
     await Future.wait([
       _detectRelayAndCheckUpdate().then((hasUpdate) {
         _pendingUpdate = hasUpdate;
       }),
-      Future.delayed(const Duration(milliseconds: 2800)),
+      Future.delayed(const Duration(milliseconds: 4200)),
     ]);
 
     if (!mounted) return;
@@ -120,23 +124,16 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<bool> _detectRelayAndCheckUpdate() async {
-    if (mounted) setState(() => _isCheckingUpdate = true);
-
     try {
       _detectedRelay = await RegionDetector.detectBestRelay();
-
       String? remoteVersion = _detectedRelay?.version;
-
       if (remoteVersion == null && _detectedRelay != null) {
         remoteVersion = await _fetchVersionFallback(_detectedRelay!.base);
       }
-
       if (remoteVersion != null && _appVersion.isNotEmpty) {
         return _isNewerVersion(_appVersion, remoteVersion);
       }
-    } finally {
-      if (mounted) setState(() => _isCheckingUpdate = false);
-    }
+    } catch (_) {}
     return false;
   }
 
@@ -154,18 +151,14 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   bool _isNewerVersion(String current, String remote) {
-    final currentParts = current.split('.').map(int.tryParse).toList();
-    final remoteParts = remote.split('.').map(int.tryParse).toList();
-
-    final length = currentParts.length > remoteParts.length
-        ? currentParts.length
-        : remoteParts.length;
-
-    for (int i = 0; i < length; i++) {
-      final c = i < currentParts.length ? (currentParts[i] ?? 0) : 0;
-      final r = i < remoteParts.length ? (remoteParts[i] ?? 0) : 0;
-      if (r > c) return true;
-      if (r < c) return false;
+    final c = current.split('.').map(int.tryParse).toList();
+    final r = remote.split('.').map(int.tryParse).toList();
+    final len = c.length > r.length ? c.length : r.length;
+    for (int i = 0; i < len; i++) {
+      final cv = i < c.length ? (c[i] ?? 0) : 0;
+      final rv = i < r.length ? (r[i] ?? 0) : 0;
+      if (rv > cv) return true;
+      if (rv < cv) return false;
     }
     return false;
   }
@@ -191,125 +184,104 @@ class _SplashScreenState extends State<SplashScreen>
       barrierDismissible: false,
       builder: (ctx) => Dialog(
         backgroundColor: Colors.transparent,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Container(
-              padding: const EdgeInsets.all(28),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1B132C),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withOpacity(0.10)),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryAccent.withOpacity(0.15),
-                    blurRadius: 40,
-                    spreadRadius: 2,
-                  ),
-                ],
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceRaised,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppTheme.borderGray),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.accent.withOpacity(0.15),
+                blurRadius: 40,
+                spreadRadius: 2,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: AppTheme.accent.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.accent.withOpacity(0.35)),
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.system_update_rounded,
+                    color: AppTheme.accent,
+                    size: 28,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Update Available',
+                style: TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'A new version of the app is available.\nUpdate now for the latest features and fixes.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 13,
+                  height: 1.6,
+                ),
+              ),
+              const SizedBox(height: 28),
+              Row(
                 children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryAccent.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: AppTheme.primaryAccent.withOpacity(0.35),
-                      ),
-                    ),
-                    child: Center(
-                      child: Icon(
-                        Icons.system_update_rounded,
-                        color: AppTheme.primaryAccent,
-                        size: 28,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Update Available',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'A new version of the app is available.\nUpdate now for the latest features and fixes.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.55),
-                      fontSize: 13,
-                      height: 1.6,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextButton(
-                          onPressed: () => Navigator.of(ctx).pop(true),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(
-                                color: Colors.white.withOpacity(0.12),
-                              ),
-                            ),
-                          ),
-                          child: Text(
-                            'Later',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.45),
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14,
-                            ),
-                          ),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        foregroundColor: AppTheme.textSecondary,
+                        side: const BorderSide(color: AppTheme.borderGray),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(ctx).pop(false);
-                            _openStore();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryAccent,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: const Text(
-                            'Update Now',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14,
-                            ),
-                          ),
+                      child: const Text('Later'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(ctx).pop(false);
+                        _openStore();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.accent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        elevation: 0,
                       ),
-                    ],
+                      child: const Text(
+                        'Update Now',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
                   ),
                 ],
               ),
-            ),
+            ],
           ),
         ),
       ),
     );
-
     return result ?? true;
   }
 
@@ -328,387 +300,320 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void dispose() {
     _fadeController.dispose();
-    _scaleController.dispose();
-    _pulseController.dispose();
-    _bgController.dispose();
-    _shimmerController.dispose();
+    for (final c in _tipControllers) {
+      c.dispose();
+    }
     super.dispose();
+  }
+
+  Widget _versionBadge({bool white = false}) {
+    if (_appVersion.isEmpty) return const SizedBox.shrink();
+    return AnimatedOpacity(
+      opacity: _appVersion.isEmpty ? 0.0 : 1.0,
+      duration: const Duration(milliseconds: 400),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: white
+              ? Colors.white.withOpacity(0.10)
+              : AppTheme.surfaceRaised,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: white ? Colors.white.withOpacity(0.15) : AppTheme.borderGray,
+          ),
+        ),
+        child: Text(
+          'v$_appVersion',
+          style: TextStyle(
+            fontSize: 11,
+            color: white ? Colors.white.withOpacity(0.5) : AppTheme.textMuted,
+            letterSpacing: 1.4,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _tipsSection({bool white = false}) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 13,
+                  color: white
+                      ? Colors.white.withOpacity(0.5)
+                      : AppTheme.textMuted,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'BEFORE YOU START',
+                  style: TextStyle(
+                    color: white
+                        ? Colors.white.withOpacity(0.5)
+                        : AppTheme.textMuted.withOpacity(0.7),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.6,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ...List.generate(_tips.length, (i) {
+            return AnimatedBuilder(
+              animation: _tipAnimations[i],
+              builder: (context, _) {
+                final t = _tipAnimations[i].value;
+                return Opacity(
+                  opacity: t,
+                  child: Transform.translate(
+                    offset: Offset(0, 16 * (1 - t)),
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        bottom: i < _tips.length - 1 ? 10 : 0,
+                      ),
+                      child: _TipCard(tip: _tips[i], darkMode: white),
+                    ),
+                  ),
+                );
+              },
+            );
+          }),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: AnimatedBuilder(
-        animation: _bgAnimation,
-        builder: (context, child) {
-          return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color.lerp(
-                    const Color(0xFF080810),
-                    const Color(0xFF0C0818),
-                    _bgAnimation.value,
-                  )!,
-                  Color.lerp(
-                    const Color(0xFF0A0818),
-                    const Color(0xFF06060F),
-                    _bgAnimation.value,
-                  )!,
-                  Color.lerp(
-                    const Color(0xFF060A14),
-                    const Color(0xFF0A0C1C),
-                    _bgAnimation.value,
-                  )!,
-                ],
-              ),
-            ),
-            child: child,
-          );
-        },
-        child: Stack(
-          children: [
-            AnimatedBuilder(
-              animation: _bgAnimation,
-              builder: (context, _) {
-                return Stack(
-                  children: [
-                    _ambientBlob(
-                      top: -120,
-                      left: -80,
-                      size: 400,
-                      color: AppTheme.primaryAccent,
-                      opacity: 0.07 + (_bgAnimation.value * 0.04),
-                    ),
-                    _ambientBlob(
-                      bottom: -80,
-                      right: -60,
-                      size: 320,
-                      color: Colors.purpleAccent,
-                      opacity: 0.05 + (_bgAnimation.value * 0.03),
-                    ),
-                    _ambientBlob(
-                      top: 200,
-                      right: -40,
-                      size: 220,
-                      color: Colors.blueAccent,
-                      opacity: 0.04 + (_bgAnimation.value * 0.02),
-                    ),
-                  ],
-                );
-              },
-            ),
-            Positioned.fill(
-              child: CustomPaint(
-                painter: _GlassGridPainter(
-                  color: Colors.white.withOpacity(0.025),
-                ),
-              ),
-            ),
-            Center(
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: ScaleTransition(
-                  scale: _scaleAnimation,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildLogo(),
-                      const SizedBox(height: 44),
-                      _buildTitle(loc),
-                      const SizedBox(height: 16),
-                      _buildBadge(loc),
-                      const SizedBox(height: 64),
-                      _buildLoader(loc),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    if (_isMobile) {
+      return Scaffold(
+        backgroundColor: AppTheme.background,
+        body: FadeTransition(
+          opacity: _fadeAnimation,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.asset('assets/images/splash.png', fit: BoxFit.cover),
 
-  Widget _buildLogo() {
-    return AnimatedBuilder(
-      animation: _pulseAnimation,
-      builder: (context, _) {
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            Container(
-              width: 160 * _pulseAnimation.value,
-              height: 160 * _pulseAnimation.value,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppTheme.primaryAccent.withOpacity(
-                    0.15 * _pulseAnimation.value,
-                  ),
-                  width: 1,
-                ),
-              ),
-            ),
-            Container(
-              width: 128,
-              height: 128,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.06),
-                  width: 1,
-                ),
-              ),
-            ),
-            ClipOval(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              Positioned.fill(
                 child: Container(
-                  width: 110,
-                  height: 110,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
+                  decoration: const BoxDecoration(
                     gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: [0.0, 0.45, 1.0],
                       colors: [
-                        Colors.white.withOpacity(0.12),
-                        Colors.white.withOpacity(0.04),
+                        Colors.transparent,
+                        Colors.transparent,
+                        Color(0xF0000000),
                       ],
                     ),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.15),
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.primaryAccent.withOpacity(0.3),
-                        blurRadius: 30,
-                        spreadRadius: 2,
-                      ),
-                    ],
                   ),
                 ),
               ),
-            ),
-            AnimatedBuilder(
-              animation: _shimmerAnimation,
-              builder: (context, _) {
-                return ShaderMask(
-                  shaderCallback: (bounds) {
-                    return LinearGradient(
-                      begin: Alignment(_shimmerAnimation.value - 1, -0.5),
-                      end: Alignment(_shimmerAnimation.value, 0.5),
-                      colors: [
-                        Colors.white.withOpacity(0.6),
-                        Colors.white,
-                        Colors.white.withOpacity(0.6),
-                      ],
-                    ).createShader(bounds);
-                  },
-                  child: const Icon(
-                    Icons.track_changes_rounded,
-                    size: 52,
-                    color: Colors.white,
-                  ),
-                );
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
 
-  Widget _buildTitle(AppLocalizations loc) {
-    return Column(
-      children: [
-        ShaderMask(
-          shaderCallback: (bounds) => LinearGradient(
-            colors: [Colors.white, Colors.white.withOpacity(0.85)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ).createShader(bounds),
-          child: Text(
-            loc.appName.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 34,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-              letterSpacing: 8,
-            ),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          loc.bedrockBridge,
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.white.withOpacity(0.35),
-            letterSpacing: 3,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-      ],
-    );
-  }
+              SafeArea(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                      child: _versionBadge(white: true),
+                    ),
 
-  Widget _buildBadge(AppLocalizations loc) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.06),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
-          ),
-          child: Text(
-            loc.createdBy,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.white.withOpacity(0.4),
-              letterSpacing: 1.5,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+                    const Spacer(),
 
-  Widget _buildLoader(AppLocalizations loc) {
-    return Column(
-      children: [
-        SizedBox(
-          width: 36,
-          height: 36,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              AppTheme.primaryAccent.withOpacity(0.7),
-            ),
-            backgroundColor: Colors.white.withOpacity(0.05),
-          ),
-        ),
-        const SizedBox(height: 16),
-        AnimatedBuilder(
-          animation: _pulseController,
-          builder: (context, _) {
-            return Opacity(
-              opacity: 0.3 + (_pulseAnimation.value * 0.4),
-              child: Text(
-                _isCheckingUpdate
-                    ? 'CHECKING FOR UPDATES...'
-                    : loc.initializing,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white.withOpacity(0.5),
-                  letterSpacing: 2.5,
-                  fontWeight: FontWeight.w400,
+                    // Tips onderaan
+                    _tipsSection(white: true),
+                  ],
                 ),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 20),
-        AnimatedOpacity(
-          opacity: _appVersion.isEmpty ? 0.0 : 1.0,
-          duration: const Duration(milliseconds: 400),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.08)),
-            ),
-            child: Text(
-              'v$_appVersion',
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.white.withOpacity(0.30),
-                letterSpacing: 1.5,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _ambientBlob({
-    double? top,
-    double? bottom,
-    double? left,
-    double? right,
-    required double size,
-    required Color color,
-    required double opacity,
-  }) {
-    return Positioned(
-      top: top,
-      bottom: bottom,
-      left: left,
-      right: right,
-      child: IgnorePointer(
-        child: Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(opacity),
-                blurRadius: size,
-                spreadRadius: size * 0.4,
               ),
             ],
           ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: AppTheme.background,
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            CustomPaint(painter: _SplashNoisePainter()),
+            CustomPaint(painter: _SplashWavePainter()),
+
+            SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: _versionBadge(),
+                  ),
+
+                  Expanded(
+                    child: Center(
+                      child: SizedBox(
+                        height: 200,
+                        child: Image.asset(
+                          'assets/images/logo.png',
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  _tipsSection(),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _GlassGridPainter extends CustomPainter {
-  final Color color;
-  _GlassGridPainter({required this.color});
+class _TipCard extends StatelessWidget {
+  final _TipData tip;
+  final bool darkMode;
+  const _TipCard({required this.tip, this.darkMode = false});
 
   @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: darkMode
+            ? Colors.black.withOpacity(0.55)
+            : tip.color.withOpacity(0.07),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: darkMode
+              ? Colors.white.withOpacity(0.12)
+              : tip.color.withOpacity(0.25),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: tip.color.withOpacity(0.18),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Icon(tip.icon, color: tip.color, size: 19),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tip.title,
+                  style: TextStyle(
+                    color: darkMode ? Colors.white : tip.color,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  tip.body,
+                  style: TextStyle(
+                    color: darkMode
+                        ? Colors.white.withOpacity(0.65)
+                        : AppTheme.textSecondary,
+                    fontSize: 12,
+                    height: 1.55,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SplashNoisePainter extends CustomPainter {
+  @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 0.5
-      ..style = PaintingStyle.stroke;
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Paint()..color = AppTheme.background,
+    );
 
-    const spacing = 52.0;
+    final rng = Random(77);
 
-    for (double x = 0; x < size.width; x += spacing) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    final paintA = Paint()..color = AppTheme.accent.withOpacity(0.045);
+    for (int i = 0; i < 400; i++) {
+      canvas.drawCircle(
+        Offset(rng.nextDouble() * size.width, rng.nextDouble() * size.height),
+        rng.nextDouble() * 1.3 + 0.2,
+        paintA,
+      );
     }
-    for (double y = 0; y < size.height; y += spacing) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
 
-    paint.color = color.withOpacity(0.4);
-    for (double i = -size.height; i < size.width; i += spacing * 2.5) {
-      canvas.drawLine(
-        Offset(i, 0),
-        Offset(i + size.height, size.height),
-        paint,
+    final paintW = Paint()..color = Colors.white.withOpacity(0.018);
+    for (int i = 0; i < 200; i++) {
+      canvas.drawCircle(
+        Offset(rng.nextDouble() * size.width, rng.nextDouble() * size.height),
+        rng.nextDouble() * 0.9 + 0.1,
+        paintW,
       );
     }
   }
 
   @override
-  bool shouldRepaint(_GlassGridPainter old) => old.color != color;
+  bool shouldRepaint(_SplashNoisePainter old) => false;
+}
+
+class _SplashWavePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    void wave(
+      double yFrac,
+      double amp,
+      double freq,
+      double phase,
+      Color color,
+      double sw,
+    ) {
+      final paint = Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = sw;
+      final path = Path();
+      path.moveTo(0, size.height * yFrac);
+      for (double x = 0; x <= size.width; x += 1) {
+        path.lineTo(
+          x,
+          size.height * yFrac + amp * sin((x / size.width) * freq * pi + phase),
+        );
+      }
+      canvas.drawPath(path, paint);
+    }
+
+    wave(0.35, 22, 2.2, 0.4, AppTheme.accent.withOpacity(0.08), 1.5);
+    wave(0.55, 14, 3.5, 1.6, AppTheme.accent.withOpacity(0.05), 1.2);
+    wave(0.75, 10, 4.8, 0.8, Colors.white.withOpacity(0.03), 1.0);
+    wave(0.88, 6, 6.0, 2.1, AppTheme.accent.withOpacity(0.04), 0.8);
+  }
+
+  @override
+  bool shouldRepaint(_SplashWavePainter old) => false;
 }

@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,35 +17,28 @@ import '../widgets/components/global_notice_banner.dart';
 import '../services/notification_service.dart';
 import '../services/region_detector.dart';
 import '../network/broadcast_mode.dart';
-
 import '../widgets/navigation/bottom_nav_bar.dart';
 import '../widgets/navigation/howto_menu.dart';
 import '../widgets/navigation/help_menu.dart';
 import '../services/navigation_controller.dart';
 import '../services/locale_provider.dart';
-
 import '../widgets/dialogs/howto_dialogs.dart';
 import '../widgets/dialogs/help_dialogs.dart';
 
 class HomeScreen extends StatefulWidget {
   final RelayPingResult? initialRelay;
-
   const HomeScreen({super.key, this.initialRelay});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> {
   late final SocketHandler socketHandler;
   late final BroadcastManager _broadcastManager;
   late final Logger logger;
 
-  late AnimationController _bgController;
-  late Animation<double> _bgAnimation;
-
-  final ValueNotifier<bool> _debugEnabledNotifier = ValueNotifier<bool>(false);
-
+  final ValueNotifier<bool> _debugEnabledNotifier = ValueNotifier(false);
   bool _nintendoDnsMode = false;
 
   Map<String, String>? _currentNotice;
@@ -54,33 +46,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   final TextEditingController _ipController = TextEditingController();
   final TextEditingController _portController = TextEditingController();
-
-  final ScrollController _scroll_controller = ScrollController();
+  final ScrollController _logScrollController = ScrollController();
   final ScrollController _mainScrollController = ScrollController();
 
   final ValueNotifier<List<String>> _logsNotifier = ValueNotifier([]);
   final ValueNotifier<bool> _broadcastingNotifier = ValueNotifier(false);
-  final ValueNotifier<List<UserServer>> _userServersNotifier = ValueNotifier([]);
+  final ValueNotifier<List<UserServer>> _userServersNotifier = ValueNotifier(
+    [],
+  );
 
   late RelayPingResult _selectedRelay;
-
   late final NavigationController navigationController;
 
   @override
   void initState() {
     super.initState();
-
     _selectedRelay = widget.initialRelay ?? _fallbackRelay();
-
-    _bgController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 6),
-    )..repeat(reverse: true);
-    _bgAnimation = CurvedAnimation(
-      parent: _bgController,
-      curve: Curves.easeInOut,
-    );
-
     _initializeComponents();
     _loadUserServers();
     _fetchNotification();
@@ -90,11 +71,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       discordUrl: AppConstants.discordUrl,
       appLocaleNotifier: appLocale,
       logsNotifier: _logsNotifier,
-      logsScrollController: _scroll_controller,
+      logsScrollController: _logScrollController,
       debugEnabledNotifier: _debugEnabledNotifier,
       toggleDebugCallback: () async => _toggleDebugMode(),
-      copyLogsCallback: () async => await _copyLogsToClipboard(),
-      clearLogsCallback: () => _clearLogs(),
+      copyLogsCallback: () async => _copyLogsToClipboard(),
+      clearLogsCallback: _clearLogs,
       showXboxHelpCallback: _showXboxHelp,
       showHowToMenuCallback: (ctx) {
         final relayName = _selectedRelay.name;
@@ -102,9 +83,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         final friendName = relayName == 'EU Server'
             ? 'NetherLinkEU'
             : relayName == 'US Server'
-                ? 'NetherLinkUS'
-                : '-';
-
+            ? 'NetherLinkUS'
+            : '-';
         HowToMenu.show(
           ctx,
           onXbox: _showXboxHelp,
@@ -146,26 +126,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     _noticeTimer?.cancel();
-    _bgController.dispose();
     _ipController.dispose();
     _portController.dispose();
+    _logScrollController.dispose();
+    _mainScrollController.dispose();
     _logsNotifier.dispose();
     _broadcastingNotifier.dispose();
     _debugEnabledNotifier.dispose();
+    _userServersNotifier.dispose();
     navigationController.consoleOpen.dispose();
-    _stopBroadcast();
+    _broadcastManager.stopBroadcast();
     super.dispose();
-  }
-
-  Future<void> _fetchNotification() async {
-    final notice = await NotificationService.fetchNotice(_selectedRelay.base);
-    if (mounted && notice != null) {
-      setState(() => _currentNotice = notice);
-      _noticeTimer?.cancel();
-      _noticeTimer = Timer(const Duration(seconds: 20), () {
-        if (mounted) setState(() => _currentNotice = null);
-      });
-    }
   }
 
   void _initializeComponents() {
@@ -182,61 +153,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _broadcastManager.onRelayError = _handleRelayError;
   }
 
-  void _handleAutoDisconnect() {
-    if (!mounted) return;
-    setState(() => _broadcastingNotifier.value = false);
-    final loc = AppLocalizations.of(context)!;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.info_outline, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                loc.clientDisconnected,
-                style: const TextStyle(fontSize: 15),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: AppTheme.info,
-        duration: const Duration(seconds: 4),
-        behavior: SnackBarBehavior.floating,
-        action: SnackBarAction(
-          label: loc.ok,
-          textColor: Colors.white,
-          onPressed: () {},
-        ),
-      ),
-    );
-    logger.info('Auto-disconnect: All clients inactive');
-  }
-
-  void _handleRelayError(String message) {
-    if (!mounted) return;
-    final loc = AppLocalizations.of(context)!;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(message, style: const TextStyle(fontSize: 14)),
-            ),
-          ],
-        ),
-        backgroundColor: AppTheme.error,
-        duration: const Duration(seconds: 6),
-        behavior: SnackBarBehavior.floating,
-        action: SnackBarAction(
-          label: loc.ok,
-          textColor: Colors.white,
-          onPressed: () {},
-        ),
-      ),
-    );
+  Future<void> _fetchNotification() async {
+    final notice = await NotificationService.fetchNotice(_selectedRelay.base);
+    if (mounted && notice != null) {
+      setState(() => _currentNotice = notice);
+      _noticeTimer?.cancel();
+      _noticeTimer = Timer(const Duration(seconds: 20), () {
+        if (mounted) setState(() => _currentNotice = null);
+      });
+    }
   }
 
   Future<void> _loadUserServers() async {
@@ -255,29 +180,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void _setDefaultServerIfNeeded(List<UserServer> servers) {
     if (_ipController.text.trim().isNotEmpty) return;
     if (servers.isNotEmpty) {
-      final first = servers.first;
-      _ipController.text = first.address;
-      _portController.text = first.port.toString();
-      return;
+      _ipController.text = servers.first.address;
+      _portController.text = servers.first.port.toString();
     }
-    _ipController.text = '';
-    _portController.text = '';
   }
 
   void _log(String message) {
-    final currentLogs = List<String>.from(_logsNotifier.value);
-    currentLogs.add(message);
-    if (currentLogs.length > AppConstants.maxLogEntries) {
-      currentLogs.removeRange(
-        0,
-        currentLogs.length - AppConstants.maxLogEntries,
-      );
+    final logs = List<String>.from(_logsNotifier.value)..add(message);
+    if (logs.length > AppConstants.maxLogEntries) {
+      logs.removeRange(0, logs.length - AppConstants.maxLogEntries);
     }
-    _logsNotifier.value = currentLogs;
+    _logsNotifier.value = logs;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scroll_controller.hasClients && mounted) {
-        _scroll_controller.animateTo(
-          _scroll_controller.position.maxScrollExtent,
+      if (_logScrollController.hasClients && mounted) {
+        _logScrollController.animateTo(
+          _logScrollController.position.maxScrollExtent,
           duration: AppConstants.animationDuration,
           curve: Curves.fastOutSlowIn,
         );
@@ -285,63 +202,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     });
   }
 
+  void _clearLogs() {
+    _logsNotifier.value = [];
+    logger.info('Console cleared');
+  }
+
   Future<void> _copyLogsToClipboard() async {
     final loc = AppLocalizations.of(context)!;
     final logs = _logsNotifier.value;
     if (logs.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(loc.noLogsToCopy),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      _snack(loc.noLogsToCopy, AppTheme.surfaceLight);
       return;
     }
     await Clipboard.setData(ClipboardData(text: logs.join('\n')));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white, size: 18),
-            const SizedBox(width: 8),
-            Text(loc.copiedLogs(logs.length)),
-          ],
-        ),
-        backgroundColor: AppTheme.success,
-        duration: const Duration(seconds: 2),
-      ),
+    _snack(
+      loc.copiedLogs(logs.length),
+      AppTheme.success,
+      icon: Icons.check_circle_outline_rounded,
     );
-  }
-
-  void _toggleDebugMode() {
-    final loc = AppLocalizations.of(context)!;
-    final newVal = !_debugEnabledNotifier.value;
-    _debugEnabledNotifier.value = newVal;
-    setState(() {});
-    logger.debugEnabled = newVal;
-    logger.info('Debug mode ${newVal ? "enabled" : "disabled"}');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(
-              newVal ? Icons.bug_report : Icons.bug_report_outlined,
-              color: Colors.white,
-            ),
-            const SizedBox(width: 12),
-            Text(newVal ? loc.debugEnabled : loc.debugDisabled),
-          ],
-        ),
-        backgroundColor: newVal ? AppTheme.success : AppTheme.textMuted,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
-  void _clearLogs() {
-    _logsNotifier.value = [];
-    logger.info('Console cleared');
   }
 
   Future<void> _startBroadcast(PanelMode mode) async {
@@ -350,22 +229,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final remotePortParsed = int.tryParse(_portController.text);
 
     if (remoteHost.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(loc.pleaseEnterServer),
-          backgroundColor: Colors.orange,
-        ),
+      _snack(
+        loc.pleaseEnterServer,
+        AppTheme.warning,
+        icon: Icons.warning_amber_rounded,
       );
       return;
     }
     if (remotePortParsed == null ||
         remotePortParsed < 1 ||
         remotePortParsed > 65535) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(loc.invalidPort),
-          backgroundColor: Colors.red,
-        ),
+      _snack(
+        loc.invalidPort,
+        AppTheme.error,
+        icon: Icons.error_outline_rounded,
       );
       return;
     }
@@ -379,22 +256,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         mode: BroadcastMode.values[mode.index],
       );
       if (ok) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(loc.dnsConfigSent),
-            backgroundColor: AppTheme.primaryAccent,
-            duration: const Duration(seconds: 2),
-          ),
+        _snack(
+          loc.dnsConfigSent,
+          AppTheme.accent,
+          icon: Icons.check_circle_outline_rounded,
         );
-
         final relayName = _selectedRelay.name;
         final relayIp = _selectedRelay.ip;
         final friendName = relayName == 'EU Server'
             ? 'NetherLinkEU'
             : relayName == 'US Server'
-                ? 'NetherLinkUS'
-                : '-';
-
+            ? 'NetherLinkUS'
+            : '-';
         if (mode == PanelMode.nintendo) {
           await HowToDialogs.showNintendoInstructions(
             context,
@@ -429,18 +302,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _broadcastingNotifier.value = _broadcastManager.isBroadcasting;
 
     if (_broadcastManager.isBroadcasting && success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 12),
-              Text(AppLocalizations.of(context)!.broadcastingStarted),
-            ],
-          ),
-          backgroundColor: AppTheme.primaryAccent,
-          duration: const Duration(seconds: 2),
-        ),
+      _snack(
+        AppLocalizations.of(context)!.broadcastingStarted,
+        AppTheme.success,
+        icon: Icons.check_circle_outline_rounded,
       );
     }
   }
@@ -448,12 +313,42 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Future<void> _stopBroadcast() async {
     await _broadcastManager.stopBroadcast();
     _broadcastingNotifier.value = false;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(AppLocalizations.of(context)!.broadcastStopped),
-        backgroundColor: Colors.grey,
-        duration: const Duration(seconds: 2),
-      ),
+    if (mounted) {
+      _snack(
+        AppLocalizations.of(context)!.broadcastStopped,
+        AppTheme.surfaceLight,
+        icon: Icons.stop_circle_outlined,
+      );
+    }
+  }
+
+  void _handleAutoDisconnect() {
+    if (!mounted) return;
+    setState(() => _broadcastingNotifier.value = false);
+    _snack(
+      AppLocalizations.of(context)!.clientDisconnected,
+      AppTheme.info,
+      icon: Icons.info_outline_rounded,
+    );
+    logger.info('Auto-disconnect: All clients inactive');
+  }
+
+  void _handleRelayError(String message) {
+    if (!mounted) return;
+    _snack(message, AppTheme.error, icon: Icons.error_outline_rounded);
+  }
+
+  void _toggleDebugMode() {
+    final loc = AppLocalizations.of(context)!;
+    final newVal = !_debugEnabledNotifier.value;
+    _debugEnabledNotifier.value = newVal;
+    setState(() {});
+    logger.debugEnabled = newVal;
+    logger.info('Debug mode ${newVal ? "enabled" : "disabled"}');
+    _snack(
+      newVal ? loc.debugEnabled : loc.debugDisabled,
+      newVal ? AppTheme.success : AppTheme.surfaceLight,
+      icon: newVal ? Icons.bug_report_rounded : Icons.bug_report_outlined,
     );
   }
 
@@ -463,27 +358,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       _portController.text = server.port.toString();
     });
     logger.info('Selected saved server: ${server.name}');
-    final loc = AppLocalizations.of(context)!;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(loc.selectedServer(server.name)),
-        duration: const Duration(seconds: 1),
-        backgroundColor: AppTheme.primaryAccentDark,
-      ),
+    _snack(
+      AppLocalizations.of(context)!.selectedServer(server.name),
+      AppTheme.accent,
+      icon: Icons.bookmark_rounded,
     );
   }
 
   Future<void> _showManageServersDialog() async {
     await showDialog(
       context: context,
-      builder: (context) => const ManageServersDialog(),
+      builder: (_) => const ManageServersDialog(),
     );
     _loadUserServers();
   }
 
-  void _showXboxHelp() {
-    HowToDialogs.showXboxInstructions(context);
-  }
+  void _showXboxHelp() => HowToDialogs.showXboxInstructions(context);
 
   void _onRelayChanged(String? ip) {
     if (ip == null) return;
@@ -502,166 +392,88 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     logger.info('Relay manually changed to: $ip');
   }
 
+  void _snack(String message, Color color, {IconData? icon}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            if (icon != null) ...[
+              Icon(icon, color: Colors.white, size: 16),
+              const SizedBox(width: 10),
+            ],
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(color: Colors.white, fontSize: 13),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: color,
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: false,
-      backgroundColor: Colors.transparent,
-      body: AnimatedBuilder(
-        animation: _bgAnimation,
-        builder: (context, child) {
-          return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color.lerp(
-                    const Color(0xFF0A0A1A),
-                    const Color(0xFF0D0D20),
-                    _bgAnimation.value,
-                  )!,
-                  Color.lerp(
-                    const Color(0xFF0D0A1F),
-                    const Color(0xFF12091A),
-                    _bgAnimation.value,
-                  )!,
-                  Color.lerp(
-                    const Color(0xFF080D1A),
-                    const Color(0xFF0A1020),
-                    _bgAnimation.value,
-                  )!,
-                ],
+      backgroundColor: AppTheme.background,
+      body: SafeArea(
+        top: true,
+        bottom: false,
+        child: Column(
+          children: [
+            if (_currentNotice != null)
+              GlobalNoticeBanner(
+                message: _currentNotice!['message']!,
+                type: _currentNotice!['type'] ?? 'info',
+                onDismiss: () {
+                  _noticeTimer?.cancel();
+                  setState(() => _currentNotice = null);
+                },
               ),
-            ),
-            child: Stack(
-              children: [
-                _ambientBlob(
-                  top: -100,
-                  left: -80,
-                  size: 350,
-                  color: AppTheme.primaryAccent,
-                  opacity: 0.06 + (_bgAnimation.value * 0.03),
-                ),
-                _ambientBlob(
-                  bottom: 50,
-                  right: -60,
-                  size: 280,
-                  color: Colors.purpleAccent,
-                  opacity: 0.04 + (_bgAnimation.value * 0.02),
-                ),
-                _ambientBlob(
-                  top: 200,
-                  right: 40,
-                  size: 200,
-                  color: Colors.blueAccent,
-                  opacity: 0.03 + (_bgAnimation.value * 0.015),
-                ),
-                child!,
-              ],
-            ),
-          );
-        },
-        child: SafeArea(
-          top: true,
-          bottom: false,
-          child: Column(
-            children: [
-              const SizedBox(height: 8),
-              if (_currentNotice != null)
-                GlobalNoticeBanner(
-                  message: _currentNotice!['message']!,
-                  type: _currentNotice!['type'] ?? 'info',
-                  onDismiss: () {
-                    _noticeTimer?.cancel();
-                    setState(() => _currentNotice = null);
-                  },
-                ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) => _buildMobileLayout(),
+
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+                child: SingleChildScrollView(
+                  controller: _mainScrollController,
+                  physics: const ClampingScrollPhysics(),
+                  child: ValueListenableBuilder<List<UserServer>>(
+                    valueListenable: _userServersNotifier,
+                    builder: (context, userServers, _) => ConnectionPanel(
+                      ipController: _ipController,
+                      portController: _portController,
+                      broadcastingNotifier: _broadcastingNotifier,
+                      onStartBroadcast: _startBroadcast,
+                      onStopBroadcast: _stopBroadcast,
+                      savedServers: userServers,
+                      onServerSelected: _onUserServerSelected,
+                      onManageServers: _showManageServersDialog,
+                      selectedRelayIp: _selectedRelay.ip,
+                      onRelayChanged: _onRelayChanged,
+                      nintendoDnsMode: _nintendoDnsMode,
+                      onNintendoDnsModeChanged: (value) =>
+                          setState(() => _nintendoDnsMode = value),
+                    ),
                   ),
                 ),
               ),
-              BottomGlassSimpleNavBar(
-                navigationController: navigationController,
-                dark: true,
-                selectedRelayIp: _selectedRelay.ip,
-                onRelayChanged: _onRelayChanged,
-              ),
-            ],
-          ),
+            ),
+
+            BottomGlassSimpleNavBar(
+              navigationController: navigationController,
+              dark: true,
+              selectedRelayIp: _selectedRelay.ip,
+              onRelayChanged: _onRelayChanged,
+            ),
+          ],
         ),
-      ),
-    );
-  }
-
-  Widget _ambientBlob({
-    double? top,
-    double? bottom,
-    double? left,
-    double? right,
-    required double size,
-    required Color color,
-    required double opacity,
-  }) {
-    return Positioned(
-      top: top,
-      bottom: bottom,
-      left: left,
-      right: right,
-      child: IgnorePointer(
-        child: Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(opacity),
-                blurRadius: size,
-                spreadRadius: size * 0.4,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildConnectionPanel(List<UserServer> userServers) {
-    return ConnectionPanel(
-      ipController: _ipController,
-      portController: _portController,
-      broadcastingNotifier: _broadcastingNotifier,
-      onStartBroadcast: (mode) => _startBroadcast(mode),
-      onStopBroadcast: _stopBroadcast,
-      savedServers: userServers,
-      onServerSelected: _onUserServerSelected,
-      onManageServers: _showManageServersDialog,
-      selectedRelayIp: _selectedRelay.ip,
-      onRelayChanged: _onRelayChanged,
-      nintendoDnsMode: _nintendoDnsMode,
-      onNintendoDnsModeChanged: (value) =>
-          setState(() => _nintendoDnsMode = value),
-    );
-  }
-
-  Widget _buildMobileLayout() {
-    return SingleChildScrollView(
-      controller: _mainScrollController,
-      physics: const ClampingScrollPhysics(),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ValueListenableBuilder<List<UserServer>>(
-            valueListenable: _userServersNotifier,
-            builder: (context, userServers, _) =>
-                _buildConnectionPanel(userServers),
-          ),
-        ],
       ),
     );
   }
