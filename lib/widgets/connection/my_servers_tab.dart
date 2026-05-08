@@ -1,7 +1,9 @@
+import 'dart:math' as Math;
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../util/user_servers.dart';
 import '../../services/server_status_service.dart';
+import '../components/app_painters.dart';
 
 class MyServersTab extends StatefulWidget {
   const MyServersTab({
@@ -30,8 +32,12 @@ class _MyServersTabState extends State<MyServersTab> {
   Widget build(BuildContext context) {
     if (widget.savedServers.isEmpty) return _emptyState();
 
-    return Column(
-      children: List.generate(widget.savedServers.length, (i) {
+    return ListView.builder(
+      padding: EdgeInsets.zero,
+      shrinkWrap: true,
+      physics: const ClampingScrollPhysics(),
+      itemCount: widget.savedServers.length,
+      itemBuilder: (context, i) {
         final server = widget.savedServers[i];
         final isLast = i == widget.savedServers.length - 1;
         final isSelected =
@@ -42,6 +48,7 @@ class _MyServersTabState extends State<MyServersTab> {
           server: server,
           isSelected: isSelected,
           isLast: isLast,
+          broadcasting: widget.broadcasting,
           onTap: widget.broadcasting
               ? null
               : () {
@@ -51,7 +58,7 @@ class _MyServersTabState extends State<MyServersTab> {
                   widget.portController.text = server.port.toString();
                 },
         );
-      }),
+      },
     );
   }
 
@@ -59,6 +66,7 @@ class _MyServersTabState extends State<MyServersTab> {
     return const Padding(
       padding: EdgeInsets.symmetric(vertical: 28),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.dns_outlined, size: 26, color: AppTheme.textMuted),
           SizedBox(height: 10),
@@ -82,97 +90,193 @@ class _ServerTile extends StatelessWidget {
     required this.server,
     required this.isSelected,
     required this.isLast,
+    required this.broadcasting,
     required this.onTap,
   });
 
   final UserServer server;
   final bool isSelected;
   final bool isLast;
+  final bool broadcasting;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.surfaceLight : Colors.transparent,
-          border: isLast
-              ? null
-              : const Border(bottom: BorderSide(color: AppTheme.borderDim)),
-        ),
-        child: Row(
+    final tileColor = isSelected ? AppTheme.accent : AppTheme.textMuted;
+    final tileOpacity = isSelected ? 0.035 : 0.018;
+
+    return GestureDetector(
+      onTap: broadcasting ? null : onTap,
+      child: ClipRect(
+        child: Stack(
           children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceRaised,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppTheme.borderGray),
-              ),
-              child: const Icon(
-                Icons.dns_rounded,
-                size: 17,
-                color: AppTheme.textMuted,
+            Positioned.fill(
+              child: Container(
+                color: isSelected
+                    ? AppTheme.accent.withOpacity(0.06)
+                    : Colors.transparent,
               ),
             ),
-            const SizedBox(width: 12),
 
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            Positioned.fill(
+              child: CustomPaint(
+                painter: AppNoisePainter(
+                  color: tileColor,
+                  opacity: tileOpacity,
+                  seed: server.address.hashCode,
+                  count: 120,
+                ),
+              ),
+            ),
+
+            if (isSelected)
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: AppWavePainter(
+                    waves: const [
+                      WaveConfig(
+                        yFraction: 0.35,
+                        amplitude: 4,
+                        frequency: 3.5,
+                        phase: 0.6,
+                        color: AppTheme.accent,
+                        opacity: 0.10,
+                        strokeWidth: 1.0,
+                      ),
+                      WaveConfig(
+                        yFraction: 0.70,
+                        amplitude: 3,
+                        frequency: 5.0,
+                        phase: 1.8,
+                        color: AppTheme.accent,
+                        opacity: 0.06,
+                        strokeWidth: 0.8,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            if (!isLast)
+              const Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: AppTheme.borderDim,
+                ),
+              ),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              child: Row(
                 children: [
-                  Text(
-                    server.name,
-                    style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppTheme.accent.withOpacity(0.12)
+                          : AppTheme.surfaceRaised,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppTheme.accent.withOpacity(0.30)
+                            : AppTheme.borderGray,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.dns_rounded,
+                      size: 17,
+                      color: isSelected ? AppTheme.accent : AppTheme.textMuted,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${server.address}:${server.port}',
-                    style: const TextStyle(
-                      color: AppTheme.textMuted,
-                      fontSize: 11,
+                  const SizedBox(width: 12),
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          server.name,
+                          style: const TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${server.address}:${server.port}',
+                          style: const TextStyle(
+                            color: AppTheme.textMuted,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
                     ),
+                  ),
+
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _StatusBadge(address: server.address, port: server.port),
+                      const SizedBox(width: 8),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: broadcasting
+                              ? AppTheme.surfaceRaised
+                              : isSelected
+                              ? AppTheme.accent
+                              : AppTheme.accent.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: broadcasting
+                                ? AppTheme.borderGray
+                                : isSelected
+                                ? AppTheme.accent
+                                : AppTheme.accent.withOpacity(0.35),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.play_arrow_rounded,
+                              size: 13,
+                              color: broadcasting
+                                  ? AppTheme.textDisabled
+                                  : isSelected
+                                  ? Colors.white
+                                  : AppTheme.accent,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Play',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: broadcasting
+                                    ? AppTheme.textDisabled
+                                    : isSelected
+                                    ? Colors.white
+                                    : AppTheme.accent,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ),
-
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _StatusBadge(address: server.address, port: server.port),
-                const SizedBox(width: 8),
-                if (isSelected)
-                  Container(
-                    width: 20,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      color: AppTheme.success.withOpacity(0.15),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppTheme.success.withOpacity(0.5),
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.check_rounded,
-                      size: 11,
-                      color: AppTheme.success,
-                    ),
-                  )
-                else
-                  const Icon(
-                    Icons.chevron_right_rounded,
-                    size: 16,
-                    color: AppTheme.textMuted,
-                  ),
-              ],
             ),
           ],
         ),
@@ -207,16 +311,13 @@ class _StatusBadgeState extends State<_StatusBadge> {
         if (!snapshot.hasData) {
           return _pill(dot: AppTheme.textMuted, label: '...', sub: null);
         }
-
         final status = snapshot.data!;
         if (!status.isOnline) {
           return _pill(dot: AppTheme.textMuted, label: 'Offline', sub: null);
         }
-
         final playerText = (status.players != null && status.maxPlayers != null)
             ? '${status.players}/${status.maxPlayers}'
             : null;
-
         return _pill(dot: AppTheme.success, label: 'Online', sub: playerText);
       },
     );
@@ -227,15 +328,16 @@ class _StatusBadgeState extends State<_StatusBadge> {
     required String label,
     required String? sub,
   }) {
+    final online = dot == AppTheme.success;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: dot == AppTheme.success
+        color: online
             ? AppTheme.success.withOpacity(0.08)
             : AppTheme.surfaceRaised,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: dot == AppTheme.success
+          color: online
               ? AppTheme.success.withOpacity(0.30)
               : AppTheme.borderGray,
         ),
@@ -252,9 +354,7 @@ class _StatusBadgeState extends State<_StatusBadge> {
           Text(
             label,
             style: TextStyle(
-              color: dot == AppTheme.success
-                  ? AppTheme.success
-                  : AppTheme.textMuted,
+              color: online ? AppTheme.success : AppTheme.textMuted,
               fontSize: 10,
               fontWeight: FontWeight.w600,
             ),

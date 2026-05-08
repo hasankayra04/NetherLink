@@ -20,11 +20,4 @@ static const relayServers = [
   static const Duration progressUpdateInterval = Duration(milliseconds: 50);
 
   static const int maxLogEntries = 1000;
-
-  static const double borderRadius = 12.0;
-  static const double cardHeight = 140.0;
-  static const double mobileBreakpoint = 700.0;
-  static const double narrowBreakpoint = 500.0;
-
-  static const String appCreator = 'NetherDev';
 }

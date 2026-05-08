@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math' show Random, pi, sin;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -8,6 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 import '../services/region_detector.dart';
+import '../widgets/components/app_painters.dart';
 import 'home_screen.dart';
 
 class _TipData {
@@ -37,6 +37,46 @@ const _tips = [
     title: 'Online Subscription Required',
     body:
         'Each console needs its own active online subscription (Xbox Live, PS Plus, NSO). Without it, NetherLink won\'t appear.',
+  ),
+];
+
+// ── Gedeelde splash wave-config ───────────────────────────────────────────────
+const _splashWaves = [
+  WaveConfig(
+    yFraction: 0.35,
+    amplitude: 22,
+    frequency: 2.2,
+    phase: 0.4,
+    color: AppTheme.accent,
+    opacity: 0.08,
+    strokeWidth: 1.5,
+  ),
+  WaveConfig(
+    yFraction: 0.55,
+    amplitude: 14,
+    frequency: 3.5,
+    phase: 1.6,
+    color: AppTheme.accent,
+    opacity: 0.05,
+    strokeWidth: 1.2,
+  ),
+  WaveConfig(
+    yFraction: 0.75,
+    amplitude: 10,
+    frequency: 4.8,
+    phase: 0.8,
+    color: Colors.white,
+    opacity: 0.03,
+    strokeWidth: 1.0,
+  ),
+  WaveConfig(
+    yFraction: 0.88,
+    amplitude: 6,
+    frequency: 6.0,
+    phase: 2.1,
+    color: AppTheme.accent,
+    opacity: 0.04,
+    strokeWidth: 0.8,
   ),
 ];
 
@@ -402,7 +442,6 @@ class _SplashScreenState extends State<SplashScreen>
             fit: StackFit.expand,
             children: [
               Image.asset('assets/images/splash.png', fit: BoxFit.cover),
-
               Positioned.fill(
                 child: Container(
                   decoration: const BoxDecoration(
@@ -419,7 +458,6 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 ),
               ),
-
               SafeArea(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -428,10 +466,7 @@ class _SplashScreenState extends State<SplashScreen>
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                       child: _versionBadge(white: true),
                     ),
-
                     const Spacer(),
-
-                    // Tips onderaan
                     _tipsSection(white: true),
                   ],
                 ),
@@ -449,8 +484,23 @@ class _SplashScreenState extends State<SplashScreen>
         child: Stack(
           fit: StackFit.expand,
           children: [
-            CustomPaint(painter: _SplashNoisePainter()),
-            CustomPaint(painter: _SplashWavePainter()),
+            const CustomPaint(
+              painter: AppNoisePainter(
+                color: AppTheme.accent,
+                opacity: 0.045,
+                seed: 77,
+                count: 400,
+              ),
+            ),
+            const CustomPaint(
+              painter: AppNoisePainter(
+                color: Colors.white,
+                opacity: 0.018,
+                seed: 177,
+                count: 200,
+              ),
+            ),
+            const CustomPaint(painter: AppWavePainter(waves: _splashWaves)),
 
             SafeArea(
               child: Column(
@@ -460,7 +510,6 @@ class _SplashScreenState extends State<SplashScreen>
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                     child: _versionBadge(),
                   ),
-
                   Expanded(
                     child: Center(
                       child: SizedBox(
@@ -472,7 +521,6 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ),
                   ),
-
                   _tipsSection(),
                 ],
               ),
@@ -547,73 +595,4 @@ class _TipCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _SplashNoisePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      Paint()..color = AppTheme.background,
-    );
-
-    final rng = Random(77);
-
-    final paintA = Paint()..color = AppTheme.accent.withOpacity(0.045);
-    for (int i = 0; i < 400; i++) {
-      canvas.drawCircle(
-        Offset(rng.nextDouble() * size.width, rng.nextDouble() * size.height),
-        rng.nextDouble() * 1.3 + 0.2,
-        paintA,
-      );
-    }
-
-    final paintW = Paint()..color = Colors.white.withOpacity(0.018);
-    for (int i = 0; i < 200; i++) {
-      canvas.drawCircle(
-        Offset(rng.nextDouble() * size.width, rng.nextDouble() * size.height),
-        rng.nextDouble() * 0.9 + 0.1,
-        paintW,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_SplashNoisePainter old) => false;
-}
-
-class _SplashWavePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    void wave(
-      double yFrac,
-      double amp,
-      double freq,
-      double phase,
-      Color color,
-      double sw,
-    ) {
-      final paint = Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = sw;
-      final path = Path();
-      path.moveTo(0, size.height * yFrac);
-      for (double x = 0; x <= size.width; x += 1) {
-        path.lineTo(
-          x,
-          size.height * yFrac + amp * sin((x / size.width) * freq * pi + phase),
-        );
-      }
-      canvas.drawPath(path, paint);
-    }
-
-    wave(0.35, 22, 2.2, 0.4, AppTheme.accent.withOpacity(0.08), 1.5);
-    wave(0.55, 14, 3.5, 1.6, AppTheme.accent.withOpacity(0.05), 1.2);
-    wave(0.75, 10, 4.8, 0.8, Colors.white.withOpacity(0.03), 1.0);
-    wave(0.88, 6, 6.0, 2.1, AppTheme.accent.withOpacity(0.04), 0.8);
-  }
-
-  @override
-  bool shouldRepaint(_SplashWavePainter old) => false;
 }

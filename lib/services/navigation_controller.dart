@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/app_localizations.dart';
+import '../widgets/components/app_toast.dart';
 import '../widgets/console/console_widget.dart';
 import '../widgets/dialogs/language_dialog.dart';
 
@@ -9,7 +10,6 @@ class NavigationController {
   final String discordUrl;
 
   final ValueNotifier<Locale?> appLocaleNotifier;
-
   final ValueNotifier<List<String>> logsNotifier;
   final ScrollController logsScrollController;
   final ValueNotifier<bool> debugEnabledNotifier;
@@ -17,17 +17,11 @@ class NavigationController {
   final VoidCallback? toggleDebugCallback;
   final Future<void> Function()? copyLogsCallback;
   final VoidCallback? clearLogsCallback;
-
-  final ValueNotifier<bool> consoleOpen = ValueNotifier<bool>(false);
-
-  final Future<void> Function(
-    BuildContext context, {
-    required bool isFriendsMode,
-  })?
-  showDnsInfoModalCallback;
   final VoidCallback? showXboxHelpCallback;
   final void Function(BuildContext context)? showHowToMenuCallback;
   final void Function(BuildContext context)? showHelpMenuCallback;
+
+  final ValueNotifier<bool> consoleOpen = ValueNotifier<bool>(false);
 
   NavigationController({
     required this.websiteUrl,
@@ -39,107 +33,36 @@ class NavigationController {
     this.toggleDebugCallback,
     this.copyLogsCallback,
     this.clearLogsCallback,
-    this.showDnsInfoModalCallback,
     this.showXboxHelpCallback,
     this.showHowToMenuCallback,
     this.showHelpMenuCallback,
   });
 
-  Future<void> openWebsite(BuildContext context) async {
+  Future<void> _launch(BuildContext context, String url) async {
     final loc = AppLocalizations.of(context);
-    final url = websiteUrl;
-    if (url.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(loc?.couldNotOpenUrl ?? 'Could not open website'),
-        ),
-      );
-      return;
-    }
+    final fallback = loc?.couldNotOpenUrl ?? 'Could not open URL';
     final uri = Uri.tryParse(url);
-    if (uri == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(loc?.couldNotOpenUrl ?? 'Could not open website'),
-        ),
-      );
+    if (uri == null || url.isEmpty) {
+      AppToast.show(context, message: fallback, color: Colors.red.shade700);
       return;
     }
     try {
       final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (!opened) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(loc?.couldNotOpenUrl ?? 'Could not open website'),
-          ),
-        );
-      }
+      if (!opened)
+        AppToast.show(context, message: fallback, color: Colors.red.shade700);
     } catch (_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(loc?.couldNotOpenUrl ?? 'Could not open website'),
-        ),
-      );
+      AppToast.show(context, message: fallback, color: Colors.red.shade700);
     }
   }
 
-  Future<void> openWebsiteWithCustomUrl(
-    BuildContext context,
-    String url,
-  ) async {
-    final loc = AppLocalizations.of(context);
-    if (url.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(loc?.couldNotOpenUrl ?? 'Could not open website'),
-        ),
-      );
-      return;
-    }
-    final uri = Uri.tryParse(url);
-    if (uri == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(loc?.couldNotOpenUrl ?? 'Could not open website'),
-        ),
-      );
-      return;
-    }
-    try {
-      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (!opened) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(loc?.couldNotOpenUrl ?? 'Could not open website'),
-          ),
-        );
-      }
-    } catch (_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(loc?.couldNotOpenUrl ?? 'Could not open website'),
-        ),
-      );
-    }
-  }
+  Future<void> openWebsite(BuildContext context) =>
+      _launch(context, websiteUrl);
 
-  Future<void> openDiscord(BuildContext context) async {
-    final uri = Uri.tryParse(discordUrl);
-    final loc = AppLocalizations.of(context);
-    if (uri == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(loc?.couldNotOpenUrl ?? 'Could not open url')),
-      );
-      return;
-    }
-    try {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(loc?.couldNotOpenUrl ?? 'Could not open url')),
-      );
-    }
-  }
+  Future<void> openWebsiteWithCustomUrl(BuildContext context, String url) =>
+      _launch(context, url);
+
+  Future<void> openDiscord(BuildContext context) =>
+      _launch(context, discordUrl);
 
   Future<void> showLanguageDialog(BuildContext context) async {
     await LanguageDialog.show(context, appLocaleNotifier: appLocaleNotifier);
@@ -151,54 +74,23 @@ class NavigationController {
     await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => ConsoleDialog(
+      builder: (_) => ConsoleDialog(
         logsNotifier: logsNotifier,
         scrollController: logsScrollController,
         debugEnabled: debugEnabledNotifier.value,
-        onToggleDebug: () {
-          if (toggleDebugCallback != null) {
-            toggleDebugCallback!();
-          }
-        },
-        onClearLogs: () {
-          if (clearLogsCallback != null) {
-            clearLogsCallback!();
-          }
-        },
-        onCopyLogs: () {
-          if (copyLogsCallback != null) {
-            copyLogsCallback!();
-          }
-        },
+        onToggleDebug: toggleDebugCallback ?? () {},
+        onClearLogs: clearLogsCallback ?? () {},
+        onCopyLogs: copyLogsCallback ?? () {},
       ),
     );
     consoleOpen.value = false;
   }
 
-  void showHowToMenu(BuildContext context) {
-    if (showHowToMenuCallback != null) {
-      showHowToMenuCallback!(context);
-      return;
-    }
-  }
+  void showHowToMenu(BuildContext context) =>
+      showHowToMenuCallback?.call(context);
 
-  void showHelpMenu(BuildContext context) {
-    if (showHelpMenuCallback != null) {
-      showHelpMenuCallback!(context);
-      return;
-    }
-  }
+  void showHelpMenu(BuildContext context) =>
+      showHelpMenuCallback?.call(context);
 
-  Future<void> showDnsInfoModal(
-    BuildContext context, {
-    required bool isFriendsMode,
-  }) async {
-    if (showDnsInfoModalCallback != null) {
-      await showDnsInfoModalCallback!(context, isFriendsMode: isFriendsMode);
-    }
-  }
-
-  void showXboxHelp() {
-    if (showXboxHelpCallback != null) showXboxHelpCallback!();
-  }
+  void showXboxHelp() => showXboxHelpCallback?.call();
 }

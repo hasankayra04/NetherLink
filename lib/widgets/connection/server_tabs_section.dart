@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../util/user_servers.dart';
 import '../../util/featured_servers.dart';
+import '../../services/navigation_controller.dart';
 import 'my_servers_tab.dart';
-import 'partner_servers_tab.dart';
+import '../../screens/partner_servers_screen.dart';
 
 class ServerTabsSection extends StatefulWidget {
   const ServerTabsSection({
@@ -15,6 +16,7 @@ class ServerTabsSection extends StatefulWidget {
     required this.onServerSelected,
     required this.onManageServers,
     required this.broadcasting,
+    required this.navigationController,
   });
 
   final List<UserServer> savedServers;
@@ -24,38 +26,40 @@ class ServerTabsSection extends StatefulWidget {
   final Function(UserServer) onServerSelected;
   final VoidCallback onManageServers;
   final bool broadcasting;
+  final NavigationController navigationController;
 
   @override
   State<ServerTabsSection> createState() => _ServerTabsSectionState();
 }
 
 class _ServerTabsSectionState extends State<ServerTabsSection> {
-  int _activeTab = 0;
+  void _openPartnerServers() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PartnerServersScreen(
+          partnerServersFuture: widget.partnerServersFuture,
+          ipController: widget.ipController,
+          portController: widget.portController,
+          navigationController: widget.navigationController,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildTabHeader(),
         const Divider(height: 1, thickness: 1, color: AppTheme.borderDim),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          child: _activeTab == 0
-              ? MyServersTab(
-                  key: const ValueKey(0),
-                  savedServers: widget.savedServers,
-                  ipController: widget.ipController,
-                  portController: widget.portController,
-                  onServerSelected: widget.onServerSelected,
-                  broadcasting: widget.broadcasting,
-                )
-              : PartnerServersTab(
-                  key: const ValueKey(1),
-                  partnerServersFuture: widget.partnerServersFuture,
-                  ipController: widget.ipController,
-                  portController: widget.portController,
-                ),
+        MyServersTab(
+          savedServers: widget.savedServers,
+          ipController: widget.ipController,
+          portController: widget.portController,
+          onServerSelected: widget.onServerSelected,
+          broadcasting: widget.broadcasting,
         ),
       ],
     );
@@ -66,75 +70,84 @@ class _ServerTabsSectionState extends State<ServerTabsSection> {
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
       child: Row(
         children: [
-          _tab(label: 'My Servers', index: 0),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceLight,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppTheme.borderLight),
+            ),
+            child: const Text(
+              'My Servers',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+          ),
           const SizedBox(width: 6),
-          _tab(label: 'Partner Servers', index: 1),
+          GestureDetector(
+            onTap: _openPartnerServers,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Text(
+                    'Partner Servers',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                  SizedBox(width: 4),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 10,
+                    color: AppTheme.textMuted,
+                  ),
+                ],
+              ),
+            ),
+          ),
           const Spacer(),
-          if (_activeTab == 0)
-            GestureDetector(
-              onTap: widget.broadcasting ? null : widget.onManageServers,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceRaised,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppTheme.borderGray),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.settings_rounded,
-                      size: 12,
+          GestureDetector(
+            onTap: widget.broadcasting ? null : widget.onManageServers,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceRaised,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppTheme.borderGray),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.settings_rounded,
+                    size: 12,
+                    color: widget.broadcasting
+                        ? AppTheme.textDisabled
+                        : AppTheme.textSecondary,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    'Manage',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
                       color: widget.broadcasting
                           ? AppTheme.textDisabled
                           : AppTheme.textSecondary,
                     ),
-                    const SizedBox(width: 5),
-                    Text(
-                      'Manage',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: widget.broadcasting
-                            ? AppTheme.textDisabled
-                            : AppTheme.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
+          ),
         ],
-      ),
-    );
-  }
-
-  Widget _tab({required String label, required int index}) {
-    final isActive = _activeTab == index;
-    return GestureDetector(
-      onTap: () => setState(() => _activeTab = index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: isActive ? AppTheme.surfaceLight : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isActive ? AppTheme.borderLight : Colors.transparent,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
-            color: isActive ? AppTheme.textPrimary : AppTheme.textSecondary,
-          ),
-        ),
       ),
     );
   }

@@ -239,10 +239,8 @@ class _MoreSheet extends StatelessWidget {
             },
           ),
           const SizedBox(height: 8),
-          _SheetTile(
-            icon: FontAwesomeIcons.server,
-            color: const Color(0xFF52CAFF),
-            label: 'Aternos',
+
+          _AternosTile(
             subtitle: loc.aternosSubtext,
             onTap: () {
               Navigator.of(context).pop();
@@ -253,6 +251,89 @@ class _MoreSheet extends StatelessWidget {
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AternosTile extends StatelessWidget {
+  final String? subtitle;
+  final VoidCallback onTap;
+
+  const _AternosTile({this.subtitle, required this.onTap});
+
+  static const _color = Color(0xFF52CAFF);
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(13),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          decoration: BoxDecoration(
+            color: _color.withOpacity(0.06),
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(color: _color.withOpacity(0.20)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: _color.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(11),
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Image.asset(
+                      'assets/icons/aternos.png',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Aternos',
+                      style: TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: const TextStyle(
+                          color: AppTheme.textMuted,
+                          fontSize: 11,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: _color.withOpacity(0.45),
+                size: 13,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

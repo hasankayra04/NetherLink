@@ -14,6 +14,7 @@ import '../theme/app_theme.dart';
 import '../widgets/connection/connection_panel.dart';
 import '../widgets/dialogs/manage_servers_dialog.dart';
 import '../widgets/components/global_notice_banner.dart';
+import '../widgets/components/app_toast.dart';
 import '../services/notification_service.dart';
 import '../services/region_detector.dart';
 import '../network/broadcast_mode.dart';
@@ -167,9 +168,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadUserServers() async {
     try {
       final servers = await UserServersStorage.loadServers();
-      if (servers.isNotEmpty) {
+      if (servers.isNotEmpty)
         logger.debug('Loaded ${servers.length} saved server(s)');
-      }
       _userServersNotifier.value = servers;
       _setDefaultServerIfNeeded(servers);
     } catch (e) {
@@ -324,7 +324,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _handleAutoDisconnect() {
     if (!mounted) return;
-    setState(() => _broadcastingNotifier.value = false);
+    _broadcastingNotifier.value = false;
     _snack(
       AppLocalizations.of(context)!.clientDisconnected,
       AppTheme.info,
@@ -342,7 +342,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final loc = AppLocalizations.of(context)!;
     final newVal = !_debugEnabledNotifier.value;
     _debugEnabledNotifier.value = newVal;
-    setState(() {});
     logger.debugEnabled = newVal;
     logger.info('Debug mode ${newVal ? "enabled" : "disabled"}');
     _snack(
@@ -353,10 +352,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onUserServerSelected(UserServer server) {
-    setState(() {
-      _ipController.text = server.address;
-      _portController.text = server.port.toString();
-    });
+    _ipController.text = server.address;
+    _portController.text = server.port.toString();
     logger.info('Selected saved server: ${server.name}');
     _snack(
       AppLocalizations.of(context)!.selectedServer(server.name),
@@ -394,29 +391,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _snack(String message, Color color, {IconData? icon}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            if (icon != null) ...[
-              Icon(icon, color: Colors.white, size: 16),
-              const SizedBox(width: 10),
-            ],
-            Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(color: Colors.white, fontSize: 13),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: color,
-        duration: const Duration(seconds: 3),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      ),
-    );
+    AppToast.show(context, message: message, icon: icon, color: color);
   }
 
   @override
@@ -426,52 +401,61 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         top: true,
         bottom: false,
-        child: Column(
+        child: Stack(
           children: [
-            if (_currentNotice != null)
-              GlobalNoticeBanner(
-                message: _currentNotice!['message']!,
-                type: _currentNotice!['type'] ?? 'info',
-                onDismiss: () {
-                  _noticeTimer?.cancel();
-                  setState(() => _currentNotice = null);
-                },
-              ),
-
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
-                child: SingleChildScrollView(
-                  controller: _mainScrollController,
-                  physics: const ClampingScrollPhysics(),
-                  child: ValueListenableBuilder<List<UserServer>>(
-                    valueListenable: _userServersNotifier,
-                    builder: (context, userServers, _) => ConnectionPanel(
-                      ipController: _ipController,
-                      portController: _portController,
-                      broadcastingNotifier: _broadcastingNotifier,
-                      onStartBroadcast: _startBroadcast,
-                      onStopBroadcast: _stopBroadcast,
-                      savedServers: userServers,
-                      onServerSelected: _onUserServerSelected,
-                      onManageServers: _showManageServersDialog,
-                      selectedRelayIp: _selectedRelay.ip,
-                      onRelayChanged: _onRelayChanged,
-                      nintendoDnsMode: _nintendoDnsMode,
-                      onNintendoDnsModeChanged: (value) =>
-                          setState(() => _nintendoDnsMode = value),
+            Column(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+                    child: SingleChildScrollView(
+                      controller: _mainScrollController,
+                      physics: const ClampingScrollPhysics(),
+                      child: ValueListenableBuilder<List<UserServer>>(
+                        valueListenable: _userServersNotifier,
+                        builder: (context, userServers, _) => ConnectionPanel(
+                          ipController: _ipController,
+                          portController: _portController,
+                          broadcastingNotifier: _broadcastingNotifier,
+                          onStartBroadcast: _startBroadcast,
+                          onStopBroadcast: _stopBroadcast,
+                          savedServers: userServers,
+                          onServerSelected: _onUserServerSelected,
+                          onManageServers: _showManageServersDialog,
+                          selectedRelayIp: _selectedRelay.ip,
+                          onRelayChanged: _onRelayChanged,
+                          nintendoDnsMode: _nintendoDnsMode,
+                          onNintendoDnsModeChanged: (value) =>
+                              setState(() => _nintendoDnsMode = value),
+                          navigationController: navigationController,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+                BottomGlassSimpleNavBar(
+                  navigationController: navigationController,
+                  dark: true,
+                  selectedRelayIp: _selectedRelay.ip,
+                  onRelayChanged: _onRelayChanged,
+                ),
+              ],
             ),
 
-            BottomGlassSimpleNavBar(
-              navigationController: navigationController,
-              dark: true,
-              selectedRelayIp: _selectedRelay.ip,
-              onRelayChanged: _onRelayChanged,
-            ),
+            if (_currentNotice != null)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: GlobalNoticeBanner(
+                  message: _currentNotice!['message']!,
+                  type: _currentNotice!['type'] ?? 'info',
+                  onDismiss: () {
+                    _noticeTimer?.cancel();
+                    setState(() => _currentNotice = null);
+                  },
+                ),
+              ),
           ],
         ),
       ),

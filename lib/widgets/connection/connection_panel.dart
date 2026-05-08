@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as Math;
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -9,8 +8,11 @@ import '../../util/user_servers.dart';
 import '../../util/featured_servers.dart';
 import '../../services/featured_servers_service.dart';
 import '../../services/server_status_service.dart';
-import 'my_servers_tab.dart';
-import 'partner_servers_tab.dart';
+import '../../services/navigation_controller.dart';
+import '../../widgets/components/app_painters.dart';
+import '../../widgets/components/app_toast.dart';
+import '../../widgets/dialogs/howto_dialogs.dart';
+import 'server_tabs_section.dart';
 
 enum PanelMode { lan, nintendo, friends, java }
 
@@ -40,6 +42,7 @@ class ConnectionPanel extends StatefulWidget {
     required this.onRelayChanged,
     required this.nintendoDnsMode,
     required this.onNintendoDnsModeChanged,
+    required this.navigationController,
   });
 
   final TextEditingController ipController;
@@ -54,6 +57,7 @@ class ConnectionPanel extends StatefulWidget {
   final void Function(String?) onRelayChanged;
   final bool nintendoDnsMode;
   final ValueChanged<bool> onNintendoDnsModeChanged;
+  final NavigationController navigationController;
 
   @override
   State<ConnectionPanel> createState() => _ConnectionPanelState();
@@ -61,7 +65,9 @@ class ConnectionPanel extends StatefulWidget {
 
 class _ConnectionPanelState extends State<ConnectionPanel> {
   PanelMode _mode = PanelMode.lan;
-  int _tab = 0;
+
+  bool _broadcasting = false;
+  bool _starting = false;
 
   Future<List<FeaturedServer>>? _featuredFuture;
   List<FeaturedServer> _featuredServers = [];
@@ -70,14 +76,6 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
   Timer? _heroTimer;
 
   final Map<String, Future<ServerStatus>> _statusCache = {};
-
-  Future<ServerStatus> _getHeroStatus(FeaturedServer server) {
-    final key = '${server.address}:${server.port}';
-    return _statusCache.putIfAbsent(
-      key,
-      () => ServerStatusService.getStatus(server.address, server.port),
-    );
-  }
 
   static const _modes = [
     _ModeConfig(
@@ -102,11 +100,54 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
     ),
   ];
 
+  static const _heroWaves = [
+    WaveConfig(
+      yFraction: 0.72,
+      amplitude: 18,
+      frequency: 2.5,
+      phase: 0.3,
+      color: AppTheme.accent,
+      opacity: 0.12,
+      strokeWidth: 1.8,
+    ),
+    WaveConfig(
+      yFraction: 0.55,
+      amplitude: 10,
+      frequency: 3.8,
+      phase: 1.8,
+      color: AppTheme.accent,
+      opacity: 0.07,
+      strokeWidth: 1.2,
+    ),
+    WaveConfig(
+      yFraction: 0.88,
+      amplitude: 7,
+      frequency: 5.0,
+      phase: 0.9,
+      color: Colors.white,
+      opacity: 0.04,
+      strokeWidth: 1.0,
+    ),
+  ];
+
+  Future<ServerStatus> _getHeroStatus(FeaturedServer server) {
+    final key = '${server.address}:${server.port}';
+    return _statusCache.putIfAbsent(
+      key,
+      () => ServerStatusService.getStatus(server.address, server.port),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
     _heroBgController = PageController();
     _mode = widget.nintendoDnsMode ? PanelMode.nintendo : PanelMode.lan;
+    _broadcasting = widget.broadcastingNotifier.value;
+
+    widget.broadcastingNotifier.addListener(_onBroadcastingChanged);
+    widget.ipController.addListener(_onControllerChanged);
+    widget.portController.addListener(_onControllerChanged);
 
     _featuredFuture = FeaturedServersService.fetchFeaturedServers();
     _featuredFuture!.then((list) {
@@ -114,6 +155,15 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
       setState(() => _featuredServers = List.from(list)..shuffle(Random()));
       _startHeroTimer();
     });
+  }
+
+  void _onBroadcastingChanged() {
+    if (mounted)
+      setState(() => _broadcasting = widget.broadcastingNotifier.value);
+  }
+
+  void _onControllerChanged() {
+    if (mounted) setState(() {});
   }
 
   void _startHeroTimer() {
@@ -131,53 +181,92 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
 
   @override
   void dispose() {
+    widget.broadcastingNotifier.removeListener(_onBroadcastingChanged);
+    widget.ipController.removeListener(_onControllerChanged);
+    widget.portController.removeListener(_onControllerChanged);
     _heroBgController.dispose();
     _heroTimer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _handleStart() async {
+    if (_starting) return;
+    setState(() => _starting = true);
+
+    try {
+      await widget.onStartBroadcast(_mode);
+    } finally {
+      if (mounted) setState(() => _starting = false);
+    }
+
+    if (!mounted) return;
+
+    switch (_mode) {
+      case PanelMode.lan:
+        if (_broadcasting) await HowToDialogs.showXboxInstructions(context);
+      case PanelMode.java:
+        if (_broadcasting) await HowToDialogs.showJavaInstructions(context);
+      case PanelMode.nintendo:
+      case PanelMode.friends:
+        break;
+    }
   }
 
   FeaturedServer? get _currentHeroServer => _featuredServers.isEmpty
       ? null
       : _featuredServers[_heroBgPage % _featuredServers.length];
 
-  String _modeLabel(PanelMode mode, AppLocalizations loc) {
-    switch (mode) {
-      case PanelMode.lan:
-        return loc.labelXbox;
-      case PanelMode.nintendo:
-        return loc.labelNintendo;
-      case PanelMode.friends:
-        return loc.labelFriends;
-      case PanelMode.java:
-        return loc.labelJava;
-    }
-  }
+  String _modeLabel(PanelMode mode, AppLocalizations loc) => switch (mode) {
+    PanelMode.lan => loc.labelXbox,
+    PanelMode.nintendo => loc.labelNintendo,
+    PanelMode.friends => loc.labelFriends,
+    PanelMode.java => loc.labelJava,
+  };
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final broadcasting = _broadcasting;
+
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 720),
-        child: ValueListenableBuilder<bool>(
-          valueListenable: widget.broadcastingNotifier,
-          builder: (context, broadcasting, _) => Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHero(broadcasting, loc),
-              const SizedBox(height: 22),
-              _sectionLabel('SELECT MODE'),
-              const SizedBox(height: 10),
-              _buildModeChips(broadcasting, loc),
-              const SizedBox(height: 12),
-              _buildBroadcastCard(broadcasting, loc),
-              const SizedBox(height: 22),
-              _buildServersHeader(broadcasting),
-              const SizedBox(height: 10),
-              _buildServersBody(broadcasting),
-              const SizedBox(height: 16),
-            ],
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildHero(broadcasting, loc),
+            const SizedBox(height: 22),
+            _sectionLabel('SELECT MODE'),
+            const SizedBox(height: 10),
+            _buildModeChips(broadcasting, loc),
+            const SizedBox(height: 12),
+            _buildBroadcastCard(broadcasting, loc),
+            const SizedBox(height: 22),
+            _sectionLabel('SERVERS'),
+            const SizedBox(height: 10),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 300),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppTheme.borderGray),
+                ),
+                child: ServerTabsSection(
+                  savedServers: widget.savedServers,
+                  partnerServersFuture: _featuredFuture,
+                  ipController: widget.ipController,
+                  portController: widget.portController,
+                  onServerSelected: widget.onServerSelected,
+                  onManageServers: widget.onManageServers,
+                  broadcasting: broadcasting,
+                  navigationController: widget.navigationController,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
         ),
       ),
     );
@@ -238,8 +327,15 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                     },
                   ),
 
-            const CustomPaint(painter: _HeroNoisePainter()),
-            const CustomPaint(painter: _HeroWavePainter()),
+            const CustomPaint(
+              painter: AppNoisePainter(
+                color: Colors.white,
+                opacity: 0.030,
+                seed: 99,
+                count: 320,
+              ),
+            ),
+            const CustomPaint(painter: AppWavePainter(waves: _heroWaves)),
 
             Container(
               decoration: const BoxDecoration(
@@ -293,9 +389,7 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                         ),
                     ],
                   ),
-
                   const Spacer(),
-
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
@@ -332,7 +426,6 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                               ),
                             ),
                             const SizedBox(height: 10),
-
                             if (server != null)
                               _HeroStatusBadge(
                                 statusFuture: _getHeroStatus(server),
@@ -346,7 +439,6 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                         ),
                       ),
                       const SizedBox(width: 12),
-
                       GestureDetector(
                         onTap: server == null || broadcasting
                             ? null
@@ -354,7 +446,12 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                                 widget.ipController.text = server.address;
                                 widget.portController.text = server.port
                                     .toString();
-                                widget.onStartBroadcast(_mode);
+                                AppToast.show(
+                                  context,
+                                  message: server.name,
+                                  icon: Icons.play_arrow_rounded,
+                                  color: AppTheme.accent,
+                                );
                               },
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
@@ -377,7 +474,7 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'Connect',
+                                'Play',
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(
                                     server == null || broadcasting ? 0.35 : 1.0,
@@ -388,7 +485,7 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                               ),
                               const SizedBox(width: 6),
                               Icon(
-                                Icons.arrow_forward_rounded,
+                                Icons.play_arrow_rounded,
                                 color: Colors.white.withOpacity(
                                   server == null || broadcasting ? 0.35 : 1.0,
                                 ),
@@ -554,26 +651,19 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
   Widget _buildBroadcastCard(bool broadcasting, AppLocalizations loc) {
     final cfg = _modes.firstWhere((c) => c.mode == _mode);
     final color = broadcasting ? AppTheme.error : cfg.color;
+    final hasServer = widget.ipController.text.isNotEmpty;
+    final serverLabel = hasServer
+        ? '${widget.ipController.text}:${widget.portController.text}'
+        : 'No server selected';
 
-    String buttonLabel;
-    if (broadcasting) {
-      buttonLabel = loc.stopBroadcasting;
-    } else {
-      switch (_mode) {
-        case PanelMode.lan:
-          buttonLabel = loc.startBroadcasting;
-          break;
-        case PanelMode.nintendo:
-          buttonLabel = loc.startNintendoMode;
-          break;
-        case PanelMode.friends:
-          buttonLabel = loc.startFriendsMode;
-          break;
-        case PanelMode.java:
-          buttonLabel = loc.startJavaMode;
-          break;
-      }
-    }
+    final buttonLabel = broadcasting
+        ? loc.stopBroadcasting
+        : switch (_mode) {
+            PanelMode.lan => loc.startBroadcasting,
+            PanelMode.nintendo => loc.startNintendoMode,
+            PanelMode.friends => loc.startFriendsMode,
+            PanelMode.java => loc.startJavaMode,
+          };
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
@@ -583,8 +673,38 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
           fit: StackFit.expand,
           children: [
             Container(color: color.withOpacity(0.07)),
-            CustomPaint(painter: _NoisePainter(color: color)),
-            CustomPaint(painter: _WavePainter(color: color)),
+            CustomPaint(
+              painter: AppNoisePainter(
+                color: color,
+                opacity: 0.055,
+                seed: 42,
+                count: 180,
+              ),
+            ),
+            CustomPaint(
+              painter: AppWavePainter(
+                waves: [
+                  WaveConfig(
+                    yFraction: 0.45,
+                    amplitude: 12,
+                    frequency: 3.0,
+                    phase: 0.5,
+                    color: color,
+                    opacity: 0.18,
+                    strokeWidth: 1.5,
+                  ),
+                  WaveConfig(
+                    yFraction: 0.65,
+                    amplitude: 8,
+                    frequency: 4.0,
+                    phase: 1.2,
+                    color: color,
+                    opacity: 0.09,
+                    strokeWidth: 1.0,
+                  ),
+                ],
+              ),
+            ),
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
@@ -613,50 +733,99 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                   ),
                   const SizedBox(width: 14),
                   Expanded(
-                    child: Text(
-                      broadcasting ? 'Broadcasting Active' : buttonLabel,
-                      style: const TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          broadcasting ? 'Broadcasting Active' : buttonLabel,
+                          style: const TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.dns_rounded,
+                              size: 10,
+                              color: hasServer
+                                  ? color.withOpacity(0.70)
+                                  : AppTheme.textDisabled,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                serverLabel,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: hasServer
+                                      ? AppTheme.textSecondary
+                                      : AppTheme.textDisabled,
+                                  fontStyle: hasServer
+                                      ? FontStyle.normal
+                                      : FontStyle.italic,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 12),
                   GestureDetector(
-                    onTap: broadcasting
+                    onTap: _starting
+                        ? null
+                        : broadcasting
                         ? widget.onStopBroadcast
-                        : () => widget.onStartBroadcast(_mode),
-                    child: Container(
+                        : _handleStart,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 18,
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: color,
+                        color: _starting ? color.withOpacity(0.55) : color,
                         borderRadius: BorderRadius.circular(11),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            broadcasting
-                                ? Icons.stop_rounded
-                                : Icons.play_arrow_rounded,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            broadcasting ? loc.stopBroadcasting : loc.start,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
+                      child: _starting
+                          ? SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white.withOpacity(0.80),
+                              ),
+                            )
+                          : Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  broadcasting
+                                      ? Icons.stop_rounded
+                                      : Icons.play_arrow_rounded,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  broadcasting
+                                      ? loc.stopBroadcasting
+                                      : loc.start,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                 ],
@@ -664,113 +833,6 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildServersHeader(bool broadcasting) {
-    return Row(
-      children: [
-        _tabChip(label: 'My Servers', index: 0),
-        const SizedBox(width: 6),
-        _tabChip(label: 'Partner Servers', index: 1),
-        const Spacer(),
-        if (_tab == 0)
-          GestureDetector(
-            onTap: broadcasting ? null : widget.onManageServers,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-              decoration: BoxDecoration(
-                color: broadcasting
-                    ? AppTheme.surfaceRaised
-                    : AppTheme.accent.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: broadcasting
-                      ? AppTheme.borderGray
-                      : AppTheme.accent.withOpacity(0.40),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.edit_rounded,
-                    size: 12,
-                    color: broadcasting
-                        ? AppTheme.textDisabled
-                        : AppTheme.accent,
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    'Add / Edit Servers',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: broadcasting
-                          ? AppTheme.textDisabled
-                          : AppTheme.accent,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _tabChip({required String label, required int index}) {
-    final isActive = _tab == index;
-    return GestureDetector(
-      onTap: () => setState(() => _tab = index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: isActive ? AppTheme.surfaceLight : AppTheme.surface,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isActive ? AppTheme.borderLight : AppTheme.borderGray,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
-            color: isActive ? AppTheme.textPrimary : AppTheme.textSecondary,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildServersBody(bool broadcasting) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.borderGray),
-      ),
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        child: _tab == 0
-            ? MyServersTab(
-                key: const ValueKey(0),
-                savedServers: widget.savedServers,
-                ipController: widget.ipController,
-                portController: widget.portController,
-                onServerSelected: widget.onServerSelected,
-                broadcasting: broadcasting,
-              )
-            : PartnerServersTab(
-                key: const ValueKey(1),
-                partnerServersFuture: _featuredFuture,
-                ipController: widget.ipController,
-                portController: widget.portController,
-              ),
       ),
     );
   }
@@ -802,7 +864,6 @@ class _HeroStatusBadge extends StatelessWidget {
             sub: null,
           );
         }
-
         final status = snapshot.data!;
         if (!status.isOnline) {
           return _badge(
@@ -811,11 +872,9 @@ class _HeroStatusBadge extends StatelessWidget {
             sub: null,
           );
         }
-
         final playerText = (status.players != null && status.maxPlayers != null)
             ? '${status.players} / ${status.maxPlayers}'
             : null;
-
         return _badge(
           dot: const Color(0xFF4ADE80),
           label: 'Online',
@@ -876,117 +935,4 @@ class _HeroStatusBadge extends StatelessWidget {
       ),
     );
   }
-}
-
-class _HeroNoisePainter extends CustomPainter {
-  const _HeroNoisePainter();
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rng = Math.Random(99);
-    final paint = Paint()..color = Colors.white.withOpacity(0.030);
-    for (int i = 0; i < 320; i++) {
-      canvas.drawCircle(
-        Offset(rng.nextDouble() * size.width, rng.nextDouble() * size.height),
-        rng.nextDouble() * 1.4 + 0.2,
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_HeroNoisePainter old) => false;
-}
-
-class _HeroWavePainter extends CustomPainter {
-  const _HeroWavePainter();
-  @override
-  void paint(Canvas canvas, Size size) {
-    void wave(
-      double yFrac,
-      double amp,
-      double freq,
-      double phase,
-      Color color,
-      double sw,
-    ) {
-      final paint = Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = sw;
-      final path = Path();
-      path.moveTo(0, size.height * yFrac);
-      for (double x = 0; x <= size.width; x += 1) {
-        path.lineTo(
-          x,
-          size.height * yFrac +
-              amp * Math.sin((x / size.width) * freq * Math.pi + phase),
-        );
-      }
-      canvas.drawPath(path, paint);
-    }
-
-    wave(0.72, 18, 2.5, 0.3, AppTheme.accent.withOpacity(0.12), 1.8);
-    wave(0.55, 10, 3.8, 1.8, AppTheme.accent.withOpacity(0.07), 1.2);
-    wave(0.88, 7, 5.0, 0.9, Colors.white.withOpacity(0.04), 1.0);
-  }
-
-  @override
-  bool shouldRepaint(_HeroWavePainter old) => false;
-}
-
-class _WavePainter extends CustomPainter {
-  final Color color;
-  const _WavePainter({required this.color});
-  @override
-  void paint(Canvas canvas, Size size) {
-    void wave(
-      double yFrac,
-      double amp,
-      double freq,
-      double phase,
-      double opacity,
-      double sw,
-    ) {
-      final paint = Paint()
-        ..color = color.withOpacity(opacity)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = sw;
-      final path = Path();
-      path.moveTo(0, size.height * yFrac);
-      for (double x = 0; x <= size.width; x += 1) {
-        path.lineTo(
-          x,
-          size.height * yFrac +
-              amp * Math.sin((x / size.width) * freq * Math.pi + phase),
-        );
-      }
-      canvas.drawPath(path, paint);
-    }
-
-    wave(0.45, 12, 3.0, 0.5, 0.18, 1.5);
-    wave(0.65, 8, 4.0, 1.2, 0.09, 1.0);
-  }
-
-  @override
-  bool shouldRepaint(_WavePainter old) => old.color != color;
-}
-
-class _NoisePainter extends CustomPainter {
-  final Color color;
-  const _NoisePainter({required this.color});
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rng = Math.Random(42);
-    final paint = Paint()..color = color.withOpacity(0.055);
-    for (int i = 0; i < 180; i++) {
-      canvas.drawCircle(
-        Offset(rng.nextDouble() * size.width, rng.nextDouble() * size.height),
-        rng.nextDouble() * 1.2 + 0.3,
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_NoisePainter old) => old.color != color;
 }
