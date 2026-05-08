@@ -7,7 +7,9 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 import '../services/region_detector.dart';
+import '../services/connectivity_checker.dart';
 import '../widgets/components/app_painters.dart';
+import '../widgets/dialogs/connectivity_warning_dialog.dart';
 import 'home_screen.dart';
 
 class _TipData {
@@ -36,11 +38,10 @@ const _tips = [
     color: AppTheme.modeFriends,
     title: 'Online Subscription Required',
     body:
-        'Each console needs its own active online subscription (Xbox Live, PS Plus, NSO). Without it, NetherLink won\'t appear.',
+        "Each console needs its own active online subscription (Xbox Live, PS Plus, NSO). Without it, NetherLink won't appear.",
   ),
 ];
 
-// ── Gedeelde splash wave-config ───────────────────────────────────────────────
 const _splashWaves = [
   WaveConfig(
     yFraction: 0.35,
@@ -100,6 +101,7 @@ class _SplashScreenState extends State<SplashScreen>
   RelayPingResult? _detectedRelay;
   String _appVersion = '';
   bool _pendingUpdate = false;
+  ConnectivityCheckResult? _connectivityResult;
 
   static const String _androidStoreUrl =
       'https://play.google.com/store/apps/details?id=net.netherdev.netherLink';
@@ -149,10 +151,18 @@ class _SplashScreenState extends State<SplashScreen>
       _detectRelayAndCheckUpdate().then((hasUpdate) {
         _pendingUpdate = hasUpdate;
       }),
+      ConnectivityChecker.check().then((result) {
+        _connectivityResult = result;
+      }),
       Future.delayed(const Duration(milliseconds: 4200)),
     ]);
 
     if (!mounted) return;
+
+    if (_connectivityResult != null) {
+      await ConnectivityWarningDialog.showIfNeeded(context, _connectivityResult!);
+      if (!mounted) return;
+    }
 
     if (_pendingUpdate) {
       final shouldContinue = await _showUpdateDialog();
@@ -249,7 +259,7 @@ class _SplashScreenState extends State<SplashScreen>
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppTheme.accent.withOpacity(0.35)),
                 ),
-                child: Center(
+                child: const Center(
                   child: Icon(
                     Icons.system_update_rounded,
                     color: AppTheme.accent,
@@ -359,14 +369,17 @@ class _SplashScreenState extends State<SplashScreen>
               : AppTheme.surfaceRaised,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: white ? Colors.white.withOpacity(0.15) : AppTheme.borderGray,
+            color: white
+                ? Colors.white.withOpacity(0.15)
+                : AppTheme.borderGray,
           ),
         ),
         child: Text(
           'v$_appVersion',
           style: TextStyle(
             fontSize: 11,
-            color: white ? Colors.white.withOpacity(0.5) : AppTheme.textMuted,
+            color:
+                white ? Colors.white.withOpacity(0.5) : AppTheme.textMuted,
             letterSpacing: 1.4,
           ),
         ),
@@ -387,9 +400,8 @@ class _SplashScreenState extends State<SplashScreen>
                 Icon(
                   Icons.info_outline_rounded,
                   size: 13,
-                  color: white
-                      ? Colors.white.withOpacity(0.5)
-                      : AppTheme.textMuted,
+                  color:
+                      white ? Colors.white.withOpacity(0.5) : AppTheme.textMuted,
                 ),
                 const SizedBox(width: 6),
                 Text(
@@ -501,7 +513,6 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
             const CustomPaint(painter: AppWavePainter(waves: _splashWaves)),
-
             SafeArea(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

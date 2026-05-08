@@ -23,6 +23,7 @@ dependencies:
   font_awesome_flutter: ^11.0.0
   flutter_svg: ^2.2.4
   mc_server_info: ^1.0.0
+  connectivity_plus: ^7.1.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
