@@ -4,6 +4,20 @@ import 'dart:convert';
 import 'dart:async';
 import '../util/Logger.dart';
 
+class _ClientState {
+  final RawDatagramSocket socket;
+  final InternetAddress address;
+  final int port;
+  DateTime lastActivity;
+
+  _ClientState({
+    required this.socket,
+    required this.address,
+    required this.port,
+    required this.lastActivity,
+  });
+}
+
 class SocketHandler {
   final Logger logger;
   SocketHandler({required this.logger});
@@ -21,7 +35,7 @@ class SocketHandler {
   static const Duration clientTimeout = Duration(seconds: 30);
   static const Duration checkInterval = Duration(seconds: 5);
 
-  static final List<int> magicBytes = [
+  static final Uint8List magicBytes = Uint8List.fromList([
     0x00,
     0xff,
     0xff,
@@ -38,42 +52,38 @@ class SocketHandler {
     0x34,
     0x56,
     0x78,
-  ];
+  ]);
+
+  static final Uint8List _serverGuidBytes = () {
+    final bd = ByteData(8)..setUint64(0, serverId.toInt(), Endian.big);
+    return bd.buffer.asUint8List();
+  }();
 
   bool _broadcasting = false;
   InternetAddress? _remoteIp;
   int _remotePort = 19132;
 
-  final Map<String, RawDatagramSocket> _clientSockets = {};
-  final Map<String, InternetAddress> _clientAddresses = {};
-  final Map<String, int> _clientPorts = {};
-  final Map<String, DateTime> _clientLastActivity = {};
-  Timer? _timeoutCheckTimer;
+  final Map<String, _ClientState> _clients = {};
 
+  final Set<String> _pendingClients = {};
+
+  Timer? _timeoutCheckTimer;
   Function()? onAllClientsDisconnected;
 
   void setBroadcasting(bool broadcasting) {
     _broadcasting = broadcasting;
-    if (broadcasting) {
-      _startTimeoutChecker();
-    } else {
-      _stopTimeoutChecker();
-    }
+    broadcasting ? _startTimeoutChecker() : _stopTimeoutChecker();
   }
 
-  void setRemoteIp(InternetAddress ip) {
-    _remoteIp = ip;
-  }
-
-  void setRemotePort(int port) {
-    _remotePort = port;
-  }
+  void setRemoteIp(InternetAddress ip) => _remoteIp = ip;
+  void setRemotePort(int port) => _remotePort = port;
 
   void _startTimeoutChecker() {
     _timeoutCheckTimer?.cancel();
-    _timeoutCheckTimer = Timer.periodic(checkInterval, (_) {
-      _checkClientTimeouts();
-    });
+    _timeoutCheckTimer = Timer.periodic(
+      checkInterval,
+      (_) => _checkClientTimeouts(),
+    );
     logger.debug('Client timeout checker started');
   }
 
@@ -83,80 +93,52 @@ class SocketHandler {
   }
 
   void _checkClientTimeouts() {
-    if (_clientLastActivity.isEmpty) return;
+    if (_clients.isEmpty) return;
 
     final now = DateTime.now();
-    final disconnectedClients = <String>[];
 
-    for (var entry in _clientLastActivity.entries) {
-      final clientKey = entry.key;
-      final lastActivity = entry.value;
-      final inactiveDuration = now.difference(lastActivity);
+    final timedOut = [
+      for (final entry in _clients.entries)
+        if (now.difference(entry.value.lastActivity) > clientTimeout) entry.key,
+    ];
 
-      if (inactiveDuration > clientTimeout) {
-        logger.info(
-          'Client $clientKey timed out (inactive for ${inactiveDuration.inSeconds}s)',
-        );
-        disconnectedClients.add(clientKey);
-      }
+    for (final key in timedOut) {
+      logger.info(
+        'Client $key timed out (inactive for '
+        '${now.difference(_clients[key]!.lastActivity).inSeconds}s)',
+      );
+      _removeClient(key);
     }
 
-    for (var clientKey in disconnectedClients) {
-      _removeClient(clientKey);
-    }
-
-    if (_clientSockets.isEmpty && disconnectedClients.isNotEmpty) {
+    if (_clients.isEmpty && timedOut.isNotEmpty) {
       logger.info('All clients disconnected');
       onAllClientsDisconnected?.call();
     }
   }
 
   void _removeClient(String clientKey) {
-    _clientSockets[clientKey]?.close();
-    _clientSockets.remove(clientKey);
-    _clientAddresses.remove(clientKey);
-    _clientPorts.remove(clientKey);
-    _clientLastActivity.remove(clientKey);
+    _clients[clientKey]?.socket.close();
+    _clients.remove(clientKey);
     logger.debug('Removed client: $clientKey');
   }
 
-  void _updateClientActivity(String clientKey) {
-    _clientLastActivity[clientKey] = DateTime.now();
-  }
-
   Uint8List _createOfflinePong(Uint8List pingPayload) {
-    final serverGuid = ByteData(8);
-    serverGuid.setUint64(0, serverId.toInt(), Endian.big);
+    final motdString =
+        'MCPE;$serverName;$protocolVersion;$gameVersion;'
+        '$onlinePlayers;$maxPlayers;$serverId;$levelName;'
+        '$gameMode;$gameModeId;$proxyPort;$proxyPort;';
 
-    final motdFields = [
-      'MCPE',
-      serverName,
-      protocolVersion.toString(),
-      gameVersion,
-      onlinePlayers.toString(),
-      maxPlayers.toString(),
-      serverId.toString(),
-      levelName,
-      gameMode,
-      gameModeId.toString(),
-      proxyPort.toString(),
-      proxyPort.toString(),
-    ];
-
-    final motdString = '${motdFields.join(';')};';
     final motdBytes = utf8.encode(motdString);
-    final motdLengthBytes = ByteData(2)
-      ..setUint16(0, motdBytes.length, Endian.big);
+    final motdLength = ByteData(2)..setUint16(0, motdBytes.length, Endian.big);
 
-    final builder = BytesBuilder();
-    builder.add([0x1c]);
-    builder.add(pingPayload);
-    builder.add(serverGuid.buffer.asUint8List());
-    builder.add(magicBytes);
-    builder.add(motdLengthBytes.buffer.asUint8List());
-    builder.add(motdBytes);
-
-    return builder.toBytes();
+    return (BytesBuilder()
+          ..add([0x1c])
+          ..add(pingPayload)
+          ..add(_serverGuidBytes)
+          ..add(magicBytes)
+          ..add(motdLength.buffer.asUint8List())
+          ..add(motdBytes))
+        .toBytes();
   }
 
   void handleSocketEvent(RawDatagramSocket socket, RawSocketEvent event) {
@@ -165,90 +147,100 @@ class SocketHandler {
     final dg = socket.receive();
     if (dg == null) return;
 
-    final clientKey = '${dg.address.address}:${dg.port}';
     final data = dg.data;
     if (data.isEmpty) return;
 
-    _updateClientActivity(clientKey);
+    final clientKey = '${dg.address.address}:${dg.port}';
 
     if (data[0] == 0x01 && data.length >= 9) {
-      final pingPayload = data.sublist(1, 9);
-      final pongPacket = _createOfflinePong(Uint8List.fromList(pingPayload));
+      final pongPacket = _createOfflinePong(Uint8List.sublistView(data, 1, 9));
       socket.send(pongPacket, dg.address, dg.port);
       logger.debug('Responded to ping from $clientKey');
       return;
     }
 
-    if (!_clientSockets.containsKey(clientKey)) {
-      RawDatagramSocket.bind(InternetAddress.anyIPv4, 0).then((serverSocket) {
-        _clientSockets[clientKey] = serverSocket;
-        _clientAddresses[clientKey] = dg.address;
-        _clientPorts[clientKey] = dg.port;
-        _updateClientActivity(clientKey);
-
-        logger.info('New client connected: $clientKey');
-
-        serverSocket.listen((serverEvent) {
-          if (serverEvent == RawSocketEvent.read) {
-            final resp = serverSocket.receive();
-            if (resp == null) return;
-            socket.send(resp.data, dg.address, dg.port);
-            _updateClientActivity(clientKey);
-            logger.debug(
-              '[SERVER → CLIENT] $_remoteIp:$_remotePort → $clientKey | ${resp.data.length} bytes',
-            );
-          }
-        });
-
-        if (_broadcasting && _remoteIp != null) {
-          serverSocket.send(data, _remoteIp!, _remotePort);
+    if (_broadcasting &&
+        _remoteIp != null &&
+        dg.address.address == _remoteIp!.address &&
+        dg.port == _remotePort) {
+      for (final state in _clients.values) {
+        if (socket.address.type == state.address.type) {
+          socket.send(data, state.address, state.port);
           logger.debug(
-            '[CLIENT → SERVER] $clientKey → $_remoteIp:$_remotePort | ${data.length} bytes',
+            '[SERVER → CLIENT] $_remoteIp:$_remotePort → '
+            '${state.address.address}:${state.port} | ${data.length} bytes',
+          );
+        } else {
+          logger.debug(
+            'Skipping send to ${state.address.address} due to IP version mismatch',
           );
         }
-      });
-    } else {
-      final clientSocket = _clientSockets[clientKey];
-      if (clientSocket != null && _broadcasting && _remoteIp != null) {
-        clientSocket.send(data, _remoteIp!, _remotePort);
+      }
+      return;
+    }
+
+    final existing = _clients[clientKey];
+    if (existing != null) {
+      existing.lastActivity = DateTime.now();
+      if (_broadcasting && _remoteIp != null) {
+        existing.socket.send(data, _remoteIp!, _remotePort);
         logger.debug(
           '[CLIENT → SERVER] $clientKey → $_remoteIp:$_remotePort | ${data.length} bytes',
         );
       }
+      return;
     }
 
-    if (_broadcasting && _remoteIp != null) {
-      if (dg.address.address == _remoteIp!.address && dg.port == _remotePort) {
-        for (var entry in _clientAddresses.entries) {
-          final key = entry.key;
-          final clientAddr = entry.value;
-          final clientPort = _clientPorts[key]!;
-          if (socket.address.type == clientAddr.type) {
-            socket.send(data, clientAddr, clientPort);
+    if (_pendingClients.contains(clientKey)) return;
+    _pendingClients.add(clientKey);
+
+    RawDatagramSocket.bind(InternetAddress.anyIPv4, 0)
+        .then((serverSocket) {
+          _pendingClients.remove(clientKey);
+
+          final state = _ClientState(
+            socket: serverSocket,
+            address: dg.address,
+            port: dg.port,
+            lastActivity: DateTime.now(),
+          );
+          _clients[clientKey] = state;
+          logger.info('New client connected: $clientKey');
+
+          serverSocket.listen((serverEvent) {
+            if (serverEvent != RawSocketEvent.read) return;
+            final resp = serverSocket.receive();
+            if (resp == null) return;
+            socket.send(resp.data, state.address, state.port);
+            state.lastActivity = DateTime.now();
             logger.debug(
-              '[SERVER → CLIENT] $_remoteIp:$_remotePort → $key | ${data.length} bytes',
+              '[SERVER → CLIENT] $_remoteIp:$_remotePort → $clientKey | ${resp.data.length} bytes',
             );
-          } else {
-            logger.debug('Skipping send to $key due to IP version mismatch');
+          });
+
+          if (_broadcasting && _remoteIp != null) {
+            serverSocket.send(data, _remoteIp!, _remotePort);
+            logger.debug(
+              '[CLIENT → SERVER] $clientKey → $_remoteIp:$_remotePort | ${data.length} bytes',
+            );
           }
-        }
-      }
-    }
+        })
+        .catchError((e, st) {
+          _pendingClients.remove(clientKey);
+          logger.error('Failed to create socket for $clientKey: $e\n$st');
+        });
   }
 
   void closeAllClientSockets() {
     _stopTimeoutChecker();
-
-    for (var socket in _clientSockets.values) {
-      socket.close();
+    _pendingClients.clear();
+    for (final state in _clients.values) {
+      state.socket.close();
     }
-    _clientSockets.clear();
-    _clientAddresses.clear();
-    _clientPorts.clear();
-    _clientLastActivity.clear();
+    _clients.clear();
     logger.debug('All client sockets closed and cleared.');
   }
 
   bool get isBroadcasting => _broadcasting;
-  int get activeClientCount => _clientSockets.length;
+  int get activeClientCount => _clients.length;
 }

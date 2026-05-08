@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:async' show unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -38,26 +39,31 @@ class _HomeScreenState extends State<HomeScreen> {
   late final SocketHandler socketHandler;
   late final BroadcastManager _broadcastManager;
   late final Logger logger;
+  late final NavigationController navigationController;
 
   final ValueNotifier<bool> _debugEnabledNotifier = ValueNotifier(false);
-  bool _nintendoDnsMode = false;
-
-  Map<String, String>? _currentNotice;
-  Timer? _noticeTimer;
-
-  final TextEditingController _ipController = TextEditingController();
-  final TextEditingController _portController = TextEditingController();
-  final ScrollController _logScrollController = ScrollController();
-  final ScrollController _mainScrollController = ScrollController();
-
   final ValueNotifier<List<String>> _logsNotifier = ValueNotifier([]);
   final ValueNotifier<bool> _broadcastingNotifier = ValueNotifier(false);
   final ValueNotifier<List<UserServer>> _userServersNotifier = ValueNotifier(
     [],
   );
 
+  final TextEditingController _ipController = TextEditingController();
+  final TextEditingController _portController = TextEditingController();
+  final ScrollController _logScrollController = ScrollController();
+  final ScrollController _mainScrollController = ScrollController();
+
+  bool _nintendoDnsMode = false;
+  Map<String, String>? _currentNotice;
+  Timer? _noticeTimer;
+
   late RelayPingResult _selectedRelay;
-  late final NavigationController navigationController;
+
+  static String _friendNameForRelay(String relayName) => switch (relayName) {
+    'EU Server' => 'NetherLinkEU',
+    'US Server' => 'NetherLinkUS',
+    _ => '-',
+  };
 
   @override
   void initState() {
@@ -66,7 +72,31 @@ class _HomeScreenState extends State<HomeScreen> {
     _initializeComponents();
     _loadUserServers();
     _fetchNotification();
+    _initNavigationController();
+  }
 
+  RelayPingResult _fallbackRelay() {
+    final first = AppConstants.relayServers[0];
+    return RelayPingResult(
+      ip: first['ip']!,
+      base: first['base']!,
+      name: first['name']!,
+      latencyMs: 999999,
+    );
+  }
+
+  void _initializeComponents() {
+    logger = Logger(debugEnabled: false, logCallback: _log);
+    socketHandler = SocketHandler(logger: logger);
+    _broadcastManager = BroadcastManager(
+      socketHandler: socketHandler,
+      logger: logger,
+    );
+    _broadcastManager.onAutoDisconnect = _handleAutoDisconnect;
+    _broadcastManager.onRelayError = _handleRelayError;
+  }
+
+  void _initNavigationController() {
     navigationController = NavigationController(
       websiteUrl: AppConstants.websiteUrl,
       discordUrl: AppConstants.discordUrl,
@@ -74,18 +104,13 @@ class _HomeScreenState extends State<HomeScreen> {
       logsNotifier: _logsNotifier,
       logsScrollController: _logScrollController,
       debugEnabledNotifier: _debugEnabledNotifier,
-      toggleDebugCallback: () async => _toggleDebugMode(),
-      copyLogsCallback: () async => _copyLogsToClipboard(),
+      toggleDebugCallback: _toggleDebugMode,
+      copyLogsCallback: _copyLogsToClipboard,
       clearLogsCallback: _clearLogs,
       showXboxHelpCallback: _showXboxHelp,
       showHowToMenuCallback: (ctx) {
         final relayName = _selectedRelay.name;
         final relayIp = _selectedRelay.ip;
-        final friendName = relayName == 'EU Server'
-            ? 'NetherLinkEU'
-            : relayName == 'US Server'
-            ? 'NetherLinkUS'
-            : '-';
         HowToMenu.show(
           ctx,
           onXbox: _showXboxHelp,
@@ -96,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           onFriends: () => HowToDialogs.showFriendsInstructions(
             context,
-            friendName: friendName,
+            friendName: _friendNameForRelay(relayName),
           ),
           onJava: () => HowToDialogs.showJavaInstructions(context),
         );
@@ -114,16 +139,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  RelayPingResult _fallbackRelay() {
-    final first = AppConstants.relayServers[0];
-    return RelayPingResult(
-      ip: first['ip']!,
-      base: first['base']!,
-      name: first['name']!,
-      latencyMs: 999999,
-    );
-  }
-
   @override
   void dispose() {
     _noticeTimer?.cancel();
@@ -136,40 +151,26 @@ class _HomeScreenState extends State<HomeScreen> {
     _debugEnabledNotifier.dispose();
     _userServersNotifier.dispose();
     navigationController.consoleOpen.dispose();
-    _broadcastManager.stopBroadcast();
+    unawaited(_broadcastManager.stopBroadcast());
     super.dispose();
-  }
-
-  void _initializeComponents() {
-    logger = Logger(
-      debugEnabled: _debugEnabledNotifier.value,
-      logCallback: _log,
-    );
-    socketHandler = SocketHandler(logger: logger);
-    _broadcastManager = BroadcastManager(
-      socketHandler: socketHandler,
-      logger: logger,
-    );
-    _broadcastManager.onAutoDisconnect = _handleAutoDisconnect;
-    _broadcastManager.onRelayError = _handleRelayError;
   }
 
   Future<void> _fetchNotification() async {
     final notice = await NotificationService.fetchNotice(_selectedRelay.base);
-    if (mounted && notice != null) {
-      setState(() => _currentNotice = notice);
-      _noticeTimer?.cancel();
-      _noticeTimer = Timer(const Duration(seconds: 20), () {
-        if (mounted) setState(() => _currentNotice = null);
-      });
-    }
+    if (!mounted || notice == null) return;
+    setState(() => _currentNotice = notice);
+    _noticeTimer?.cancel();
+    _noticeTimer = Timer(const Duration(seconds: 20), () {
+      if (mounted) setState(() => _currentNotice = null);
+    });
   }
 
   Future<void> _loadUserServers() async {
     try {
       final servers = await UserServersStorage.loadServers();
-      if (servers.isNotEmpty)
+      if (servers.isNotEmpty) {
         logger.debug('Loaded ${servers.length} saved server(s)');
+      }
       _userServersNotifier.value = servers;
       _setDefaultServerIfNeeded(servers);
     } catch (e) {
@@ -178,19 +179,21 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _setDefaultServerIfNeeded(List<UserServer> servers) {
-    if (_ipController.text.trim().isNotEmpty) return;
-    if (servers.isNotEmpty) {
-      _ipController.text = servers.first.address;
-      _portController.text = servers.first.port.toString();
-    }
+    if (_ipController.text.trim().isNotEmpty || servers.isEmpty) return;
+    _ipController.text = servers.first.address;
+    _portController.text = servers.first.port.toString();
   }
 
   void _log(String message) {
-    final logs = List<String>.from(_logsNotifier.value)..add(message);
-    if (logs.length > AppConstants.maxLogEntries) {
-      logs.removeRange(0, logs.length - AppConstants.maxLogEntries);
-    }
-    _logsNotifier.value = logs;
+    final current = _logsNotifier.value;
+    final next = [
+      if (current.length >= AppConstants.maxLogEntries)
+        ...current.skip(current.length - AppConstants.maxLogEntries + 1),
+      if (current.length < AppConstants.maxLogEntries) ...current,
+      message,
+    ];
+    _logsNotifier.value = next;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_logScrollController.hasClients && mounted) {
         _logScrollController.animateTo(
@@ -248,42 +251,55 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (mode == PanelMode.nintendo || mode == PanelMode.friends) {
-      final ok = await _broadcastManager.sendRelayConfigOnly(
-        remoteHost,
-        remotePortParsed,
-        relayIp: _selectedRelay.ip,
-        relayBase: _selectedRelay.base,
-        mode: BroadcastMode.values[mode.index],
-      );
-      if (ok) {
-        _snack(
-          loc.dnsConfigSent,
-          AppTheme.accent,
-          icon: Icons.check_circle_outline_rounded,
-        );
-        final relayName = _selectedRelay.name;
-        final relayIp = _selectedRelay.ip;
-        final friendName = relayName == 'EU Server'
-            ? 'NetherLinkEU'
-            : relayName == 'US Server'
-            ? 'NetherLinkUS'
-            : '-';
-        if (mode == PanelMode.nintendo) {
-          await HowToDialogs.showNintendoInstructions(
-            context,
-            relayName: relayName,
-            relayIp: relayIp,
-          );
-        } else {
-          await HowToDialogs.showFriendsInstructions(
-            context,
-            friendName: friendName,
-          );
-        }
-      }
+      await _handleDnsMode(mode, remoteHost, remotePortParsed, loc);
       return;
     }
 
+    await _handleBroadcastMode(mode, remoteHost, remotePortParsed, loc);
+  }
+
+  Future<void> _handleDnsMode(
+    PanelMode mode,
+    String remoteHost,
+    int remotePort,
+    AppLocalizations loc,
+  ) async {
+    final ok = await _broadcastManager.sendRelayConfigOnly(
+      remoteHost,
+      remotePort,
+      relayIp: _selectedRelay.ip,
+      relayBase: _selectedRelay.base,
+      mode: BroadcastMode.values[mode.index],
+    );
+    if (!ok) return;
+
+    _snack(
+      loc.dnsConfigSent,
+      AppTheme.accent,
+      icon: Icons.check_circle_outline_rounded,
+    );
+
+    final relayName = _selectedRelay.name;
+    if (mode == PanelMode.nintendo) {
+      await HowToDialogs.showNintendoInstructions(
+        context,
+        relayName: relayName,
+        relayIp: _selectedRelay.ip,
+      );
+    } else {
+      await HowToDialogs.showFriendsInstructions(
+        context,
+        friendName: _friendNameForRelay(relayName),
+      );
+    }
+  }
+
+  Future<void> _handleBroadcastMode(
+    PanelMode mode,
+    String remoteHost,
+    int remotePort,
+    AppLocalizations loc,
+  ) async {
     logger.info('Starting NetherLink');
     try {
       await WakelockPlus.enable();
@@ -293,17 +309,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final success = await _broadcastManager.startBroadcast(
       remoteHost,
-      remotePortParsed,
+      remotePort,
       relayIp: _selectedRelay.ip,
       relayBase: _selectedRelay.base,
       isJava: mode == PanelMode.java,
       mode: BroadcastMode.values[mode.index],
     );
-    _broadcastingNotifier.value = _broadcastManager.isBroadcasting;
 
-    if (_broadcastManager.isBroadcasting && success) {
+    _broadcastingNotifier.value = success;
+    if (success) {
       _snack(
-        AppLocalizations.of(context)!.broadcastingStarted,
+        loc.broadcastingStarted,
         AppTheme.success,
         icon: Icons.check_circle_outline_rounded,
       );
@@ -367,7 +383,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (_) => const ManageServersDialog(),
     );
-    _loadUserServers();
+    await _loadUserServers();
   }
 
   void _showXboxHelp() => HowToDialogs.showXboxInstructions(context);
@@ -441,7 +457,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-
             if (_currentNotice != null)
               Positioned(
                 top: 0,
