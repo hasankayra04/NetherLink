@@ -33,7 +33,6 @@ class _PartnerServersScreenState extends State<PartnerServersScreen> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Header (vervangt AppBar)
         Container(
           color: AppTheme.surface,
           child: Column(
@@ -65,7 +64,6 @@ class _PartnerServersScreenState extends State<PartnerServersScreen> {
           ),
         ),
 
-        // Body
         Expanded(
           child: FutureBuilder<List<FeaturedServer>>(
             future: widget.partnerServersFuture,
@@ -145,7 +143,7 @@ class _PartnerServersScreenState extends State<PartnerServersScreen> {
                       color: AppTheme.success,
                       duration: const Duration(seconds: 2),
                     );
-                    widget.onBack(); // terug naar home na selectie
+                    widget.onBack();
                   },
                 ),
               );
@@ -157,220 +155,293 @@ class _PartnerServersScreenState extends State<PartnerServersScreen> {
   }
 }
 
-class _PartnerServerCard extends StatelessWidget {
+class _PartnerServerCard extends StatefulWidget {
   const _PartnerServerCard({required this.server, required this.onPlay});
 
   final FeaturedServer server;
   final VoidCallback onPlay;
 
-  bool get _hasIcon => server.iconUrl != null && server.iconUrl!.isNotEmpty;
+  @override
+  State<_PartnerServerCard> createState() => _PartnerServerCardState();
+}
+
+class _PartnerServerCardState extends State<_PartnerServerCard>
+    with SingleTickerProviderStateMixin {
+  bool _expanded = false;
+  late final AnimationController _animController;
+  late final Animation<double> _expandAnimation;
+
+  bool get _hasIcon =>
+      widget.server.iconUrl != null && widget.server.iconUrl!.isNotEmpty;
+  bool get _hasDescription => widget.server.description.isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 250),
+      vsync: this,
+    );
+    _expandAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  void _toggleExpanded() {
+    if (!_hasDescription) return;
+    setState(() => _expanded = !_expanded);
+    if (_expanded) {
+      _animController.forward();
+    } else {
+      _animController.reverse();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
-      child: SizedBox(
-        height: 80,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (_hasIcon)
-              Positioned.fill(
-                child: ImageFiltered(
-                  imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-                  child: Image.network(
-                    server.iconUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _solidBg(),
-                  ),
-                ),
-              )
-            else
-              _solidBg(),
-
+      child: Stack(
+        children: [
+          if (_hasIcon)
             Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                    colors: [
-                      AppTheme.surface.withOpacity(0.82),
-                      AppTheme.surface.withOpacity(0.60),
-                    ],
-                  ),
+              child: ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+                child: Image.network(
+                  widget.server.iconUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => _solidBg(),
+                ),
+              ),
+            )
+          else
+            Positioned.fill(child: _solidBg()),
+
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    AppTheme.surface.withOpacity(0.92),
+                    AppTheme.surface.withOpacity(0.75),
+                  ],
                 ),
               ),
             ),
+          ),
 
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.borderGray),
-                ),
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.borderGray),
               ),
             ),
+          ),
 
-            Row(
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.horizontal(
-                    left: Radius.circular(11),
-                  ),
-                  child: SizedBox(
-                    width: 80,
-                    height: 80,
-                    child: _hasIcon
-                        ? Image.network(
-                            server.iconUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _iconFallback(),
-                          )
-                        : _iconFallback(),
-                  ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              InkWell(
+                onTap: _hasDescription ? _toggleExpanded : null,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(12),
                 ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: SizedBox(
+                          width: 56,
+                          height: 56,
+                          child: _hasIcon
+                              ? Image.network(
+                                  widget.server.iconUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => _iconFallback(),
+                                )
+                              : _iconFallback(),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
 
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Row(
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Expanded(
-                              child: Text(
-                                server.name,
-                                style: const TextStyle(
-                                  color: AppTheme.textPrimary,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    widget.server.name,
+                                    style: const TextStyle(
+                                      color: AppTheme.textPrimary,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                                if (_hasDescription) ...[
+                                  const SizedBox(width: 4),
+                                  AnimatedRotation(
+                                    turns: _expanded ? 0.5 : 0,
+                                    duration: const Duration(milliseconds: 250),
+                                    child: const Icon(
+                                      Icons.keyboard_arrow_down_rounded,
+                                      size: 16,
+                                      color: AppTheme.textMuted,
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
-                            const SizedBox(width: 6),
+                            const SizedBox(height: 4),
+
                             _StatusBadge(
-                              address: server.address,
-                              port: server.port,
+                              address: widget.server.address,
+                              port: widget.server.port,
+                            ),
+                            const SizedBox(height: 3),
+
+                            Text(
+                              '${widget.server.address}:${widget.server.port}',
+                              style: const TextStyle(
+                                color: AppTheme.textMuted,
+                                fontSize: 10,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${server.address}:${server.port}',
-                          style: const TextStyle(
-                            color: AppTheme.textMuted,
-                            fontSize: 10,
-                          ),
-                        ),
-                        if (server.description.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            server.description,
-                            style: const TextStyle(
-                              color: AppTheme.textSecondary,
-                              fontSize: 11,
-                              height: 1.4,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-
-                Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      GestureDetector(
-                        onTap: onPlay,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 7,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppTheme.accent,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.play_arrow_rounded,
-                                size: 13,
-                                color: Colors.white,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                'Play',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                       ),
-                      if (server.websiteUrl != null) ...[
-                        const SizedBox(height: 5),
-                        GestureDetector(
-                          onTap: () => launchUrl(
-                            Uri.parse(server.websiteUrl!),
-                            mode: LaunchMode.externalApplication,
+                      const SizedBox(width: 10),
+
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          GestureDetector(
+                            onTap: widget.onPlay,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 9,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.accent,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.play_arrow_rounded,
+                                    size: 14,
+                                    color: Colors.white,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Play',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppTheme.surfaceRaised.withOpacity(0.80),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: AppTheme.borderGray),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.language_rounded,
-                                  size: 11,
-                                  color: AppTheme.textSecondary,
+                          if (widget.server.websiteUrl != null) ...[
+                            const SizedBox(height: 6),
+                            GestureDetector(
+                              onTap: () => launchUrl(
+                                Uri.parse(widget.server.websiteUrl!),
+                                mode: LaunchMode.externalApplication,
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 8,
                                 ),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Website',
-                                  style: TextStyle(
-                                    color: AppTheme.textSecondary,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w500,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.surfaceRaised.withOpacity(
+                                    0.80,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: AppTheme.borderGray,
                                   ),
                                 ),
-                              ],
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.language_rounded,
+                                      size: 12,
+                                      color: AppTheme.textSecondary,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Website',
+                                      style: TextStyle(
+                                        color: AppTheme.textSecondary,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      ],
+                          ],
+                        ],
+                      ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+
+              if (_hasDescription)
+                SizeTransition(
+                  sizeFactor: _expandAnimation,
+                  axisAlignment: -1,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Divider(height: 1, color: AppTheme.borderGray),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                        child: Text(
+                          widget.server.description,
+                          style: const TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 12,
+                            height: 1.6,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -422,15 +493,15 @@ class _StatusBadgeState extends State<_StatusBadge> {
   Widget _pill({required Color dot, required String label}) {
     final online = dot == AppTheme.success;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
         color: online
-            ? AppTheme.success.withOpacity(0.08)
+            ? AppTheme.success.withOpacity(0.10)
             : AppTheme.surfaceRaised.withOpacity(0.80),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: online
-              ? AppTheme.success.withOpacity(0.30)
+              ? AppTheme.success.withOpacity(0.35)
               : AppTheme.borderGray,
         ),
       ),
@@ -442,7 +513,7 @@ class _StatusBadgeState extends State<_StatusBadge> {
             height: 5,
             decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 5),
           Text(
             label,
             style: TextStyle(
