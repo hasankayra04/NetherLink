@@ -6,7 +6,6 @@ import '../../l10n/app_localizations.dart';
 import '../../theme/app_theme.dart';
 import '../../util/user_servers.dart';
 import '../../util/featured_servers.dart';
-import '../../services/featured_servers_service.dart';
 import '../../services/server_status_service.dart';
 import '../../services/navigation_controller.dart';
 import '../../widgets/components/app_painters.dart';
@@ -43,6 +42,8 @@ class ConnectionPanel extends StatefulWidget {
     required this.nintendoDnsMode,
     required this.onNintendoDnsModeChanged,
     required this.navigationController,
+    required this.partnerServersFuture,
+    required this.onOpenPartnerServers,
   });
 
   final TextEditingController ipController;
@@ -58,6 +59,8 @@ class ConnectionPanel extends StatefulWidget {
   final bool nintendoDnsMode;
   final ValueChanged<bool> onNintendoDnsModeChanged;
   final NavigationController navigationController;
+  final Future<List<FeaturedServer>>? partnerServersFuture;
+  final VoidCallback onOpenPartnerServers;
 
   @override
   State<ConnectionPanel> createState() => _ConnectionPanelState();
@@ -69,7 +72,6 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
   bool _broadcasting = false;
   bool _starting = false;
 
-  Future<List<FeaturedServer>>? _featuredFuture;
   List<FeaturedServer> _featuredServers = [];
   late final PageController _heroBgController;
   int _heroBgPage = 0;
@@ -149,8 +151,7 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
     widget.ipController.addListener(_onControllerChanged);
     widget.portController.addListener(_onControllerChanged);
 
-    _featuredFuture = FeaturedServersService.fetchFeaturedServers();
-    _featuredFuture!.then((list) {
+    widget.partnerServersFuture?.then((list) {
       if (!mounted || list.isEmpty) return;
       setState(() => _featuredServers = List.from(list)..shuffle(Random()));
       _startHeroTimer();
@@ -218,11 +219,11 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
       : _featuredServers[_heroBgPage % _featuredServers.length];
 
   String _modeLabel(PanelMode mode, AppLocalizations loc) => switch (mode) {
-        PanelMode.lan => loc.labelXbox,
-        PanelMode.nintendo => loc.labelNintendo,
-        PanelMode.friends => loc.labelFriends,
-        PanelMode.java => loc.labelJava,
-      };
+    PanelMode.lan => loc.labelXbox,
+    PanelMode.nintendo => loc.labelNintendo,
+    PanelMode.friends => loc.labelFriends,
+    PanelMode.java => loc.labelJava,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -256,13 +257,12 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                 ),
                 child: ServerTabsSection(
                   savedServers: widget.savedServers,
-                  partnerServersFuture: _featuredFuture,
                   ipController: widget.ipController,
                   portController: widget.portController,
                   onServerSelected: widget.onServerSelected,
                   onManageServers: widget.onManageServers,
                   broadcasting: broadcasting,
-                  navigationController: widget.navigationController,
+                  onOpenPartnerServers: widget.onOpenPartnerServers,
                 ),
               ),
             ),
@@ -409,8 +409,7 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                             ),
                             const SizedBox(height: 5),
                             ConstrainedBox(
-                              constraints:
-                                  const BoxConstraints(maxWidth: 220),
+                              constraints: const BoxConstraints(maxWidth: 220),
                               child: Text(
                                 server?.description.isNotEmpty == true
                                     ? server!.description
@@ -443,8 +442,8 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                             ? null
                             : () {
                                 widget.ipController.text = server.address;
-                                widget.portController.text =
-                                    server.port.toString();
+                                widget.portController.text = server.port
+                                    .toString();
                                 AppToast.show(
                                   context,
                                   message: server.name,
@@ -476,9 +475,7 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                                 'Play',
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(
-                                    server == null || broadcasting
-                                        ? 0.35
-                                        : 1.0,
+                                    server == null || broadcasting ? 0.35 : 1.0,
                                   ),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
@@ -508,18 +505,14 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
   }
 
   Widget _defaultHeroBg() => Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0D0D28),
-              Color(0xFF16113A),
-              Color(0xFF0A1830),
-            ],
-          ),
-        ),
-      );
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF0D0D28), Color(0xFF16113A), Color(0xFF0A1830)],
+      ),
+    ),
+  );
 
   Widget _heroBadge({required IconData icon, required String label}) {
     return Container(
@@ -622,8 +615,8 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                       color: isSelected
                           ? cfg.color
                           : dimmed
-                              ? AppTheme.textDisabled
-                              : AppTheme.textMuted,
+                          ? AppTheme.textDisabled
+                          : AppTheme.textMuted,
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -636,8 +629,8 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                         color: isSelected
                             ? cfg.color
                             : dimmed
-                                ? AppTheme.textDisabled
-                                : AppTheme.textSecondary,
+                            ? AppTheme.textDisabled
+                            : AppTheme.textSecondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -714,7 +707,6 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                 border: Border.all(color: color.withOpacity(0.22)),
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -728,8 +720,7 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                           decoration: BoxDecoration(
                             color: color.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(12),
-                            border:
-                                Border.all(color: color.withOpacity(0.28)),
+                            border: Border.all(color: color.withOpacity(0.28)),
                           ),
                           child: Icon(
                             broadcasting
@@ -748,8 +739,7 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                               Row(
                                 children: [
                                   AnimatedContainer(
-                                    duration:
-                                        const Duration(milliseconds: 300),
+                                    duration: const Duration(milliseconds: 300),
                                     width: 6,
                                     height: 6,
                                     decoration: BoxDecoration(
@@ -821,15 +811,13 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                       ],
                     ),
                   ),
-
                   const SizedBox(width: 12),
-
                   GestureDetector(
                     onTap: _starting
                         ? null
                         : broadcasting
-                            ? widget.onStopBroadcast
-                            : _handleStart,
+                        ? widget.onStopBroadcast
+                        : _handleStart,
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 150),
                       padding: const EdgeInsets.symmetric(
@@ -837,8 +825,7 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color:
-                            _starting ? color.withOpacity(0.55) : color,
+                        color: _starting ? color.withOpacity(0.55) : color,
                         borderRadius: BorderRadius.circular(11),
                       ),
                       child: _starting
@@ -883,14 +870,14 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
   }
 
   Widget _sectionLabel(String text) => Text(
-        text,
-        style: const TextStyle(
-          color: AppTheme.textMuted,
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.4,
-        ),
-      );
+    text,
+    style: const TextStyle(
+      color: AppTheme.textMuted,
+      fontSize: 10,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 1.4,
+    ),
+  );
 }
 
 class _HeroStatusBadge extends StatelessWidget {
@@ -917,10 +904,9 @@ class _HeroStatusBadge extends StatelessWidget {
             sub: null,
           );
         }
-        final playerText =
-            (status.players != null && status.maxPlayers != null)
-                ? '${status.players} / ${status.maxPlayers}'
-                : null;
+        final playerText = (status.players != null && status.maxPlayers != null)
+            ? '${status.players} / ${status.maxPlayers}'
+            : null;
         return _badge(
           dot: const Color(0xFF4ADE80),
           label: 'Online',

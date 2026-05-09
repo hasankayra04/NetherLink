@@ -2,13 +2,11 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../l10n/app_localizations.dart';
-import '../../theme/app_theme.dart';
-import '../../util/featured_servers.dart';
-import '../../services/server_status_service.dart';
-import '../../services/navigation_controller.dart';
-import '../../widgets/components/app_toast.dart';
-import '../../widgets/navigation/bottom_nav_bar.dart';
+import '../l10n/app_localizations.dart';
+import '../theme/app_theme.dart';
+import '../util/featured_servers.dart';
+import '../services/server_status_service.dart';
+import '../widgets/components/app_toast.dart';
 
 class PartnerServersScreen extends StatefulWidget {
   const PartnerServersScreen({
@@ -16,13 +14,13 @@ class PartnerServersScreen extends StatefulWidget {
     required this.partnerServersFuture,
     required this.ipController,
     required this.portController,
-    required this.navigationController,
+    required this.onBack,
   });
 
   final Future<List<FeaturedServer>>? partnerServersFuture;
   final TextEditingController ipController;
   final TextEditingController portController;
-  final NavigationController navigationController;
+  final VoidCallback onBack;
 
   @override
   State<PartnerServersScreen> createState() => _PartnerServersScreenState();
@@ -33,119 +31,128 @@ class _PartnerServersScreenState extends State<PartnerServersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        backgroundColor: AppTheme.surface,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_rounded,
-            color: AppTheme.textPrimary,
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text(
-          'Partner Servers',
-          style: TextStyle(
-            color: AppTheme.textPrimary,
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, color: AppTheme.borderGray),
-        ),
-      ),
-      bottomNavigationBar: BottomGlassSimpleNavBar(
-        navigationController: widget.navigationController,
-        dark: true,
-        selectedRelayIp: null,
-        onRelayChanged: null,
-      ),
-      body: FutureBuilder<List<FeaturedServer>>(
-        future: widget.partnerServersFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 1.5,
-                  color: AppTheme.textMuted,
+    return Column(
+      children: [
+        // Header (vervangt AppBar)
+        Container(
+          color: AppTheme.surface,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: AppTheme.textPrimary,
+                      ),
+                      onPressed: widget.onBack,
+                    ),
+                    const Text(
+                      'Partner Servers',
+                      style: TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            );
-          }
+              const Divider(height: 1, color: AppTheme.borderGray),
+            ],
+          ),
+        ),
 
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: AppTheme.surfaceRaised,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppTheme.borderGray),
-                    ),
-                    child: const Icon(
-                      Icons.handshake_outlined,
-                      size: 24,
+        // Body
+        Expanded(
+          child: FutureBuilder<List<FeaturedServer>>(
+            future: widget.partnerServersFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 1.5,
                       color: AppTheme.textMuted,
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  const Text(
-                    'No partner servers available yet.',
-                    style: TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Check back later.',
-                    style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          _shuffled ??= List.from(snapshot.data!)..shuffle(Random());
-          final servers = _shuffled!;
-
-          return ListView.separated(
-            padding: const EdgeInsets.all(12),
-            itemCount: servers.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
-            itemBuilder: (context, i) => _PartnerServerCard(
-              server: servers[i],
-              onPlay: () {
-                widget.ipController.text = servers[i].address;
-                widget.portController.text = servers[i].port.toString();
-                AppToast.show(
-                  context,
-                  message: AppLocalizations.of(
-                    context,
-                  )!.selectedFeaturedServer(servers[i].name),
-                  icon: Icons.play_arrow_rounded,
-                  color: AppTheme.success,
-                  duration: const Duration(seconds: 2),
                 );
-                Navigator.of(context).pop();
-              },
-            ),
-          );
-        },
-      ),
+              }
+
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: AppTheme.surfaceRaised,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppTheme.borderGray),
+                        ),
+                        child: const Icon(
+                          Icons.handshake_outlined,
+                          size: 24,
+                          color: AppTheme.textMuted,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      const Text(
+                        'No partner servers available yet.',
+                        style: TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Check back later.',
+                        style: TextStyle(
+                          color: AppTheme.textMuted,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              _shuffled ??= List.from(snapshot.data!)..shuffle(Random());
+              final servers = _shuffled!;
+
+              return ListView.separated(
+                padding: const EdgeInsets.all(12),
+                itemCount: servers.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemBuilder: (context, i) => _PartnerServerCard(
+                  server: servers[i],
+                  onPlay: () {
+                    widget.ipController.text = servers[i].address;
+                    widget.portController.text = servers[i].port.toString();
+                    AppToast.show(
+                      context,
+                      message: AppLocalizations.of(
+                        context,
+                      )!.selectedFeaturedServer(servers[i].name),
+                      icon: Icons.play_arrow_rounded,
+                      color: AppTheme.success,
+                      duration: const Duration(seconds: 2),
+                    );
+                    widget.onBack(); // terug naar home na selectie
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

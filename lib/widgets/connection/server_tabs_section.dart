@@ -1,52 +1,34 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../util/user_servers.dart';
-import '../../util/featured_servers.dart';
-import '../../services/navigation_controller.dart';
 import 'my_servers_tab.dart';
-import '../../screens/partner_servers_screen.dart';
 import '../../l10n/app_localizations.dart';
 
 class ServerTabsSection extends StatefulWidget {
   const ServerTabsSection({
     super.key,
     required this.savedServers,
-    required this.partnerServersFuture,
     required this.ipController,
     required this.portController,
     required this.onServerSelected,
     required this.onManageServers,
     required this.broadcasting,
-    required this.navigationController,
+    required this.onOpenPartnerServers,
   });
 
   final List<UserServer> savedServers;
-  final Future<List<FeaturedServer>>? partnerServersFuture;
   final TextEditingController ipController;
   final TextEditingController portController;
   final Function(UserServer) onServerSelected;
   final VoidCallback onManageServers;
   final bool broadcasting;
-  final NavigationController navigationController;
+  final VoidCallback onOpenPartnerServers;
 
   @override
   State<ServerTabsSection> createState() => _ServerTabsSectionState();
 }
 
 class _ServerTabsSectionState extends State<ServerTabsSection> {
-  void _openPartnerServers() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => PartnerServersScreen(
-          partnerServersFuture: widget.partnerServersFuture,
-          ipController: widget.ipController,
-          portController: widget.portController,
-          navigationController: widget.navigationController,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -77,7 +59,7 @@ class _ServerTabsSectionState extends State<ServerTabsSection> {
           _TabButton(
             label: 'Partner Servers',
             trailing: Icons.arrow_forward_ios_rounded,
-            onTap: _openPartnerServers,
+            onTap: widget.onOpenPartnerServers,
           ),
           const Spacer(),
           _TabButton(

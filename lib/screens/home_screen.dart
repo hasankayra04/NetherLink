@@ -10,6 +10,7 @@ import '../network/broadcast_manager.dart';
 import '../util/Logger.dart';
 import '../util/user_servers.dart';
 import '../util/user_servers_storage.dart';
+import '../util/featured_servers.dart';
 import '../constants/app_constants.dart';
 import '../theme/app_theme.dart';
 import '../widgets/connection/connection_panel.dart';
@@ -18,6 +19,7 @@ import '../widgets/components/global_notice_banner.dart';
 import '../widgets/components/app_toast.dart';
 import '../services/notification_service.dart';
 import '../services/region_detector.dart';
+import '../services/featured_servers_service.dart';
 import '../network/broadcast_mode.dart';
 import '../widgets/navigation/bottom_nav_bar.dart';
 import '../widgets/navigation/howto_menu.dart';
@@ -26,6 +28,7 @@ import '../services/navigation_controller.dart';
 import '../services/locale_provider.dart';
 import '../widgets/dialogs/howto_dialogs.dart';
 import '../widgets/dialogs/help_dialogs.dart';
+import 'partner_servers_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final RelayPingResult? initialRelay;
@@ -40,6 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late final BroadcastManager _broadcastManager;
   late final Logger logger;
   late final NavigationController navigationController;
+  late final Future<List<FeaturedServer>> _partnerServersFuture;
 
   final ValueNotifier<bool> _debugEnabledNotifier = ValueNotifier(false);
   final ValueNotifier<List<String>> _logsNotifier = ValueNotifier([]);
@@ -56,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _nintendoDnsMode = false;
   Map<String, String>? _currentNotice;
   Timer? _noticeTimer;
+  int _pageIndex = 0;
 
   late RelayPingResult _selectedRelay;
 
@@ -69,6 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _selectedRelay = widget.initialRelay ?? _fallbackRelay();
+    _partnerServersFuture = FeaturedServersService.fetchFeaturedServers();
     _initializeComponents();
     _loadUserServers();
     _fetchNotification();
@@ -272,13 +278,11 @@ class _HomeScreenState extends State<HomeScreen> {
       mode: BroadcastMode.values[mode.index],
     );
     if (!ok) return;
-
     _snack(
       loc.dnsConfigSent,
       AppTheme.accent,
       icon: Icons.check_circle_outline_rounded,
     );
-
     final relayName = _selectedRelay.name;
     if (mode == PanelMode.nintendo) {
       await HowToDialogs.showNintendoInstructions(
@@ -412,17 +416,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.background,
-      body: SafeArea(
-        top: true,
-        bottom: false,
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                Expanded(
-                  child: Padding(
+    return PopScope(
+      canPop: _pageIndex == 0,
+      onPopInvoked: (didPop) {
+        if (!didPop) setState(() => _pageIndex = 0);
+      },
+      child: Scaffold(
+        backgroundColor: AppTheme.background,
+        bottomNavigationBar: BottomGlassSimpleNavBar(
+          navigationController: navigationController,
+          dark: true,
+          selectedRelayIp: _selectedRelay.ip,
+          onRelayChanged: _onRelayChanged,
+        ),
+        body: SafeArea(
+          top: true,
+          bottom: false,
+          child: Stack(
+            children: [
+              IndexedStack(
+                index: _pageIndex,
+                children: [
+                  Padding(
                     padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
                     child: SingleChildScrollView(
                       controller: _mainScrollController,
@@ -444,34 +459,39 @@ class _HomeScreenState extends State<HomeScreen> {
                           onNintendoDnsModeChanged: (value) =>
                               setState(() => _nintendoDnsMode = value),
                           navigationController: navigationController,
+                          partnerServersFuture: _partnerServersFuture,
+                          onOpenPartnerServers: () =>
+                              setState(() => _pageIndex = 1),
                         ),
                       ),
                     ),
                   ),
-                ),
-                BottomGlassSimpleNavBar(
-                  navigationController: navigationController,
-                  dark: true,
-                  selectedRelayIp: _selectedRelay.ip,
-                  onRelayChanged: _onRelayChanged,
-                ),
-              ],
-            ),
-            if (_currentNotice != null)
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: GlobalNoticeBanner(
-                  message: _currentNotice!['message']!,
-                  type: _currentNotice!['type'] ?? 'info',
-                  onDismiss: () {
-                    _noticeTimer?.cancel();
-                    setState(() => _currentNotice = null);
-                  },
-                ),
+
+                  PartnerServersScreen(
+                    partnerServersFuture: _partnerServersFuture,
+                    ipController: _ipController,
+                    portController: _portController,
+                    onBack: () => setState(() => _pageIndex = 0),
+                  ),
+                ],
               ),
-          ],
+
+              if (_currentNotice != null)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: GlobalNoticeBanner(
+                    message: _currentNotice!['message']!,
+                    type: _currentNotice!['type'] ?? 'info',
+                    onDismiss: () {
+                      _noticeTimer?.cancel();
+                      setState(() => _currentNotice = null);
+                    },
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
