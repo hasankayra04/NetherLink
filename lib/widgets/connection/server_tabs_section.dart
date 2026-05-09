@@ -5,6 +5,7 @@ import '../../util/featured_servers.dart';
 import '../../services/navigation_controller.dart';
 import 'my_servers_tab.dart';
 import '../../screens/partner_servers_screen.dart';
+import '../../l10n/app_localizations.dart';
 
 class ServerTabsSection extends StatefulWidget {
   const ServerTabsSection({
@@ -48,11 +49,12 @@ class _ServerTabsSectionState extends State<ServerTabsSection> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildTabHeader(),
+        _buildTabHeader(loc),
         const Divider(height: 1, thickness: 1, color: AppTheme.borderDim),
         MyServersTab(
           savedServers: widget.savedServers,
@@ -65,89 +67,81 @@ class _ServerTabsSectionState extends State<ServerTabsSection> {
     );
   }
 
-  Widget _buildTabHeader() {
+  Widget _buildTabHeader(AppLocalizations loc) {
+    final bool disabled = widget.broadcasting;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceLight,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppTheme.borderLight),
-            ),
-            child: const Text(
-              'My Servers',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.textPrimary,
-              ),
-            ),
-          ),
-          const SizedBox(width: 6),
-          GestureDetector(
+          _TabButton(
+            label: 'Partner Servers',
+            trailing: Icons.arrow_forward_ios_rounded,
             onTap: _openPartnerServers,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Text(
-                    'Partner Servers',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                  SizedBox(width: 4),
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 10,
-                    color: AppTheme.textMuted,
-                  ),
-                ],
-              ),
-            ),
           ),
           const Spacer(),
-          GestureDetector(
-            onTap: widget.broadcasting ? null : widget.onManageServers,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceRaised,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppTheme.borderGray),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.settings_rounded,
-                    size: 12,
-                    color: widget.broadcasting
-                        ? AppTheme.textDisabled
-                        : AppTheme.textSecondary,
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    'Manage',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: widget.broadcasting
-                          ? AppTheme.textDisabled
-                          : AppTheme.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          _TabButton(
+            label: loc.manageServers,
+            icon: Icons.settings_rounded,
+            disabled: disabled,
+            onTap: disabled ? null : widget.onManageServers,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TabButton extends StatelessWidget {
+  final String label;
+  final bool disabled;
+  final IconData? icon;
+  final IconData? trailing;
+  final VoidCallback? onTap;
+
+  const _TabButton({
+    required this.label,
+    this.disabled = false,
+    this.icon,
+    this.trailing,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Color fg =
+        disabled ? AppTheme.textDisabled : AppTheme.textSecondary;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceRaised,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppTheme.borderGray),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 12, color: fg),
+              const SizedBox(width: 5),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: fg,
+              ),
+            ),
+            if (trailing != null) ...[
+              const SizedBox(width: 4),
+              Icon(trailing, size: 10, color: fg),
+            ],
+          ],
+        ),
       ),
     );
   }

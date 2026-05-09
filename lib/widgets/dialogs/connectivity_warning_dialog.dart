@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../services/connectivity_checker.dart';
+import '../../l10n/app_localizations.dart';
 
 class ConnectivityWarningDialog extends StatelessWidget {
   final ConnectivityWarning warning;
@@ -23,14 +24,10 @@ class ConnectivityWarningDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final color = _isVpn ? AppTheme.warning : AppTheme.info;
-
-    final title = _isVpn ? 'VPN Detected' : 'Not on Wi-Fi';
-
-    final body = _isVpn
-        ? 'We detected that your VPN is active.\n\nPlease disable your VPN before using NetherLink, otherwise the LAN broadcast may not reach your console.'
-        : 'Detected: Mobile Data\n\nNetherLink needs to be on the same network as your console. Please connect to your home Wi-Fi or hotspot before continuing.';
-
+    final title = _isVpn ? loc.vpnDetected : loc.noWifi;
+    final body = _isVpn ? loc.vpnActive : loc.mobileActive;
     final icon = _isVpn ? Icons.vpn_lock_rounded : Icons.wifi_off_rounded;
 
     return Dialog(
@@ -95,7 +92,7 @@ class ConnectivityWarningDialog extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text('Continue Anyway'),
+                    child: Text(loc.continueAnyway),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -111,9 +108,9 @@ class ConnectivityWarningDialog extends StatelessWidget {
                       ),
                       elevation: 0,
                     ),
-                    child: const Text(
-                      'I understand',
-                      style: TextStyle(fontWeight: FontWeight.w700),
+                    child: Text(
+                      loc.iUnderstand,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),

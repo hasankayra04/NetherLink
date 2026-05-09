@@ -213,6 +213,12 @@ abstract class AppLocalizations {
   /// **'Start'**
   String get start;
 
+  /// No description provided for @stop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get stop;
+
   /// No description provided for @labelJava.
   ///
   /// In en, this message translates to:
@@ -536,6 +542,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Manage servers'**
   String get manageServersTooltip;
+
+  /// No description provided for @noServerYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved servers yet.\nTap Manage to add one.'**
+  String get noServerYet;
+
+  /// No description provided for @serverNotSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No server selected'**
+  String get serverNotSelected;
+
+  /// No description provided for @ready.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get ready;
+
+  /// No description provided for @active.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get active;
+
+  /// No description provided for @vpnDetected.
+  ///
+  /// In en, this message translates to:
+  /// **'VPN Detected'**
+  String get vpnDetected;
+
+  /// No description provided for @noWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'Not on Wi-Fi'**
+  String get noWifi;
+
+  /// No description provided for @vpnActive.
+  ///
+  /// In en, this message translates to:
+  /// **'We detected that your VPN is active.\n\nPlease disable your VPN before using NetherLink, otherwise the LAN broadcast may not reach your console.'**
+  String get vpnActive;
+
+  /// No description provided for @mobileActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Detected: Mobile Data\n\nNetherLink needs to be on the same network as your console. Please connect to your home Wi-Fi or hotspot before continuing.'**
+  String get mobileActive;
+
+  /// No description provided for @continueAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue Anyway'**
+  String get continueAnyway;
+
+  /// No description provided for @sameWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'Same Wi-Fi Network'**
+  String get sameWifi;
+
+  /// No description provided for @needSameWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'The device running NetherLink MUST be on the same Wi-Fi network as the console you play Minecraft on.'**
+  String get needSameWifi;
+
+  /// No description provided for @subscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Online Subscription Required'**
+  String get subscription;
+
+  /// No description provided for @needSubscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Each console needs its own active online subscription (Xbox Live, PS Plus, NSO). Without it, NetherLink won\'t appear.'**
+  String get needSubscription;
+
+  /// No description provided for @updateAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Available'**
+  String get updateAvailable;
+
+  /// No description provided for @newVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'A new version of the app is available.\nUpdate now for the latest features and fixes.'**
+  String get newVersion;
+
+  /// No description provided for @later.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get later;
+
+  /// No description provided for @updateNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Now'**
+  String get updateNow;
+
+  /// No description provided for @beforeYouStart.
+  ///
+  /// In en, this message translates to:
+  /// **'BEFORE YOU START'**
+  String get beforeYouStart;
 
   /// No description provided for @stopBroadcasting.
   ///

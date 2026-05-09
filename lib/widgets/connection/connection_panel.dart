@@ -158,8 +158,9 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
   }
 
   void _onBroadcastingChanged() {
-    if (mounted)
+    if (mounted) {
       setState(() => _broadcasting = widget.broadcastingNotifier.value);
+    }
   }
 
   void _onControllerChanged() {
@@ -217,11 +218,11 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
       : _featuredServers[_heroBgPage % _featuredServers.length];
 
   String _modeLabel(PanelMode mode, AppLocalizations loc) => switch (mode) {
-    PanelMode.lan => loc.labelXbox,
-    PanelMode.nintendo => loc.labelNintendo,
-    PanelMode.friends => loc.labelFriends,
-    PanelMode.java => loc.labelJava,
-  };
+        PanelMode.lan => loc.labelXbox,
+        PanelMode.nintendo => loc.labelNintendo,
+        PanelMode.friends => loc.labelFriends,
+        PanelMode.java => loc.labelJava,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -326,7 +327,6 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                       return _defaultHeroBg();
                     },
                   ),
-
             const CustomPaint(
               painter: AppNoisePainter(
                 color: Colors.white,
@@ -336,7 +336,6 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
               ),
             ),
             const CustomPaint(painter: AppWavePainter(waves: _heroWaves)),
-
             Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -351,7 +350,6 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                 ),
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.all(18),
               child: Column(
@@ -411,7 +409,8 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                             ),
                             const SizedBox(height: 5),
                             ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 220),
+                              constraints:
+                                  const BoxConstraints(maxWidth: 220),
                               child: Text(
                                 server?.description.isNotEmpty == true
                                     ? server!.description
@@ -444,8 +443,8 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                             ? null
                             : () {
                                 widget.ipController.text = server.address;
-                                widget.portController.text = server.port
-                                    .toString();
+                                widget.portController.text =
+                                    server.port.toString();
                                 AppToast.show(
                                   context,
                                   message: server.name,
@@ -477,7 +476,9 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                                 'Play',
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(
-                                    server == null || broadcasting ? 0.35 : 1.0,
+                                    server == null || broadcasting
+                                        ? 0.35
+                                        : 1.0,
                                   ),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
@@ -507,14 +508,18 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
   }
 
   Widget _defaultHeroBg() => Container(
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFF0D0D28), Color(0xFF16113A), Color(0xFF0A1830)],
-      ),
-    ),
-  );
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF0D0D28),
+              Color(0xFF16113A),
+              Color(0xFF0A1830),
+            ],
+          ),
+        ),
+      );
 
   Widget _heroBadge({required IconData icon, required String label}) {
     return Container(
@@ -617,8 +622,8 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                       color: isSelected
                           ? cfg.color
                           : dimmed
-                          ? AppTheme.textDisabled
-                          : AppTheme.textMuted,
+                              ? AppTheme.textDisabled
+                              : AppTheme.textMuted,
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -631,8 +636,8 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                         color: isSelected
                             ? cfg.color
                             : dimmed
-                            ? AppTheme.textDisabled
-                            : AppTheme.textSecondary,
+                                ? AppTheme.textDisabled
+                                : AppTheme.textSecondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -656,19 +661,17 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
         ? '${widget.ipController.text}:${widget.portController.text}'
         : 'No server selected';
 
-    final buttonLabel = broadcasting
-        ? loc.stopBroadcasting
-        : switch (_mode) {
-            PanelMode.lan => loc.startBroadcasting,
-            PanelMode.nintendo => loc.startNintendoMode,
-            PanelMode.friends => loc.startFriendsMode,
-            PanelMode.java => loc.startJavaMode,
-          };
+    final buttonLabel = switch (_mode) {
+      PanelMode.lan => loc.startBroadcasting,
+      PanelMode.nintendo => loc.startNintendoMode,
+      PanelMode.friends => loc.startFriendsMode,
+      PanelMode.java => loc.startJavaMode,
+    };
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: SizedBox(
-        height: 80,
+        height: 88,
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -711,87 +714,131 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                 border: Border.all(color: color.withOpacity(0.22)),
               ),
             ),
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(13),
-                      border: Border.all(color: color.withOpacity(0.28)),
-                    ),
-                    child: Icon(
-                      broadcasting
-                          ? Icons.stop_circle_outlined
-                          : Icons.sensors_rounded,
-                      color: color,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
+                    child: Row(
                       children: [
-                        Text(
-                          broadcasting ? 'Broadcasting Active' : buttonLabel,
-                          style: const TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(12),
+                            border:
+                                Border.all(color: color.withOpacity(0.28)),
+                          ),
+                          child: Icon(
+                            broadcasting
+                                ? Icons.sensors_rounded
+                                : Icons.sensors_off_rounded,
+                            color: color,
+                            size: 20,
                           ),
                         ),
-                        const SizedBox(height: 3),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.dns_rounded,
-                              size: 10,
-                              color: hasServer
-                                  ? color.withOpacity(0.70)
-                                  : AppTheme.textDisabled,
-                            ),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                serverLabel,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: hasServer
-                                      ? AppTheme.textSecondary
-                                      : AppTheme.textDisabled,
-                                  fontStyle: hasServer
-                                      ? FontStyle.normal
-                                      : FontStyle.italic,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                children: [
+                                  AnimatedContainer(
+                                    duration:
+                                        const Duration(milliseconds: 300),
+                                    width: 6,
+                                    height: 6,
+                                    decoration: BoxDecoration(
+                                      color: broadcasting
+                                          ? const Color(0xFF4ADE80)
+                                          : AppTheme.textMuted,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    broadcasting ? loc.active : loc.ready,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1.2,
+                                      color: broadcasting
+                                          ? const Color(0xFF4ADE80)
+                                          : AppTheme.textMuted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                broadcasting
+                                    ? loc.stopBroadcasting
+                                    : buttonLabel,
+                                style: const TextStyle(
+                                  color: AppTheme.textPrimary,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.dns_rounded,
+                                    size: 10,
+                                    color: hasServer
+                                        ? color.withOpacity(0.70)
+                                        : AppTheme.textDisabled,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      serverLabel,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: hasServer
+                                            ? AppTheme.textSecondary
+                                            : AppTheme.textDisabled,
+                                        fontStyle: hasServer
+                                            ? FontStyle.normal
+                                            : FontStyle.italic,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
+
                   const SizedBox(width: 12),
+
                   GestureDetector(
                     onTap: _starting
                         ? null
                         : broadcasting
-                        ? widget.onStopBroadcast
-                        : _handleStart,
+                            ? widget.onStopBroadcast
+                            : _handleStart,
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 150),
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
+                        horizontal: 16,
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: _starting ? color.withOpacity(0.55) : color,
+                        color:
+                            _starting ? color.withOpacity(0.55) : color,
                         borderRadius: BorderRadius.circular(11),
                       ),
                       child: _starting
@@ -815,9 +862,7 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                                 ),
                                 const SizedBox(width: 5),
                                 Text(
-                                  broadcasting
-                                      ? loc.stopBroadcasting
-                                      : loc.start,
+                                  broadcasting ? loc.stop : loc.start,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 14,
@@ -838,14 +883,14 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
   }
 
   Widget _sectionLabel(String text) => Text(
-    text,
-    style: const TextStyle(
-      color: AppTheme.textMuted,
-      fontSize: 10,
-      fontWeight: FontWeight.w700,
-      letterSpacing: 1.4,
-    ),
-  );
+        text,
+        style: const TextStyle(
+          color: AppTheme.textMuted,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.4,
+        ),
+      );
 }
 
 class _HeroStatusBadge extends StatelessWidget {
@@ -872,9 +917,10 @@ class _HeroStatusBadge extends StatelessWidget {
             sub: null,
           );
         }
-        final playerText = (status.players != null && status.maxPlayers != null)
-            ? '${status.players} / ${status.maxPlayers}'
-            : null;
+        final playerText =
+            (status.players != null && status.maxPlayers != null)
+                ? '${status.players} / ${status.maxPlayers}'
+                : null;
         return _badge(
           dot: const Color(0xFF4ADE80),
           label: 'Online',

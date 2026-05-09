@@ -10,6 +10,7 @@ import '../services/region_detector.dart';
 import '../services/connectivity_checker.dart';
 import '../widgets/components/app_painters.dart';
 import '../widgets/dialogs/connectivity_warning_dialog.dart';
+import '../l10n/app_localizations.dart';
 import 'home_screen.dart';
 
 class _TipData {
@@ -25,20 +26,18 @@ class _TipData {
   });
 }
 
-const _tips = [
+List<_TipData> _buildTips(AppLocalizations loc) => [
   _TipData(
     icon: Icons.wifi_rounded,
     color: AppTheme.info,
-    title: 'Same Wi-Fi Network',
-    body:
-        'The device running NetherLink MUST be on the same Wi-Fi network as the console you play Minecraft on.',
+    title: loc.sameWifi,
+    body: loc.needSameWifi,
   ),
   _TipData(
     icon: Icons.card_membership_rounded,
     color: AppTheme.modeFriends,
-    title: 'Online Subscription Required',
-    body:
-        "Each console needs its own active online subscription (Xbox Live, PS Plus, NSO). Without it, NetherLink won't appear.",
+    title: loc.subscription,
+    body: loc.needSubscription,
   ),
 ];
 
@@ -103,6 +102,8 @@ class _SplashScreenState extends State<SplashScreen>
   bool _pendingUpdate = false;
   ConnectivityCheckResult? _connectivityResult;
 
+  List<_TipData>? _tips;
+
   static const String _androidStoreUrl =
       'https://play.google.com/store/apps/details?id=net.netherdev.netherLink';
   static const String _iosStoreUrl =
@@ -124,16 +125,26 @@ class _SplashScreenState extends State<SplashScreen>
       curve: Curves.easeIn,
     );
 
-    for (int i = 0; i < _tips.length; i++) {
-      final ctrl = AnimationController(
-        duration: const Duration(milliseconds: 500),
-        vsync: this,
-      );
-      _tipControllers.add(ctrl);
-      _tipAnimations.add(CurvedAnimation(parent: ctrl, curve: Curves.easeOut));
-    }
-
     _startSequence();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_tips == null) {
+      final loc = AppLocalizations.of(context)!;
+      _tips = _buildTips(loc);
+
+      for (int i = 0; i < _tips!.length; i++) {
+        final ctrl = AnimationController(
+          duration: const Duration(milliseconds: 500),
+          vsync: this,
+        );
+        _tipControllers.add(ctrl);
+        _tipAnimations
+            .add(CurvedAnimation(parent: ctrl, curve: Curves.easeOut));
+      }
+    }
   }
 
   Future<void> _startSequence() async {
@@ -142,7 +153,7 @@ class _SplashScreenState extends State<SplashScreen>
     final info = await PackageInfo.fromPlatform();
     if (mounted) setState(() => _appVersion = info.version);
 
-    for (int i = 0; i < _tips.length; i++) {
+    for (int i = 0; i < (_tips?.length ?? 0); i++) {
       await Future.delayed(Duration(milliseconds: i == 0 ? 600 : 1400));
       if (mounted) _tipControllers[i].forward();
     }
@@ -160,7 +171,8 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     if (_connectivityResult != null) {
-      await ConnectivityWarningDialog.showIfNeeded(context, _connectivityResult!);
+      await ConnectivityWarningDialog.showIfNeeded(
+          context, _connectivityResult!);
       if (!mounted) return;
     }
 
@@ -229,6 +241,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<bool> _showUpdateDialog() async {
+    final loc = AppLocalizations.of(context)!;
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -257,7 +270,8 @@ class _SplashScreenState extends State<SplashScreen>
                 decoration: BoxDecoration(
                   color: AppTheme.accent.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.accent.withOpacity(0.35)),
+                  border:
+                      Border.all(color: AppTheme.accent.withOpacity(0.35)),
                 ),
                 child: const Center(
                   child: Icon(
@@ -268,19 +282,19 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
-                'Update Available',
-                style: TextStyle(
+              Text(
+                loc.updateAvailable,
+                style: const TextStyle(
                   color: AppTheme.textPrimary,
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 10),
-              const Text(
-                'A new version of the app is available.\nUpdate now for the latest features and fixes.',
+              Text(
+                loc.newVersion,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   color: AppTheme.textSecondary,
                   fontSize: 13,
                   height: 1.6,
@@ -300,7 +314,7 @@ class _SplashScreenState extends State<SplashScreen>
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text('Later'),
+                      child: Text(loc.later),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -319,9 +333,10 @@ class _SplashScreenState extends State<SplashScreen>
                         ),
                         elevation: 0,
                       ),
-                      child: const Text(
-                        'Update Now',
-                        style: TextStyle(fontWeight: FontWeight.w700),
+                      child: Text(
+                        loc.updateNow,
+                        style:
+                            const TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ),
                   ),
@@ -364,9 +379,8 @@ class _SplashScreenState extends State<SplashScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: white
-              ? Colors.white.withOpacity(0.10)
-              : AppTheme.surfaceRaised,
+          color:
+              white ? Colors.white.withOpacity(0.10) : AppTheme.surfaceRaised,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: white
@@ -378,8 +392,7 @@ class _SplashScreenState extends State<SplashScreen>
           'v$_appVersion',
           style: TextStyle(
             fontSize: 11,
-            color:
-                white ? Colors.white.withOpacity(0.5) : AppTheme.textMuted,
+            color: white ? Colors.white.withOpacity(0.5) : AppTheme.textMuted,
             letterSpacing: 1.4,
           ),
         ),
@@ -388,6 +401,9 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Widget _tipsSection({bool white = false}) {
+    final loc = AppLocalizations.of(context)!;
+    final tips = _tips ?? [];
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
       child: Column(
@@ -400,12 +416,13 @@ class _SplashScreenState extends State<SplashScreen>
                 Icon(
                   Icons.info_outline_rounded,
                   size: 13,
-                  color:
-                      white ? Colors.white.withOpacity(0.5) : AppTheme.textMuted,
+                  color: white
+                      ? Colors.white.withOpacity(0.5)
+                      : AppTheme.textMuted,
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'BEFORE YOU START',
+                  loc.beforeYouStart,
                   style: TextStyle(
                     color: white
                         ? Colors.white.withOpacity(0.5)
@@ -418,7 +435,7 @@ class _SplashScreenState extends State<SplashScreen>
               ],
             ),
           ),
-          ...List.generate(_tips.length, (i) {
+          ...List.generate(tips.length, (i) {
             return AnimatedBuilder(
               animation: _tipAnimations[i],
               builder: (context, _) {
@@ -429,9 +446,9 @@ class _SplashScreenState extends State<SplashScreen>
                     offset: Offset(0, 16 * (1 - t)),
                     child: Padding(
                       padding: EdgeInsets.only(
-                        bottom: i < _tips.length - 1 ? 10 : 0,
+                        bottom: i < tips.length - 1 ? 10 : 0,
                       ),
-                      child: _TipCard(tip: _tips[i], darkMode: white),
+                      child: _TipCard(tip: tips[i], darkMode: white),
                     ),
                   ),
                 );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../util/user_servers.dart';
 import '../../services/server_status_service.dart';
+import '../../l10n/app_localizations.dart';
 import '../components/app_painters.dart';
 
 class MyServersTab extends StatefulWidget {
@@ -29,7 +30,7 @@ class _MyServersTabState extends State<MyServersTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.savedServers.isEmpty) return _emptyState();
+    if (widget.savedServers.isEmpty) return _emptyState(context);
 
     return ListView.builder(
       padding: EdgeInsets.zero,
@@ -61,18 +62,19 @@ class _MyServersTabState extends State<MyServersTab> {
     );
   }
 
-  Widget _emptyState() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 28),
+  Widget _emptyState(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 28),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.dns_outlined, size: 26, color: AppTheme.textMuted),
-          SizedBox(height: 10),
+          const Icon(Icons.dns_outlined, size: 26, color: AppTheme.textMuted),
+          const SizedBox(height: 10),
           Text(
-            'No saved servers yet.\nTap Manage to add one.',
+            loc.noServerYet,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppTheme.textMuted,
               fontSize: 12,
               height: 1.5,
@@ -233,15 +235,15 @@ class _ServerTile extends StatelessWidget {
                           color: broadcasting
                               ? AppTheme.surfaceRaised
                               : isSelected
-                              ? AppTheme.accent
-                              : AppTheme.accent.withOpacity(0.15),
+                                  ? AppTheme.accent
+                                  : AppTheme.accent.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                             color: broadcasting
                                 ? AppTheme.borderGray
                                 : isSelected
-                                ? AppTheme.accent
-                                : AppTheme.accent.withOpacity(0.35),
+                                    ? AppTheme.accent
+                                    : AppTheme.accent.withOpacity(0.35),
                           ),
                         ),
                         child: Row(
@@ -253,8 +255,8 @@ class _ServerTile extends StatelessWidget {
                               color: broadcasting
                                   ? AppTheme.textDisabled
                                   : isSelected
-                                  ? Colors.white
-                                  : AppTheme.accent,
+                                      ? Colors.white
+                                      : AppTheme.accent,
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -265,8 +267,8 @@ class _ServerTile extends StatelessWidget {
                                 color: broadcasting
                                     ? AppTheme.textDisabled
                                     : isSelected
-                                    ? Colors.white
-                                    : AppTheme.accent,
+                                        ? Colors.white
+                                        : AppTheme.accent,
                               ),
                             ),
                           ],
@@ -314,9 +316,10 @@ class _StatusBadgeState extends State<_StatusBadge> {
         if (!status.isOnline) {
           return _pill(dot: AppTheme.textMuted, label: 'Offline', sub: null);
         }
-        final playerText = (status.players != null && status.maxPlayers != null)
-            ? '${status.players}/${status.maxPlayers}'
-            : null;
+        final playerText =
+            (status.players != null && status.maxPlayers != null)
+                ? '${status.players}/${status.maxPlayers}'
+                : null;
         return _pill(dot: AppTheme.success, label: 'Online', sub: playerText);
       },
     );

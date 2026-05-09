@@ -56,6 +56,9 @@ class AppLocalizationsNl extends AppLocalizations {
   String get start => 'Starten';
 
   @override
+  String get stop => 'Stop';
+
+  @override
   String get labelJava => 'Java';
 
   @override
@@ -228,6 +231,60 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get manageServersTooltip => 'Beheer servers';
+
+  @override
+  String get noServerYet => 'No saved servers yet.\nTap Manage to add one.';
+
+  @override
+  String get serverNotSelected => 'No server selected';
+
+  @override
+  String get ready => 'Ready';
+
+  @override
+  String get active => 'Active';
+
+  @override
+  String get vpnDetected => 'VPN Detected';
+
+  @override
+  String get noWifi => 'Not on Wi-Fi';
+
+  @override
+  String get vpnActive => 'We detected that your VPN is active.\n\nPlease disable your VPN before using NetherLink, otherwise the LAN broadcast may not reach your console.';
+
+  @override
+  String get mobileActive => 'Detected: Mobile Data\n\nNetherLink needs to be on the same network as your console. Please connect to your home Wi-Fi or hotspot before continuing.';
+
+  @override
+  String get continueAnyway => 'Continue Anyway';
+
+  @override
+  String get sameWifi => 'Same Wi-Fi Network';
+
+  @override
+  String get needSameWifi => 'The device running NetherLink MUST be on the same Wi-Fi network as the console you play Minecraft on.';
+
+  @override
+  String get subscription => 'Online Subscription Required';
+
+  @override
+  String get needSubscription => 'Each console needs its own active online subscription (Xbox Live, PS Plus, NSO). Without it, NetherLink won\'t appear.';
+
+  @override
+  String get updateAvailable => 'Update Available';
+
+  @override
+  String get newVersion => 'A new version of the app is available.\nUpdate now for the latest features and fixes.';
+
+  @override
+  String get later => 'Later';
+
+  @override
+  String get updateNow => 'Update Now';
+
+  @override
+  String get beforeYouStart => 'BEFORE YOU START';
 
   @override
   String get stopBroadcasting => 'Uitzenden stoppen';
