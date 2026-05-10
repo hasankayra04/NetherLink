@@ -13,7 +13,6 @@ class ServerTabsSection extends StatefulWidget {
     required this.onServerSelected,
     required this.onManageServers,
     required this.broadcasting,
-    required this.onOpenPartnerServers,
   });
 
   final List<UserServer> savedServers;
@@ -22,7 +21,6 @@ class ServerTabsSection extends StatefulWidget {
   final Function(UserServer) onServerSelected;
   final VoidCallback onManageServers;
   final bool broadcasting;
-  final VoidCallback onOpenPartnerServers;
 
   @override
   State<ServerTabsSection> createState() => _ServerTabsSectionState();
@@ -56,12 +54,6 @@ class _ServerTabsSectionState extends State<ServerTabsSection> {
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       child: Row(
         children: [
-          _TabButton(
-            label: 'Partner Servers',
-            trailing: Icons.arrow_forward_ios_rounded,
-            onTap: widget.onOpenPartnerServers,
-          ),
-          const Spacer(),
           _TabButton(
             label: loc.manageServers,
             icon: Icons.settings_rounded,

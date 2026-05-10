@@ -9,6 +9,7 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
   final NavigationController navigationController;
   final VoidCallback? onHowToTapOverride;
   final VoidCallback? onHelpTapOverride;
+  final VoidCallback? onPartnerServersTap;
   final bool dark;
   final String? selectedRelayIp;
   final void Function(String?)? onRelayChanged;
@@ -18,6 +19,7 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
     required this.navigationController,
     this.onHowToTapOverride,
     this.onHelpTapOverride,
+    this.onPartnerServersTap,
     this.dark = true,
     this.selectedRelayIp,
     this.onRelayChanged,
@@ -44,11 +46,9 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
                 onTap: () => navigationController.openDiscord(context),
               ),
               _NavItem(
-                icon: FontAwesomeIcons.bookOpen,
-                label: loc.howToUseMenu,
-                onTap: () => onHowToTapOverride != null
-                    ? onHowToTapOverride!()
-                    : navigationController.showHowToMenu(context),
+                icon: FontAwesomeIcons.handshake,
+                label: 'Partners',
+                onTap: onPartnerServersTap,
               ),
               _NavItem(
                 icon: FontAwesomeIcons.headset,
@@ -78,6 +78,7 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
         navigationController: navigationController,
         selectedRelayIp: selectedRelayIp,
         onRelayChanged: onRelayChanged,
+        onHowToTapOverride: onHowToTapOverride,
       ),
     );
   }
@@ -132,11 +133,13 @@ class _MoreSheet extends StatelessWidget {
   final NavigationController navigationController;
   final String? selectedRelayIp;
   final void Function(String?)? onRelayChanged;
+  final VoidCallback? onHowToTapOverride;
 
   const _MoreSheet({
     required this.navigationController,
     this.selectedRelayIp,
     this.onRelayChanged,
+    this.onHowToTapOverride,
   });
 
   @override
@@ -166,7 +169,6 @@ class _MoreSheet extends StatelessWidget {
               ),
             ),
           ),
-
           Row(
             children: [
               Container(
@@ -197,7 +199,6 @@ class _MoreSheet extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
-
           _RegionSelector(
             selectedIp: selectedRelayIp,
             onChanged: (ip) {
@@ -208,7 +209,20 @@ class _MoreSheet extends StatelessWidget {
           const SizedBox(height: 16),
           const Divider(color: AppTheme.borderDim, height: 1),
           const SizedBox(height: 12),
-
+          _SheetTile(
+            icon: FontAwesomeIcons.bookOpen,
+            color: AppTheme.accent,
+            label: loc.howToUseMenu,
+            onTap: () {
+              Navigator.of(context).pop();
+              if (onHowToTapOverride != null) {
+                onHowToTapOverride!();
+              } else {
+                navigationController.showHowToMenu(context);
+              }
+            },
+          ),
+          const SizedBox(height: 8),
           _SheetTile(
             icon: FontAwesomeIcons.terminal,
             color: AppTheme.info,
@@ -239,7 +253,6 @@ class _MoreSheet extends StatelessWidget {
             },
           ),
           const SizedBox(height: 8),
-
           _AternosTile(
             subtitle: loc.aternosSubtext,
             onTap: () {

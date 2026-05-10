@@ -262,7 +262,6 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                   onServerSelected: widget.onServerSelected,
                   onManageServers: widget.onManageServers,
                   broadcasting: broadcasting,
-                  onOpenPartnerServers: widget.onOpenPartnerServers,
                 ),
               ),
             ),

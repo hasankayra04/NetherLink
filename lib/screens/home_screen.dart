@@ -65,10 +65,10 @@ class _HomeScreenState extends State<HomeScreen> {
   late RelayPingResult _selectedRelay;
 
   static String _friendNameForRelay(String relayName) => switch (relayName) {
-    'EU Server' => 'NetherLinkEU',
-    'US Server' => 'NetherLinkUS',
-    _ => '-',
-  };
+        'EU Server' => 'NetherLinkEU',
+        'US Server' => 'NetherLinkUS',
+        _ => '-',
+      };
 
   @override
   void initState() {
@@ -278,11 +278,6 @@ class _HomeScreenState extends State<HomeScreen> {
       mode: BroadcastMode.values[mode.index],
     );
     if (!ok) return;
-    _snack(
-      loc.dnsConfigSent,
-      AppTheme.accent,
-      icon: Icons.check_circle_outline_rounded,
-    );
     final relayName = _selectedRelay.name;
     if (mode == PanelMode.nintendo) {
       await HowToDialogs.showNintendoInstructions(
@@ -321,25 +316,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     _broadcastingNotifier.value = success;
-    if (success) {
-      _snack(
-        loc.broadcastingStarted,
-        AppTheme.success,
-        icon: Icons.check_circle_outline_rounded,
-      );
-    }
   }
 
   Future<void> _stopBroadcast() async {
     await _broadcastManager.stopBroadcast();
     _broadcastingNotifier.value = false;
-    if (mounted) {
-      _snack(
-        AppLocalizations.of(context)!.broadcastStopped,
-        AppTheme.surfaceLight,
-        icon: Icons.stop_circle_outlined,
-      );
-    }
   }
 
   void _handleAutoDisconnect() {
@@ -414,6 +395,10 @@ class _HomeScreenState extends State<HomeScreen> {
     AppToast.show(context, message: message, icon: icon, color: color);
   }
 
+  void _openPartnerServers() {
+    setState(() => _pageIndex = 1);
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -428,6 +413,7 @@ class _HomeScreenState extends State<HomeScreen> {
           dark: true,
           selectedRelayIp: _selectedRelay.ip,
           onRelayChanged: _onRelayChanged,
+          onPartnerServersTap: _openPartnerServers,
         ),
         body: SafeArea(
           top: true,
