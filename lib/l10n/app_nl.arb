@@ -327,6 +327,25 @@
   "@useSystemLanguage": {
     "description": "Button that resets localization to the system/default locale"
   },
+  "updateAvailable": "Update beschikbaar",
+  "needSameWifi": "Het apparaat waarop NetherLink draait MOET zich op hetzelfde wifi-netwerk bevinden als de console waarop je Minecraft speelt.",
+  "active": "Actief",
+  "newVersion": "Er is een nieuwe versie van de app beschikbaar.\nWerk nu bij voor de nieuwste functies en verbeteringen.",
+  "noServerYet": "Nog geen servers opgeslagen.\nTik op Beheren om er een toe te voegen.",
+  "beforeYouStart": "VOORDAT JE BEGINT",
+  "stop": "Stoppen",
+  "later": "Later",
+  "continueAnyway": "Toch doorgaan",
+  "serverNotSelected": "Geen server geselecteerd",
+  "noWifi": "Niet op wifi",
+  "vpnDetected": "VPN gedetecteerd",
+  "ready": "Klaar",
+  "vpnActive": "We hebben gedetecteerd dat je VPN actief is.\n\nSchakel je VPN uit voordat je NetherLink gebruikt, anders bereikt de LAN-uitzending je console mogelijk niet.",
+  "updateNow": "Nu bijwerken",
+  "needSubscription": "Elke console heeft een eigen actief online abonnement nodig (Xbox Live, PS Plus, NSO). Zonder dat verschijnt NetherLink niet.",
+  "mobileActive": "Gedetecteerd: mobiele data\n\nNetherLink moet zich op hetzelfde netwerk bevinden als je console. Verbind eerst met je wifi of hotspot voordat je doorgaat.",
+  "sameWifi": "Zelfde wifi-netwerk",
+  "subscription": "Online abonnement vereist",
   "couldNotOpenUrl": "Kon URL niet openen",
   "@couldNotOpenUrl": {
     "description": "Snackbar message when launching an external URL fails"

@@ -345,6 +345,25 @@
     "@useSystemLanguage":  {
                                "description":  "Button that resets localization to the system/default locale"
                            },
+    "updateAvailable":  "アップデートがあります",
+    "needSameWifi":  "NetherLink を実行している端末は、Minecraft をプレイするコンソールと同じ Wi‑Fi ネットワーク上にある必要があります。",
+    "active":  "アクティブ",
+    "newVersion":  "アプリの新しいバージョンが利用できます。\n最新の機能と修正のため、今すぐ更新してください。",
+    "noServerYet":  "保存されたサーバーはまだありません。\n追加するには「管理」をタップしてください。",
+    "beforeYouStart":  "始める前に",
+    "stop":  "停止",
+    "later":  "後で",
+    "continueAnyway":  "このまま続行",
+    "serverNotSelected":  "サーバーが選択されていません",
+    "noWifi":  "Wi‑Fi に接続されていません",
+    "vpnDetected":  "VPN が検出されました",
+    "ready":  "準備完了",
+    "vpnActive":  "VPN が有効になっていることを検出しました。\n\nNetherLink を使用する前に VPN を無効にしてください。そうしないと、LAN ブロードキャストがコンソールに届かない可能性があります。",
+    "updateNow":  "今すぐ更新",
+    "needSubscription":  "各コンソールには有効なオンライン加入サービス（Xbox Live、PS Plus、NSO）が必要です。ない場合、NetherLink は表示されません。",
+    "mobileActive":  "検出: モバイルデータ\n\nNetherLink はコンソールと同じネットワーク上にある必要があります。続行する前に、自宅の Wi‑Fi またはホットスポットに接続してください。",
+    "sameWifi":  "同じ Wi‑Fi ネットワーク",
+    "subscription":  "オンライン加入が必要",
     "couldNotOpenUrl":  "URL を開けませんでした",
     "@couldNotOpenUrl":  {
                              "description":  "Snackbar message when launching an external URL fails"

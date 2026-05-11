@@ -345,6 +345,25 @@
     "@useSystemLanguage":  {
                                "description":  "Button that resets localization to the system/default locale"
                            },
+    "updateAvailable":  "আপডেট উপলব্ধ",
+    "needSameWifi":  "যে ডিভাইসে NetherLink চলছে সেটি অবশ্যই সেই একই Wi‑Fi নেটওয়ার্কে থাকতে হবে, যেটিতে আপনার Minecraft কনসোল যুক্ত আছে।",
+    "active":  "সক্রিয়",
+    "newVersion":  "অ্যাপের একটি নতুন সংস্করণ উপলব্ধ।\nসর্বশেষ ফিচার ও সংশোধনের জন্য এখনই আপডেট করুন।",
+    "noServerYet":  "এখনও কোনো সংরক্ষিত সার্ভার নেই।\nএকটি যোগ করতে ম্যানেজে ট্যাপ করুন।",
+    "beforeYouStart":  "শুরু করার আগে",
+    "stop":  "বন্ধ করুন",
+    "later":  "পরে",
+    "continueAnyway":  "তবুও চালিয়ে যান",
+    "serverNotSelected":  "কোনো সার্ভার নির্বাচিত নয়",
+    "noWifi":  "Wi‑Fi এ নেই",
+    "vpnDetected":  "VPN শনাক্ত হয়েছে",
+    "ready":  "প্রস্তুত",
+    "vpnActive":  "আমরা শনাক্ত করেছি যে আপনার VPN সক্রিয় আছে।\n\nNetherLink ব্যবহার করার আগে অনুগ্রহ করে VPN বন্ধ করুন, নইলে LAN সম্প্রচার আপনার কনসোলে পৌঁছাতে নাও পারে।",
+    "updateNow":  "এখনই আপডেট করুন",
+    "needSubscription":  "প্রতিটি কনসোলের জন্য আলাদা সক্রিয় অনলাইন সাবস্ক্রিপশন (Xbox Live, PS Plus, NSO) প্রয়োজন। এটি না থাকলে NetherLink দেখা যাবে না।",
+    "mobileActive":  "শনাক্ত হয়েছে: মোবাইল ডেটা\n\nNetherLink কে আপনার কনসোলের একই নেটওয়ার্কে থাকতে হবে। চালিয়ে যাওয়ার আগে আপনার হোম Wi‑Fi বা হটস্পটে সংযুক্ত হোন।",
+    "sameWifi":  "একই Wi‑Fi নেটওয়ার্ক",
+    "subscription":  "অনলাইন সাবস্ক্রিপশন প্রয়োজন",
     "couldNotOpenUrl":  "URL খোলা যায়নি",
     "@couldNotOpenUrl":  {
                              "description":  "Snackbar message when launching an external URL fails"

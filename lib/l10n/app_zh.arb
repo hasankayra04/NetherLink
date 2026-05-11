@@ -345,6 +345,25 @@
     "@useSystemLanguage":  {
                                "description":  "Button that resets localization to the system/default locale"
                            },
+    "updateAvailable":  "有可用更新",
+    "needSameWifi":  "运行 NetherLink 的设备必须与您游玩 Minecraft 的主机连接到同一个 Wi‑Fi 网络。",
+    "active":  "活动中",
+    "newVersion":  "有新版本应用可用。\n立即更新以获取最新功能和修复。",
+    "noServerYet":  "还没有已保存的服务器。\n点击“管理”以添加一个。",
+    "beforeYouStart":  "开始之前",
+    "stop":  "停止",
+    "later":  "稍后",
+    "continueAnyway":  "仍然继续",
+    "serverNotSelected":  "未选择服务器",
+    "noWifi":  "未连接到 Wi‑Fi",
+    "vpnDetected":  "检测到 VPN",
+    "ready":  "就绪",
+    "vpnActive":  "我们检测到您的 VPN 已开启。\n\n请先关闭 VPN 再使用 NetherLink，否则局域网广播可能无法到达您的主机。",
+    "updateNow":  "立即更新",
+    "needSubscription":  "每台主机都需要各自有效的在线订阅服务（Xbox Live、PS Plus、NSO）。否则 NetherLink 不会显示。",
+    "mobileActive":  "检测到：移动数据\n\nNetherLink 必须与您的主机位于同一网络。请先连接家庭 Wi‑Fi 或热点后再继续。",
+    "sameWifi":  "同一 Wi‑Fi 网络",
+    "subscription":  "需要在线订阅",
     "couldNotOpenUrl":  "无法打开 URL",
     "@couldNotOpenUrl":  {
                              "description":  "Snackbar message when launching an external URL fails"

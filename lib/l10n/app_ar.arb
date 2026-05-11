@@ -345,6 +345,25 @@
     "@useSystemLanguage":  {
                                "description":  "Button that resets localization to the system/default locale"
                            },
+    "updateAvailable":  "يتوفر تحديث",
+    "needSameWifi":  "يجب أن يكون الجهاز الذي يشغّل NetherLink على نفس شبكة Wi‑Fi الخاصة بالجهاز الذي تلعب عليه Minecraft.",
+    "active":  "نشط",
+    "newVersion":  "يتوفر إصدار جديد من التطبيق.\nحدّث الآن للحصول على أحدث الميزات والإصلاحات.",
+    "noServerYet":  "لا توجد خوادم محفوظة بعد.\nاضغط على إدارة لإضافة خادم.",
+    "beforeYouStart":  "قبل أن تبدأ",
+    "stop":  "إيقاف",
+    "later":  "لاحقًا",
+    "continueAnyway":  "المتابعة على أي حال",
+    "serverNotSelected":  "لم يتم تحديد خادم",
+    "noWifi":  "لست متصلاً بشبكة Wi‑Fi",
+    "vpnDetected":  "تم اكتشاف VPN",
+    "ready":  "جاهز",
+    "vpnActive":  "اكتشفنا أن الـ VPN لديك مفعّل.\n\nيرجى تعطيل الـ VPN قبل استخدام NetherLink، وإلا فقد لا يصل بث LAN إلى جهازك.",
+    "updateNow":  "حدّث الآن",
+    "needSubscription":  "تحتاج كل منصة إلى اشتراكها النشط الخاص بها عبر الإنترنت (Xbox Live أو PS Plus أو NSO). بدون ذلك، لن يظهر NetherLink.",
+    "mobileActive":  "تم الاكتشاف: بيانات الجوال\n\nيجب أن يكون NetherLink على نفس الشبكة مثل جهازك. يرجى الاتصال بشبكة Wi‑Fi المنزلية أو نقطة الاتصال قبل المتابعة.",
+    "sameWifi":  "نفس شبكة Wi‑Fi",
+    "subscription":  "اشتراك عبر الإنترنت مطلوب",
     "couldNotOpenUrl":  "تعذر فتح الرابط",
     "@couldNotOpenUrl":  {
                              "description":  "Snackbar message when launching an external URL fails"

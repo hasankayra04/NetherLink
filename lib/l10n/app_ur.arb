@@ -345,6 +345,25 @@
     "@useSystemLanguage":  {
                                "description":  "Button that resets localization to the system/default locale"
                            },
+    "updateAvailable":  "اپ ڈیٹ دستیاب ہے",
+    "needSameWifi":  "جس ڈیوائس پر NetherLink چل رہا ہے وہ اسی Wi‑Fi نیٹ ورک پر ہونا چاہیے جس پر آپ Minecraft کھیلنے والا کنسول موجود ہے۔",
+    "active":  "فعال",
+    "newVersion":  "ایپ کا نیا ورژن دستیاب ہے۔\nتازہ ترین خصوصیات اور بہتریوں کے لیے ابھی اپ ڈیٹ کریں۔",
+    "noServerYet":  "ابھی تک کوئی محفوظ سرور نہیں ہے۔\nایک شامل کرنے کے لیے مینیج پر ٹیپ کریں۔",
+    "beforeYouStart":  "شروع کرنے سے پہلے",
+    "stop":  "روکیں",
+    "later":  "بعد میں",
+    "continueAnyway":  "پھر بھی جاری رکھیں",
+    "serverNotSelected":  "کوئی سرور منتخب نہیں کیا گیا",
+    "noWifi":  "Wi‑Fi پر نہیں",
+    "vpnDetected":  "VPN کا پتہ چل گیا",
+    "ready":  "تیار",
+    "vpnActive":  "ہم نے پتہ لگایا ہے کہ آپ کا VPN فعال ہے۔\n\nNetherLink استعمال کرنے سے پہلے براہ کرم VPN بند کریں، ورنہ LAN براڈکاسٹ آپ کے کنسول تک نہیں پہنچ پائے گی۔",
+    "updateNow":  "ابھی اپ ڈیٹ کریں",
+    "needSubscription":  "ہر کنسول کے لیے الگ فعال آن لائن سبسکرپشن (Xbox Live، PS Plus، NSO) درکار ہے۔ اس کے بغیر NetherLink ظاہر نہیں ہوگا۔",
+    "mobileActive":  "پتہ چلا: موبائل ڈیٹا\n\nNetherLink کو آپ کے کنسول کے اسی نیٹ ورک پر ہونا چاہیے۔ آگے بڑھنے سے پہلے اپنے ہوم Wi‑Fi یا ہاٹ اسپاٹ سے جڑیں۔",
+    "sameWifi":  "ایک ہی Wi‑Fi نیٹ ورک",
+    "subscription":  "آن لائن سبسکرپشن درکار ہے",
     "couldNotOpenUrl":  "URL نہیں کھولا جا سکا",
     "@couldNotOpenUrl":  {
                              "description":  "Snackbar message when launching an external URL fails"
