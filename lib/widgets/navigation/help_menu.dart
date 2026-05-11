@@ -2,47 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/app_theme.dart';
-import '../dialogs/help_dialogs.dart';
 
-class HelpMenu {
-  static Future<void> show(
-    BuildContext context, {
-    VoidCallback? onNetherLink,
-    VoidCallback? onMultiplayerFailed,
-    VoidCallback? onNintendoDns,
-    VoidCallback? onFriendsMode,
-  }) {
-    final loc = AppLocalizations.of(context)!;
-    return showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) => _HelpSheet(
-        loc: loc,
-        sheetCtx: ctx,
-        outerCtx: context,
-        onNetherLink: onNetherLink,
-        onMultiplayerFailed: onMultiplayerFailed,
-        onNintendoDns: onNintendoDns,
-        onFriendsMode: onFriendsMode,
-      ),
-    );
-  }
-}
-
-class _HelpSheet extends StatelessWidget {
+class HelpSheetContent extends StatelessWidget {
   final AppLocalizations loc;
-  final BuildContext sheetCtx;
-  final BuildContext outerCtx;
+  final VoidCallback onClose;
   final VoidCallback? onNetherLink;
   final VoidCallback? onMultiplayerFailed;
   final VoidCallback? onNintendoDns;
   final VoidCallback? onFriendsMode;
 
-  const _HelpSheet({
+  const HelpSheetContent({
+    super.key,
     required this.loc,
-    required this.sheetCtx,
-    required this.outerCtx,
+    required this.onClose,
     this.onNetherLink,
     this.onMultiplayerFailed,
     this.onNintendoDns,
@@ -51,39 +23,48 @@ class _HelpSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewInsets.bottom;
     return Container(
       decoration: const BoxDecoration(
         color: AppTheme.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         border: Border(top: BorderSide(color: AppTheme.borderGray)),
       ),
-      padding: EdgeInsets.fromLTRB(16, 0, 16, 20 + bottom),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Center(
-            child: Container(
-              width: 36, height: 4,
-              margin: const EdgeInsets.symmetric(vertical: 14),
-              decoration: BoxDecoration(
-                color: AppTheme.borderLight,
-                borderRadius: BorderRadius.circular(4),
+          GestureDetector(
+            onTap: onClose,
+            behavior: HitTestBehavior.opaque,
+            child: Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppTheme.borderLight,
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
             ),
           ),
           Row(
             children: [
               Container(
-                width: 38, height: 38,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
                   color: AppTheme.error.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(11),
                   border: Border.all(color: AppTheme.error.withOpacity(0.25)),
                 ),
                 child: const Center(
-                  child: FaIcon(FontAwesomeIcons.lifeRing, color: AppTheme.error, size: 15),
+                  child: FaIcon(
+                    FontAwesomeIcons.lifeRing,
+                    color: AppTheme.error,
+                    size: 15,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -103,10 +84,7 @@ class _HelpSheet extends StatelessWidget {
             color: AppTheme.info,
             title: loc.helpNetherlinkTitle,
             subtitle: loc.helpNetherlinkSubtitle,
-            onTap: () {
-              Navigator.of(sheetCtx).pop();
-              (onNetherLink ?? () => HelpDialogs.showNetherlinkNotAppearing(outerCtx))();
-            },
+            onTap: onNetherLink ?? () {},
           ),
           const SizedBox(height: 8),
           _tile(
@@ -114,10 +92,7 @@ class _HelpSheet extends StatelessWidget {
             color: AppTheme.warning,
             title: loc.helpMultiplayerFailedTitle,
             subtitle: loc.helpMultiplayerFailedSubtitle,
-            onTap: () {
-              Navigator.of(sheetCtx).pop();
-              (onMultiplayerFailed ?? () => HelpDialogs.showMultiplayerConnectionFailed(outerCtx))();
-            },
+            onTap: onMultiplayerFailed ?? () {},
           ),
           const SizedBox(height: 8),
           _tile(
@@ -125,10 +100,7 @@ class _HelpSheet extends StatelessWidget {
             color: AppTheme.modeNintendo,
             title: loc.helpNintendoDnsTitle,
             subtitle: loc.helpNintendoDnsSubtitle,
-            onTap: () {
-              Navigator.of(sheetCtx).pop();
-              (onNintendoDns ?? () => HelpDialogs.showNintendoDns(outerCtx))();
-            },
+            onTap: onNintendoDns ?? () {},
           ),
           const SizedBox(height: 8),
           _tile(
@@ -136,10 +108,7 @@ class _HelpSheet extends StatelessWidget {
             color: AppTheme.modeFriends,
             title: loc.helpFriendsModeTitle,
             subtitle: loc.helpFriendsModeSubtitle,
-            onTap: () {
-              Navigator.of(sheetCtx).pop();
-              (onFriendsMode ?? () => HelpDialogs.showFriendsMode(outerCtx))();
-            },
+            onTap: onFriendsMode ?? () {},
           ),
         ],
       ),
@@ -168,7 +137,8 @@ class _HelpSheet extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 44, height: 44,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.14),
                   borderRadius: BorderRadius.circular(13),
@@ -180,22 +150,30 @@ class _HelpSheet extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title,
-                        style: TextStyle(
-                          color: color,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                        )),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: color,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
                     const SizedBox(height: 3),
-                    Text(subtitle,
-                        style: const TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontSize: 12,
-                        )),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              Icon(Icons.arrow_forward_ios_rounded, color: color.withOpacity(0.4), size: 13),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: color.withOpacity(0.4),
+                size: 13,
+              ),
             ],
           ),
         ),

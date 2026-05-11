@@ -9,7 +9,9 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
   final NavigationController navigationController;
   final VoidCallback? onHowToTapOverride;
   final VoidCallback? onHelpTapOverride;
+  final VoidCallback? onMoreTapOverride;
   final VoidCallback? onPartnerServersTap;
+  final VoidCallback? onAnyTap;
   final bool dark;
   final String? selectedRelayIp;
   final void Function(String?)? onRelayChanged;
@@ -19,7 +21,9 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
     required this.navigationController,
     this.onHowToTapOverride,
     this.onHelpTapOverride,
+    this.onMoreTapOverride,
     this.onPartnerServersTap,
+    this.onAnyTap,
     this.dark = true,
     this.selectedRelayIp,
     this.onRelayChanged,
@@ -43,24 +47,46 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
                 icon: FontAwesomeIcons.discord,
                 label: loc.discord,
                 accentColor: const Color(0xFF5865F2),
-                onTap: () => navigationController.openDiscord(context),
+                onTap: () async {
+                  if (onAnyTap != null) {
+                    onAnyTap!();
+                  }
+                  navigationController.openDiscord(context);
+                },
               ),
               _NavItem(
                 icon: FontAwesomeIcons.handshake,
                 label: 'Partners',
-                onTap: onPartnerServersTap,
+                onTap: () async {
+                  if (onAnyTap != null) {
+                    onAnyTap!();
+                  }
+                  onPartnerServersTap?.call();
+                },
               ),
               _NavItem(
                 icon: FontAwesomeIcons.headset,
                 label: loc.support,
-                onTap: () => onHelpTapOverride != null
-                    ? onHelpTapOverride!()
-                    : navigationController.showHelpMenu(context),
+                onTap: () async {
+                  if (onAnyTap != null) {
+                    onAnyTap!();
+                  }
+                  if (onHelpTapOverride != null) {
+                    onHelpTapOverride!();
+                  } else {
+                    navigationController.showHelpMenu(context);
+                  }
+                },
               ),
               _NavItem(
                 icon: FontAwesomeIcons.ellipsis,
                 label: loc.more,
-                onTap: () => _showMoreSheet(context),
+                onTap: () async {
+                  if (onAnyTap != null) {
+                    onAnyTap!();
+                  }
+                  (onMoreTapOverride ?? () => _showMoreSheetFallback(context))();
+                },
               ),
             ],
           ),
@@ -69,16 +95,24 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
     );
   }
 
-  void _showMoreSheet(BuildContext context) {
+  void _showMoreSheetFallback(BuildContext context) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) => _MoreSheet(
+      builder: (_) => MoreSheetContent(
+        loc: AppLocalizations.of(context)!,
         navigationController: navigationController,
         selectedRelayIp: selectedRelayIp,
-        onRelayChanged: onRelayChanged,
-        onHowToTapOverride: onHowToTapOverride,
+        onClose: () => Navigator.of(context).pop(),
+        onRelayChanged: (ip) {
+          Navigator.of(context).pop();
+          onRelayChanged?.call(ip);
+        },
+        onHowTo: () {
+          Navigator.of(context).pop();
+          navigationController.showHowToMenu(context);
+        },
       ),
     );
   }
@@ -129,43 +163,49 @@ class _NavItem extends StatelessWidget {
   }
 }
 
-class _MoreSheet extends StatelessWidget {
+class MoreSheetContent extends StatelessWidget {
+  final AppLocalizations loc;
   final NavigationController navigationController;
   final String? selectedRelayIp;
-  final void Function(String?)? onRelayChanged;
-  final VoidCallback? onHowToTapOverride;
+  final VoidCallback onClose;
+  final void Function(String?) onRelayChanged;
+  final VoidCallback onHowTo;
 
-  const _MoreSheet({
+  const MoreSheetContent({
+    super.key,
+    required this.loc,
     required this.navigationController,
+    required this.onClose,
+    required this.onRelayChanged,
+    required this.onHowTo,
     this.selectedRelayIp,
-    this.onRelayChanged,
-    this.onHowToTapOverride,
   });
 
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    final bottom = MediaQuery.of(context).viewInsets.bottom;
-
     return Container(
       decoration: const BoxDecoration(
         color: AppTheme.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         border: Border(top: BorderSide(color: AppTheme.borderGray)),
       ),
-      padding: EdgeInsets.fromLTRB(16, 0, 16, 20 + bottom),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              margin: const EdgeInsets.symmetric(vertical: 14),
-              decoration: BoxDecoration(
-                color: AppTheme.borderLight,
-                borderRadius: BorderRadius.circular(4),
+          GestureDetector(
+            onTap: onClose,
+            behavior: HitTestBehavior.opaque,
+            child: Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppTheme.borderLight,
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
             ),
           ),
@@ -180,11 +220,8 @@ class _MoreSheet extends StatelessWidget {
                   border: Border.all(color: AppTheme.accent.withOpacity(0.25)),
                 ),
                 child: const Center(
-                  child: FaIcon(
-                    FontAwesomeIcons.ellipsis,
-                    color: AppTheme.accent,
-                    size: 15,
-                  ),
+                  child: FaIcon(FontAwesomeIcons.ellipsis,
+                      color: AppTheme.accent, size: 15),
                 ),
               ),
               const SizedBox(width: 12),
@@ -201,10 +238,7 @@ class _MoreSheet extends StatelessWidget {
           const SizedBox(height: 18),
           _RegionSelector(
             selectedIp: selectedRelayIp,
-            onChanged: (ip) {
-              onRelayChanged?.call(ip);
-              Navigator.of(context).pop();
-            },
+            onChanged: onRelayChanged,
           ),
           const SizedBox(height: 16),
           const Divider(color: AppTheme.borderDim, height: 1),
@@ -213,14 +247,7 @@ class _MoreSheet extends StatelessWidget {
             icon: FontAwesomeIcons.bookOpen,
             color: AppTheme.accent,
             label: loc.howToUseMenu,
-            onTap: () {
-              Navigator.of(context).pop();
-              if (onHowToTapOverride != null) {
-                onHowToTapOverride!();
-              } else {
-                navigationController.showHowToMenu(context);
-              }
-            },
+            onTap: onHowTo,
           ),
           const SizedBox(height: 8),
           _SheetTile(
@@ -228,7 +255,7 @@ class _MoreSheet extends StatelessWidget {
             color: AppTheme.info,
             label: loc.console,
             onTap: () {
-              Navigator.of(context).pop();
+              onClose();
               navigationController.showConsole(context);
             },
           ),
@@ -238,7 +265,7 @@ class _MoreSheet extends StatelessWidget {
             color: AppTheme.success,
             label: loc.website,
             onTap: () {
-              Navigator.of(context).pop();
+              onClose();
               navigationController.openWebsite(context);
             },
           ),
@@ -248,7 +275,7 @@ class _MoreSheet extends StatelessWidget {
             color: AppTheme.warning,
             label: loc.changeLanguage,
             onTap: () {
-              Navigator.of(context).pop();
+              onClose();
               navigationController.showLanguageDialog(context);
             },
           ),
@@ -256,11 +283,9 @@ class _MoreSheet extends StatelessWidget {
           _AternosTile(
             subtitle: loc.aternosSubtext,
             onTap: () {
-              Navigator.of(context).pop();
+              onClose();
               navigationController.openWebsiteWithCustomUrl(
-                context,
-                'https://aternos.org/',
-              );
+                  context, 'https://aternos.org/');
             },
           ),
         ],
@@ -304,10 +329,8 @@ class _AternosTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(11),
                   child: Padding(
                     padding: const EdgeInsets.all(6),
-                    child: Image.asset(
-                      'assets/icons/aternos.png',
-                      fit: BoxFit.contain,
-                    ),
+                    child: Image.asset('assets/icons/aternos.png',
+                        fit: BoxFit.contain),
                   ),
                 ),
               ),
@@ -316,34 +339,27 @@ class _AternosTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Aternos',
-                      style: TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
+                    const Text('Aternos',
+                        style: TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        )),
                     if (subtitle != null) ...[
                       const SizedBox(height: 2),
-                      Text(
-                        subtitle!,
-                        style: const TextStyle(
-                          color: AppTheme.textMuted,
-                          fontSize: 11,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      Text(subtitle!,
+                          style: const TextStyle(
+                            color: AppTheme.textMuted,
+                            fontSize: 11,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
                     ],
                   ],
                 ),
               ),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: _color.withOpacity(0.45),
-                size: 13,
-              ),
+              Icon(Icons.arrow_forward_ios_rounded,
+                  color: _color.withOpacity(0.45), size: 13),
             ],
           ),
         ),
@@ -397,34 +413,27 @@ class _SheetTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
+                    Text(label,
+                        style: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        )),
                     if (subtitle != null) ...[
                       const SizedBox(height: 2),
-                      Text(
-                        subtitle!,
-                        style: const TextStyle(
-                          color: AppTheme.textMuted,
-                          fontSize: 11,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      Text(subtitle!,
+                          style: const TextStyle(
+                            color: AppTheme.textMuted,
+                            fontSize: 11,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
                     ],
                   ],
                 ),
               ),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: color.withOpacity(0.45),
-                size: 13,
-              ),
+              Icon(Icons.arrow_forward_ios_rounded,
+                  color: color.withOpacity(0.45), size: 13),
             ],
           ),
         ),
@@ -471,9 +480,7 @@ class _RegionSelector extends StatelessWidget {
                     left: isFirst ? 0 : 6,
                   ),
                   padding: const EdgeInsets.symmetric(
-                    vertical: 13,
-                    horizontal: 12,
-                  ),
+                      vertical: 13, horizontal: 12),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppTheme.accent.withOpacity(0.10)

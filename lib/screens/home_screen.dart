@@ -30,6 +30,8 @@ import '../widgets/dialogs/howto_dialogs.dart';
 import '../widgets/dialogs/help_dialogs.dart';
 import 'partner_servers_screen.dart';
 
+enum _ActiveSheet { none, help, howTo, more }
+
 class HomeScreen extends StatefulWidget {
   final RelayPingResult? initialRelay;
   const HomeScreen({super.key, this.initialRelay});
@@ -38,7 +40,8 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   late final SocketHandler socketHandler;
   late final BroadcastManager _broadcastManager;
   late final Logger logger;
@@ -64,17 +67,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
   late RelayPingResult _selectedRelay;
 
+  _ActiveSheet _activeSheet = _ActiveSheet.none;
+  late final AnimationController _sheetAnimController;
+  late final Animation<double> _sheetAnim;
+
   static String _friendNameForRelay(String relayName) => switch (relayName) {
-        'EU Server' => 'NetherLinkEU',
-        'US Server' => 'NetherLinkUS',
-        _ => '-',
-      };
+    'EU Server' => 'NetherLinkEU',
+    'US Server' => 'NetherLinkUS',
+    _ => '-',
+  };
 
   @override
   void initState() {
     super.initState();
     _selectedRelay = widget.initialRelay ?? _fallbackRelay();
     _partnerServersFuture = FeaturedServersService.fetchFeaturedServers();
+
+    _sheetAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 280),
+    );
+    _sheetAnim = CurvedAnimation(
+      parent: _sheetAnimController,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+
     _initializeComponents();
     _loadUserServers();
     _fetchNotification();
@@ -114,40 +132,27 @@ class _HomeScreenState extends State<HomeScreen> {
       copyLogsCallback: _copyLogsToClipboard,
       clearLogsCallback: _clearLogs,
       showXboxHelpCallback: _showXboxHelp,
-      showHowToMenuCallback: (ctx) {
-        final relayName = _selectedRelay.name;
-        final relayIp = _selectedRelay.ip;
-        HowToMenu.show(
-          ctx,
-          onXbox: _showXboxHelp,
-          onNintendo: () => HowToDialogs.showNintendoInstructions(
-            context,
-            relayName: relayName,
-            relayIp: relayIp,
-          ),
-          onFriends: () => HowToDialogs.showFriendsInstructions(
-            context,
-            friendName: _friendNameForRelay(relayName),
-          ),
-          onJava: () => HowToDialogs.showJavaInstructions(context),
-        );
-      },
-      showHelpMenuCallback: (ctx) {
-        HelpMenu.show(
-          ctx,
-          onNetherLink: () => HelpDialogs.showNetherlinkNotAppearing(ctx),
-          onMultiplayerFailed: () =>
-              HelpDialogs.showMultiplayerConnectionFailed(ctx),
-          onNintendoDns: () => HelpDialogs.showNintendoDns(ctx),
-          onFriendsMode: () => HelpDialogs.showFriendsMode(ctx),
-        );
-      },
+      showHowToMenuCallback: (_) => _openSheet(_ActiveSheet.howTo),
+      showHelpMenuCallback: (_) => _openSheet(_ActiveSheet.help),
     );
+  }
+
+  void _openSheet(_ActiveSheet sheet) {
+    if (_activeSheet == sheet) return;
+    setState(() => _activeSheet = sheet);
+    _sheetAnimController.forward(from: 0);
+  }
+
+  Future<void> _closeSheet() async {
+    if (_activeSheet == _ActiveSheet.none) return;
+    await _sheetAnimController.reverse();
+    if (mounted) setState(() => _activeSheet = _ActiveSheet.none);
   }
 
   @override
   void dispose() {
     _noticeTimer?.cancel();
+    _sheetAnimController.dispose();
     _ipController.dispose();
     _portController.dispose();
     _logScrollController.dispose();
@@ -199,7 +204,6 @@ class _HomeScreenState extends State<HomeScreen> {
       message,
     ];
     _logsNotifier.value = next;
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_logScrollController.hasClients && mounted) {
         _logScrollController.animateTo(
@@ -260,7 +264,6 @@ class _HomeScreenState extends State<HomeScreen> {
       await _handleDnsMode(mode, remoteHost, remotePortParsed, loc);
       return;
     }
-
     await _handleBroadcastMode(mode, remoteHost, remotePortParsed, loc);
   }
 
@@ -305,7 +308,6 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       logger.error('Failed to enable wakelock: $e');
     }
-
     final success = await _broadcastManager.startBroadcast(
       remoteHost,
       remotePort,
@@ -314,7 +316,6 @@ class _HomeScreenState extends State<HomeScreen> {
       isJava: mode == PanelMode.java,
       mode: BroadcastMode.values[mode.index],
     );
-
     _broadcastingNotifier.value = success;
   }
 
@@ -401,10 +402,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+
     return PopScope(
-      canPop: _pageIndex == 0,
+      canPop: _pageIndex == 0 && _activeSheet == _ActiveSheet.none,
       onPopInvoked: (didPop) {
-        if (!didPop) setState(() => _pageIndex = 0);
+        if (!didPop) {
+          if (_activeSheet != _ActiveSheet.none) {
+            _closeSheet();
+          } else {
+            setState(() => _pageIndex = 0);
+          }
+        }
       },
       child: Scaffold(
         backgroundColor: AppTheme.background,
@@ -413,7 +422,26 @@ class _HomeScreenState extends State<HomeScreen> {
           dark: true,
           selectedRelayIp: _selectedRelay.ip,
           onRelayChanged: _onRelayChanged,
-          onPartnerServersTap: _openPartnerServers,
+          onPartnerServersTap: () async {
+            await _closeSheet();
+            _openPartnerServers();
+          },
+          onAnyTap: _closeSheet,
+          onHelpTapOverride: () async {
+            if (_activeSheet == _ActiveSheet.help) return;
+            await _closeSheet();
+            _openSheet(_ActiveSheet.help);
+          },
+          onHowToTapOverride: () async {
+            if (_activeSheet == _ActiveSheet.howTo) return;
+            await _closeSheet();
+            _openSheet(_ActiveSheet.howTo);
+          },
+          onMoreTapOverride: () async {
+            if (_activeSheet == _ActiveSheet.more) return;
+            await _closeSheet();
+            _openSheet(_ActiveSheet.more);
+          },
         ),
         body: SafeArea(
           top: true,
@@ -452,7 +480,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-
                   PartnerServersScreen(
                     partnerServersFuture: _partnerServersFuture,
                     ipController: _ipController,
@@ -476,10 +503,110 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
                 ),
+
+              if (_activeSheet != _ActiveSheet.none) ...[
+                AnimatedBuilder(
+                  animation: _sheetAnim,
+                  builder: (_, __) => GestureDetector(
+                    onTap: _closeSheet,
+                    child: Container(
+                      color: Colors.black.withOpacity(0.45 * _sheetAnim.value),
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: AnimatedBuilder(
+                    animation: _sheetAnim,
+                    builder: (_, child) => FractionalTranslation(
+                      translation: Offset(0, 1 - _sheetAnim.value),
+                      child: child,
+                    ),
+                    child: _buildActiveSheetContent(loc),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildActiveSheetContent(AppLocalizations loc) {
+    switch (_activeSheet) {
+      case _ActiveSheet.help:
+        return HelpSheetContent(
+          loc: loc,
+          onClose: _closeSheet,
+          onNetherLink: () {
+            _closeSheet();
+            HelpDialogs.showNetherlinkNotAppearing(context);
+          },
+          onMultiplayerFailed: () {
+            _closeSheet();
+            HelpDialogs.showMultiplayerConnectionFailed(context);
+          },
+          onNintendoDns: () {
+            _closeSheet();
+            HelpDialogs.showNintendoDns(context);
+          },
+          onFriendsMode: () {
+            _closeSheet();
+            HelpDialogs.showFriendsMode(context);
+          },
+        );
+      case _ActiveSheet.howTo:
+        return HowToSheetContent(
+          loc: loc,
+          onClose: _closeSheet,
+          onXbox: () {
+            _closeSheet();
+            _showXboxHelp();
+          },
+          onNintendo: () {
+            _closeSheet();
+            HowToDialogs.showNintendoInstructions(
+              context,
+              relayName: _selectedRelay.name,
+              relayIp: _selectedRelay.ip,
+            );
+          },
+          onFriends: () {
+            _closeSheet();
+            HowToDialogs.showFriendsInstructions(
+              context,
+              friendName: _friendNameForRelay(_selectedRelay.name),
+            );
+          },
+          onJava: () {
+            _closeSheet();
+            HowToDialogs.showJavaInstructions(context);
+          },
+        );
+      case _ActiveSheet.more:
+        return MoreSheetContent(
+          loc: loc,
+          navigationController: navigationController,
+          selectedRelayIp: _selectedRelay.ip,
+          onClose: _closeSheet,
+          onRelayChanged: (ip) {
+            _closeSheet();
+            _onRelayChanged(ip);
+          },
+          onHowTo: () {
+            _closeSheet();
+            Future.delayed(
+              const Duration(milliseconds: 200),
+              () => _openSheet(_ActiveSheet.howTo),
+            );
+          },
+        );
+      case _ActiveSheet.none:
+        return const SizedBox.shrink();
+    }
   }
 }
