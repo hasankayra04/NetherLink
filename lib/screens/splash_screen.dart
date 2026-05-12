@@ -11,7 +11,7 @@ import '../services/connectivity_checker.dart';
 import '../widgets/components/app_painters.dart';
 import '../widgets/dialogs/connectivity_warning_dialog.dart';
 import '../l10n/app_localizations.dart';
-import 'home_screen.dart';
+import 'app_shell.dart';
 
 class _TipData {
   final IconData icon;
@@ -27,19 +27,19 @@ class _TipData {
 }
 
 List<_TipData> _buildTips(AppLocalizations loc) => [
-  _TipData(
-    icon: Icons.wifi_rounded,
-    color: AppTheme.info,
-    title: loc.sameWifi,
-    body: loc.needSameWifi,
-  ),
-  _TipData(
-    icon: Icons.card_membership_rounded,
-    color: AppTheme.modeFriends,
-    title: loc.subscription,
-    body: loc.needSubscription,
-  ),
-];
+      _TipData(
+        icon: Icons.wifi_rounded,
+        color: AppTheme.info,
+        title: loc.sameWifi,
+        body: loc.needSameWifi,
+      ),
+      _TipData(
+        icon: Icons.card_membership_rounded,
+        color: AppTheme.modeFriends,
+        title: loc.subscription,
+        body: loc.needSubscription,
+      ),
+    ];
 
 const _splashWaves = [
   WaveConfig(
@@ -354,7 +354,7 @@ class _SplashScreenState extends State<SplashScreen>
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (_, animation, __) =>
-            HomeScreen(initialRelay: _detectedRelay),
+            AppShell(initialRelay: _detectedRelay),
         transitionsBuilder: (_, animation, __, child) =>
             FadeTransition(opacity: animation, child: child),
         transitionDuration: const Duration(milliseconds: 600),
@@ -379,8 +379,9 @@ class _SplashScreenState extends State<SplashScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color:
-              white ? Colors.white.withOpacity(0.10) : AppTheme.surfaceRaised,
+          color: white
+              ? Colors.white.withOpacity(0.10)
+              : AppTheme.surfaceRaised,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: white
@@ -392,7 +393,8 @@ class _SplashScreenState extends State<SplashScreen>
           'v$_appVersion',
           style: TextStyle(
             fontSize: 11,
-            color: white ? Colors.white.withOpacity(0.5) : AppTheme.textMuted,
+            color:
+                white ? Colors.white.withOpacity(0.5) : AppTheme.textMuted,
             letterSpacing: 1.4,
           ),
         ),
