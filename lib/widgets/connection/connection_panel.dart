@@ -737,31 +737,6 @@ widget.partnerServersFuture?.then((list) {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Row(
-                                children: [
-                                  AnimatedContainer(
-                                    duration: const Duration(milliseconds: 300),
-                                    width: 6,
-                                    height: 6,
-                                    decoration: BoxDecoration(
-                                      color: broadcasting
-                                          ? const Color(0xFF4ADE80)
-                                          : AppTheme.textMuted,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    broadcasting ? loc.active : loc.ready,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 1.2,
-                                      color: broadcasting
-                                          ? const Color(0xFF4ADE80)
-                                          : AppTheme.textMuted,
-                                    ),
-                                  ),
-                                ],
                               ),
                               const SizedBox(height: 3),
                               Text(
