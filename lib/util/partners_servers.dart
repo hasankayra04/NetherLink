@@ -5,6 +5,7 @@ class FeaturedServer {
   final String description;
   final String? iconUrl;
   final String? websiteUrl;
+  final bool featured;
 
   FeaturedServer({
     required this.name,
@@ -13,6 +14,7 @@ class FeaturedServer {
     required this.description,
     this.iconUrl,
     this.websiteUrl,
+    required this.featured,
   });
 
   factory FeaturedServer.fromJson(Map<String, dynamic> json) => FeaturedServer(
@@ -22,6 +24,7 @@ class FeaturedServer {
     description: json['description'] as String? ?? '',
     iconUrl: json['iconUrl'] as String?,
     websiteUrl: json['websiteUrl'] as String?,
+    featured: json['featured'] as bool? ?? false,
   );
 
   Map<String, dynamic> toJson() => {
@@ -31,5 +34,6 @@ class FeaturedServer {
     'description': description,
     'iconUrl': iconUrl,
     'websiteUrl': websiteUrl,
+    'featured': featured,
   };
 }

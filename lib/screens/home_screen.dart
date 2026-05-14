@@ -9,7 +9,7 @@ import '../network/broadcast_manager.dart';
 import '../util/Logger.dart';
 import '../util/user_servers.dart';
 import '../util/user_servers_storage.dart';
-import '../util/featured_servers.dart';
+import '../util/partners_servers.dart';
 import '../constants/app_constants.dart';
 import '../theme/app_theme.dart';
 import '../widgets/connection/connection_panel.dart';

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
-import '../util/featured_servers.dart';
+import '../util/partners_servers.dart';
 import '../services/server_status_service.dart';
 import '../widgets/components/app_toast.dart';
 

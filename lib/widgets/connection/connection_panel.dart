@@ -5,7 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/app_theme.dart';
 import '../../util/user_servers.dart';
-import '../../util/featured_servers.dart';
+import '../../util/partners_servers.dart';
 import '../../services/server_status_service.dart';
 import '../../services/navigation_controller.dart';
 import '../../widgets/components/app_painters.dart';
@@ -151,11 +151,12 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
     widget.ipController.addListener(_onControllerChanged);
     widget.portController.addListener(_onControllerChanged);
 
-    widget.partnerServersFuture?.then((list) {
-      if (!mounted || list.isEmpty) return;
-      setState(() => _featuredServers = List.from(list)..shuffle(Random()));
-      _startHeroTimer();
-    });
+widget.partnerServersFuture?.then((list) {
+  if (!mounted || list.isEmpty) return;
+  final featured = list.where((server) => server.featured).toList();
+  setState(() => _featuredServers = featured..shuffle(Random()));
+  _startHeroTimer();
+});
   }
 
   void _onBroadcastingChanged() {
