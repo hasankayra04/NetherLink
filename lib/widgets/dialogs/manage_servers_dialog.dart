@@ -561,169 +561,178 @@ class _AddServerDialogState extends State<AddServerDialog> {
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 480),
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceRaised,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: AppTheme.borderGray),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.45),
-              blurRadius: 40,
-              offset: const Offset(0, 16),
-            ),
-          ],
+      child: AnimatedPadding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(22),
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+        child: SingleChildScrollView(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 480),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceRaised,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: AppTheme.borderGray),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.45),
+                  blurRadius: 40,
+                  offset: const Offset(0, 16),
                 ),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppTheme.accent.withOpacity(0.12),
-                    Colors.transparent,
-                  ],
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(22),
+                    ),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppTheme.accent.withOpacity(0.12),
+                        Colors.transparent,
+                      ],
+                    ),
+                    border: const Border(
+                      bottom: BorderSide(color: AppTheme.borderDim),
+                    ),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(20, 18, 16, 16),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppTheme.accent.withOpacity(0.14),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppTheme.accent.withOpacity(0.28),
+                          ),
+                        ),
+                        child: Icon(
+                          isEditing ? Icons.edit_rounded : Icons.add_rounded,
+                          color: AppTheme.accent,
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          isEditing ? 'Edit Server' : loc.addServer,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: AppTheme.surfaceLight,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppTheme.borderGray),
+                          ),
+                          child: const Icon(
+                            Icons.close_rounded,
+                            color: AppTheme.textSecondary,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                border: const Border(
-                  bottom: BorderSide(color: AppTheme.borderDim),
+                Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    children: [
+                      _Field(
+                        controller: _nameCtrl,
+                        label: loc.serverNameLabel,
+                        hint: 'My Awesome Server',
+                        icon: Icons.label_rounded,
+                        autofocus: true,
+                      ),
+                      const SizedBox(height: 12),
+                      _Field(
+                        controller: _addressCtrl,
+                        label: loc.addressLabel,
+                        hint: 'play.example.com',
+                        icon: Icons.dns_rounded,
+                      ),
+                      const SizedBox(height: 12),
+                      _Field(
+                        controller: _portCtrl,
+                        label: loc.portLabel,
+                        icon: Icons.numbers_rounded,
+                        keyboardType: TextInputType.number,
+                      ),
+                      const SizedBox(height: 12),
+                      _Field(
+                        controller: _descCtrl,
+                        label: loc.descriptionLabel,
+                        hint: 'Survival server with friends',
+                        icon: Icons.notes_rounded,
+                        maxLines: 2,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              padding: const EdgeInsets.fromLTRB(20, 18, 16, 16),
-              child: Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppTheme.accent.withOpacity(0.14),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppTheme.accent.withOpacity(0.28),
+                const Divider(height: 1, color: AppTheme.borderDim),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.textSecondary,
+                          side: const BorderSide(color: AppTheme.borderGray),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 11,
+                          ),
+                        ),
+                        child: Text(loc.cancel),
                       ),
-                    ),
-                    child: Icon(
-                      isEditing ? Icons.edit_rounded : Icons.add_rounded,
-                      color: AppTheme.accent,
-                      size: 18,
-                    ),
+                      const SizedBox(width: 10),
+                      ElevatedButton(
+                        onPressed: _save,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.accent,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 11,
+                          ),
+                        ),
+                        child: Text(loc.save),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      isEditing ? 'Edit Server' : loc.addServer,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: AppTheme.surfaceLight,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppTheme.borderGray),
-                      ),
-                      child: const Icon(
-                        Icons.close_rounded,
-                        color: AppTheme.textSecondary,
-                        size: 16,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                children: [
-                  _Field(
-                    controller: _nameCtrl,
-                    label: loc.serverNameLabel,
-                    hint: 'My Awesome Server',
-                    icon: Icons.label_rounded,
-                    autofocus: true,
-                  ),
-                  const SizedBox(height: 12),
-                  _Field(
-                    controller: _addressCtrl,
-                    label: loc.addressLabel,
-                    hint: 'play.example.com',
-                    icon: Icons.dns_rounded,
-                  ),
-                  const SizedBox(height: 12),
-                  _Field(
-                    controller: _portCtrl,
-                    label: loc.portLabel,
-                    icon: Icons.numbers_rounded,
-                    keyboardType: TextInputType.number,
-                  ),
-                  const SizedBox(height: 12),
-                  _Field(
-                    controller: _descCtrl,
-                    label: loc.descriptionLabel,
-                    hint: 'Survival server with friends',
-                    icon: Icons.notes_rounded,
-                    maxLines: 2,
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1, color: AppTheme.borderDim),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.textSecondary,
-                      side: const BorderSide(color: AppTheme.borderGray),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 11,
-                      ),
-                    ),
-                    child: Text(loc.cancel),
-                  ),
-                  const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: _save,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.accent,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 11,
-                      ),
-                    ),
-                    child: Text(loc.save),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
