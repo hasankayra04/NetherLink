@@ -23,94 +23,108 @@ class HowToSheetContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppTheme.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: AppTheme.borderGray)),
-      ),
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          GestureDetector(
-            onTap: onClose,
-            behavior: HitTestBehavior.opaque,
-            child: Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  color: AppTheme.borderLight,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-            ),
-          ),
-          Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: AppTheme.accent.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(11),
-                  border: Border.all(color: AppTheme.accent.withOpacity(0.25)),
-                ),
-                child: const Center(
-                  child: FaIcon(
-                    FontAwesomeIcons.circleQuestion,
-                    color: AppTheme.accent,
-                    size: 15,
+    final maxHeight = MediaQuery.of(context).size.height * 0.80;
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: AppTheme.background,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border(top: BorderSide(color: AppTheme.borderGray)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            GestureDetector(
+              onTap: onClose,
+              behavior: HitTestBehavior.opaque,
+              child: Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    color: AppTheme.borderLight,
+                    borderRadius: BorderRadius.circular(4),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Text(
-                loc.howToUseMenu,
-                style: const TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
+            ),
+
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: AppTheme.accent.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(11),
+                      border: Border.all(
+                          color: AppTheme.accent.withOpacity(0.25)),
+                    ),
+                    child: const Center(
+                      child: FaIcon(FontAwesomeIcons.circleQuestion,
+                          color: AppTheme.accent, size: 15),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    loc.howToUseMenu,
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                child: Column(
+                  children: [
+                    _tile(
+                      icon: FontAwesomeIcons.xbox,
+                      color: AppTheme.modeXbox,
+                      title: loc.howToXboxTitle,
+                      subtitle: loc.howToXboxSubtitle,
+                      onTap: onXbox ?? () {},
+                    ),
+                    const SizedBox(height: 8),
+                    _tile(
+                      icon: FontAwesomeIcons.gamepad,
+                      color: AppTheme.modeNintendo,
+                      title: loc.howToNintendoTitle,
+                      subtitle: loc.howToNintendoSubtitle,
+                      onTap: onNintendo ?? () {},
+                    ),
+                    const SizedBox(height: 8),
+                    _tile(
+                      icon: FontAwesomeIcons.userGroup,
+                      color: AppTheme.modeFriends,
+                      title: loc.howToFriendsTitle,
+                      subtitle: loc.howToFriendsSubtitle,
+                      onTap: onFriends ?? () {},
+                    ),
+                    const SizedBox(height: 8),
+                    _tile(
+                      icon: FontAwesomeIcons.java,
+                      color: AppTheme.modeJava,
+                      title: loc.javaInfoTitle,
+                      subtitle: loc.howToJavaSubtitle,
+                      onTap: onJava ?? () {},
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _tile(
-            icon: FontAwesomeIcons.xbox,
-            color: AppTheme.modeXbox,
-            title: loc.howToXboxTitle,
-            subtitle: loc.howToXboxSubtitle,
-            onTap: onXbox ?? () {},
-          ),
-          const SizedBox(height: 8),
-          _tile(
-            icon: FontAwesomeIcons.gamepad,
-            color: AppTheme.modeNintendo,
-            title: loc.howToNintendoTitle,
-            subtitle: loc.howToNintendoSubtitle,
-            onTap: onNintendo ?? () {},
-          ),
-          const SizedBox(height: 8),
-          _tile(
-            icon: FontAwesomeIcons.userGroup,
-            color: AppTheme.modeFriends,
-            title: loc.howToFriendsTitle,
-            subtitle: loc.howToFriendsSubtitle,
-            onTap: onFriends ?? () {},
-          ),
-          const SizedBox(height: 8),
-          _tile(
-            icon: FontAwesomeIcons.java,
-            color: AppTheme.modeJava,
-            title: loc.javaInfoTitle,
-            subtitle: loc.howToJavaSubtitle,
-            onTap: onJava ?? () {},
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -150,30 +164,23 @@ class HowToSheetContent extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      ),
-                    ),
+                    Text(title,
+                        style: TextStyle(
+                          color: color,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        )),
                     const SizedBox(height: 3),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 12,
-                      ),
-                    ),
+                    Text(subtitle,
+                        style: const TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 12,
+                        )),
                   ],
                 ),
               ),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: color.withOpacity(0.4),
-                size: 13,
-              ),
+              Icon(Icons.arrow_forward_ios_rounded,
+                  color: color.withOpacity(0.4), size: 13),
             ],
           ),
         ),

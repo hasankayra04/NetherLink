@@ -16,8 +16,14 @@ import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import 'home_screen.dart';
 import 'partner_servers_screen.dart';
+import 'manage_servers_screen.dart';
 
 enum _ActiveSheet { none, help, howTo, more }
+
+const int _pageHome = 0;
+const int _pagePartners = 1;
+const int _pageManageServers = 2;
+const int _pageAddEditServer = 3;
 
 class AppShell extends StatefulWidget {
   final RelayPingResult? initialRelay;
@@ -41,7 +47,8 @@ class _AppShellState extends State<AppShell>
   final TextEditingController _portController = TextEditingController();
 
   late RelayPingResult _selectedRelay;
-  int _pageIndex = 0;
+  int _pageIndex = _pageHome;
+  int? _editingServerIndex;
 
   _ActiveSheet _activeSheet = _ActiveSheet.none;
   late final AnimationController _sheetAnimController;
@@ -91,7 +98,10 @@ class _AppShellState extends State<AppShell>
   }
 
   void _openSheet(_ActiveSheet sheet) {
-    if (_activeSheet == sheet) return;
+    if (_activeSheet == sheet) {
+      _closeSheet();
+      return;
+    }
     setState(() => _activeSheet = sheet);
     _sheetAnimController.forward(from: 0);
   }
@@ -100,6 +110,33 @@ class _AppShellState extends State<AppShell>
     if (_activeSheet == _ActiveSheet.none) return;
     await _sheetAnimController.reverse();
     if (mounted) setState(() => _activeSheet = _ActiveSheet.none);
+  }
+
+  void _closeSheetInstant() {
+    _sheetAnimController.stop();
+    _sheetAnimController.value = 0;
+    setState(() => _activeSheet = _ActiveSheet.none);
+  }
+
+  void _goTo(int page) {
+    _closeSheetInstant();
+    setState(() => _pageIndex = page);
+  }
+
+  void _openManageServers() => _goTo(_pageManageServers);
+
+  void _openAddServer() {
+    setState(() {
+      _editingServerIndex = null;
+      _pageIndex = _pageAddEditServer;
+    });
+  }
+
+  void _openEditServer(int index) {
+    setState(() {
+      _editingServerIndex = index;
+      _pageIndex = _pageAddEditServer;
+    });
   }
 
   void _onRelayChanged(String? ip) {
@@ -119,10 +156,39 @@ class _AppShellState extends State<AppShell>
   }
 
   static String _friendNameForRelay(String relayName) => switch (relayName) {
-        'EU Server' => 'NetherLinkEU',
-        'US Server' => 'NetherLinkUS',
-        _ => '-',
-      };
+    'EU Server' => 'NetherLinkEU',
+    'US Server' => 'NetherLinkUS',
+    _ => '-',
+  };
+
+  String? get _activeNavItem {
+    if (_pageIndex == _pageHome && _activeSheet == _ActiveSheet.none) {
+      return 'home';
+    }
+    if (_pageIndex == _pagePartners) return 'partners';
+    switch (_activeSheet) {
+      case _ActiveSheet.help:
+        return 'support';
+      case _ActiveSheet.more:
+        return 'more';
+      case _ActiveSheet.howTo:
+      case _ActiveSheet.none:
+        return null;
+    }
+  }
+
+  bool get _canPop =>
+      _pageIndex == _pageHome && _activeSheet == _ActiveSheet.none;
+
+  void _handlePop() {
+    if (_activeSheet != _ActiveSheet.none) {
+      _closeSheet();
+    } else if (_pageIndex == _pageAddEditServer) {
+      setState(() => _pageIndex = _pageManageServers);
+    } else if (_pageIndex != _pageHome) {
+      _goTo(_pageHome);
+    }
+  }
 
   @override
   void dispose() {
@@ -141,15 +207,9 @@ class _AppShellState extends State<AppShell>
     final loc = AppLocalizations.of(context)!;
 
     return PopScope(
-      canPop: _pageIndex == 0 && _activeSheet == _ActiveSheet.none,
+      canPop: _canPop,
       onPopInvoked: (didPop) {
-        if (!didPop) {
-          if (_activeSheet != _ActiveSheet.none) {
-            _closeSheet();
-          } else {
-            setState(() => _pageIndex = 0);
-          }
-        }
+        if (!didPop) _handlePop();
       },
       child: Scaffold(
         backgroundColor: AppTheme.background,
@@ -158,25 +218,25 @@ class _AppShellState extends State<AppShell>
           dark: true,
           selectedRelayIp: _selectedRelay.ip,
           onRelayChanged: _onRelayChanged,
-          onPartnerServersTap: () async {
-            await _closeSheet();
-            setState(() => _pageIndex = 1);
+          activeItem: _activeNavItem,
+          onHomeTap: () => _goTo(_pageHome),
+          onPartnerServersTap: () => _goTo(_pagePartners),
+          onAnyTap: null,
+          onHelpTapOverride: () {
+            if (_activeSheet == _ActiveSheet.help) {
+              _closeSheet();
+            } else {
+              _closeSheetInstant();
+              _openSheet(_ActiveSheet.help);
+            }
           },
-          onAnyTap: _closeSheet,
-          onHelpTapOverride: () async {
-            if (_activeSheet == _ActiveSheet.help) return;
-            await _closeSheet();
-            _openSheet(_ActiveSheet.help);
-          },
-          onHowToTapOverride: () async {
-            if (_activeSheet == _ActiveSheet.howTo) return;
-            await _closeSheet();
-            _openSheet(_ActiveSheet.howTo);
-          },
-          onMoreTapOverride: () async {
-            if (_activeSheet == _ActiveSheet.more) return;
-            await _closeSheet();
-            _openSheet(_ActiveSheet.more);
+          onMoreTapOverride: () {
+            if (_activeSheet == _ActiveSheet.more) {
+              _closeSheet();
+            } else {
+              _closeSheetInstant();
+              _openSheet(_ActiveSheet.more);
+            }
           },
         ),
         body: SafeArea(
@@ -192,8 +252,8 @@ class _AppShellState extends State<AppShell>
                     onRelayChanged: _onRelayChanged,
                     navigationController: navigationController,
                     partnerServersFuture: _partnerServersFuture,
-                    onOpenPartnerServers: () =>
-                        setState(() => _pageIndex = 1),
+                    onOpenPartnerServers: () => _goTo(_pagePartners),
+                    onOpenManageServers: _openManageServers,
                     ipController: _ipController,
                     portController: _portController,
                   ),
@@ -201,7 +261,19 @@ class _AppShellState extends State<AppShell>
                     partnerServersFuture: _partnerServersFuture,
                     ipController: _ipController,
                     portController: _portController,
-                    onBack: () => setState(() => _pageIndex = 0),
+                    onBack: () => _goTo(_pageHome),
+                  ),
+                  ManageServersScreen(
+                    onBack: () => _goTo(_pageHome),
+                    onAddServer: _openAddServer,
+                    onEditServer: _openEditServer,
+                  ),
+                  AddEditServerScreen(
+                    editingIndex: _editingServerIndex,
+                    onSaved: () =>
+                        setState(() => _pageIndex = _pageManageServers),
+                    onCancel: () =>
+                        setState(() => _pageIndex = _pageManageServers),
                   ),
                 ],
               ),
@@ -212,8 +284,7 @@ class _AppShellState extends State<AppShell>
                   builder: (_, __) => GestureDetector(
                     onTap: _closeSheet,
                     child: Container(
-                      color:
-                          Colors.black.withOpacity(0.45 * _sheetAnim.value),
+                      color: Colors.black.withOpacity(0.45 * _sheetAnim.value),
                     ),
                   ),
                 ),
@@ -245,19 +316,19 @@ class _AppShellState extends State<AppShell>
           loc: loc,
           onClose: _closeSheet,
           onNetherLink: () {
-            _closeSheet();
+            _closeSheetInstant();
             HelpDialogs.showNetherlinkNotAppearing(context);
           },
           onMultiplayerFailed: () {
-            _closeSheet();
+            _closeSheetInstant();
             HelpDialogs.showMultiplayerConnectionFailed(context);
           },
           onNintendoDns: () {
-            _closeSheet();
+            _closeSheetInstant();
             HelpDialogs.showNintendoDns(context);
           },
           onFriendsMode: () {
-            _closeSheet();
+            _closeSheetInstant();
             HelpDialogs.showFriendsMode(context);
           },
         );
@@ -266,11 +337,11 @@ class _AppShellState extends State<AppShell>
           loc: loc,
           onClose: _closeSheet,
           onXbox: () {
-            _closeSheet();
+            _closeSheetInstant();
             HowToDialogs.showXboxInstructions(context);
           },
           onNintendo: () {
-            _closeSheet();
+            _closeSheetInstant();
             HowToDialogs.showNintendoInstructions(
               context,
               relayName: _selectedRelay.name,
@@ -278,14 +349,14 @@ class _AppShellState extends State<AppShell>
             );
           },
           onFriends: () {
-            _closeSheet();
+            _closeSheetInstant();
             HowToDialogs.showFriendsInstructions(
               context,
               friendName: _friendNameForRelay(_selectedRelay.name),
             );
           },
           onJava: () {
-            _closeSheet();
+            _closeSheetInstant();
             HowToDialogs.showJavaInstructions(context);
           },
         );
@@ -296,14 +367,37 @@ class _AppShellState extends State<AppShell>
           selectedRelayIp: _selectedRelay.ip,
           onClose: _closeSheet,
           onRelayChanged: (ip) {
-            _closeSheet();
+            _closeSheetInstant();
             _onRelayChanged(ip);
           },
           onHowTo: () {
-            _closeSheet();
+            _closeSheetInstant();
             Future.delayed(
-              const Duration(milliseconds: 200),
+              const Duration(milliseconds: 50),
               () => _openSheet(_ActiveSheet.howTo),
+            );
+          },
+          onDiscord: () {
+            _closeSheetInstant();
+            navigationController.openDiscord(context);
+          },
+          onConsole: () {
+            _closeSheetInstant();
+            navigationController.showConsole(context);
+          },
+          onWebsite: () {
+            _closeSheetInstant();
+            navigationController.openWebsite(context);
+          },
+          onLanguage: () {
+            _closeSheetInstant();
+            navigationController.showLanguageDialog(context);
+          },
+          onAternos: () {
+            _closeSheetInstant();
+            navigationController.openWebsiteWithCustomUrl(
+              context,
+              'https://aternos.org/',
             );
           },
         );

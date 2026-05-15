@@ -7,7 +7,7 @@ import '../../theme/app_theme.dart';
 
 class BottomGlassSimpleNavBar extends StatelessWidget {
   final NavigationController navigationController;
-  final VoidCallback? onHowToTapOverride;
+  final VoidCallback? onHomeTap;
   final VoidCallback? onHelpTapOverride;
   final VoidCallback? onMoreTapOverride;
   final VoidCallback? onPartnerServersTap;
@@ -15,15 +15,17 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
   final bool dark;
   final String? selectedRelayIp;
   final void Function(String?)? onRelayChanged;
+  final String? activeItem;
 
   const BottomGlassSimpleNavBar({
     super.key,
     required this.navigationController,
-    this.onHowToTapOverride,
+    this.onHomeTap,
     this.onHelpTapOverride,
     this.onMoreTapOverride,
     this.onPartnerServersTap,
     this.onAnyTap,
+    this.activeItem,
     this.dark = true,
     this.selectedRelayIp,
     this.onRelayChanged,
@@ -44,33 +46,29 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
           child: Row(
             children: [
               _NavItem(
-                icon: FontAwesomeIcons.discord,
-                label: loc.discord,
-                accentColor: const Color(0xFF5865F2),
-                onTap: () async {
-                  if (onAnyTap != null) {
-                    onAnyTap!();
-                  }
-                  navigationController.openDiscord(context);
+                icon: FontAwesomeIcons.house,
+                label: "Home",
+                isActive: activeItem == 'home',
+                onTap: () {
+                  onAnyTap?.call();
+                  onHomeTap?.call();
                 },
               ),
               _NavItem(
                 icon: FontAwesomeIcons.handshake,
                 label: 'Partners',
-                onTap: () async {
-                  if (onAnyTap != null) {
-                    onAnyTap!();
-                  }
+                isActive: activeItem == 'partners',
+                onTap: () {
+                  onAnyTap?.call();
                   onPartnerServersTap?.call();
                 },
               ),
               _NavItem(
                 icon: FontAwesomeIcons.headset,
                 label: loc.support,
-                onTap: () async {
-                  if (onAnyTap != null) {
-                    onAnyTap!();
-                  }
+                isActive: activeItem == 'support',
+                onTap: () {
+                  onAnyTap?.call();
                   if (onHelpTapOverride != null) {
                     onHelpTapOverride!();
                   } else {
@@ -81,11 +79,11 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
               _NavItem(
                 icon: FontAwesomeIcons.ellipsis,
                 label: loc.more,
-                onTap: () async {
-                  if (onAnyTap != null) {
-                    onAnyTap!();
-                  }
-                  (onMoreTapOverride ?? () => _showMoreSheetFallback(context))();
+                isActive: activeItem == 'more',
+                onTap: () {
+                  onAnyTap?.call();
+                  (onMoreTapOverride ??
+                      () => _showMoreSheetFallback(context))();
                 },
               ),
             ],
@@ -123,23 +121,35 @@ class _NavItem extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
   final Color? accentColor;
+  final bool isActive;
 
   const _NavItem({
     required this.icon,
     required this.label,
+    required this.isActive,
     this.onTap,
     this.accentColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = accentColor ?? AppTheme.textSecondary;
+    final Color activeColor = accentColor ?? AppTheme.accent;
+    final Color inactiveColor = accentColor ?? AppTheme.textSecondary;
+    final Color color = isActive ? activeColor : inactiveColor;
+
     return Expanded(
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(10),
-        child: Padding(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          decoration: BoxDecoration(
+            color: isActive
+                ? activeColor.withOpacity(0.10)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -150,10 +160,20 @@ class _NavItem extends StatelessWidget {
                 style: TextStyle(
                   color: color,
                   fontSize: 10,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
+              ),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                margin: const EdgeInsets.only(top: 3),
+                width: isActive ? 4 : 0,
+                height: isActive ? 4 : 0,
+                decoration: BoxDecoration(
+                  color: activeColor,
+                  shape: BoxShape.circle,
+                ),
               ),
             ],
           ),
@@ -171,6 +191,12 @@ class MoreSheetContent extends StatelessWidget {
   final void Function(String?) onRelayChanged;
   final VoidCallback onHowTo;
 
+  final VoidCallback? onDiscord;
+  final VoidCallback? onConsole;
+  final VoidCallback? onWebsite;
+  final VoidCallback? onLanguage;
+  final VoidCallback? onAternos;
+
   const MoreSheetContent({
     super.key,
     required this.loc,
@@ -179,116 +205,166 @@ class MoreSheetContent extends StatelessWidget {
     required this.onRelayChanged,
     required this.onHowTo,
     this.selectedRelayIp,
+    this.onDiscord,
+    this.onConsole,
+    this.onWebsite,
+    this.onLanguage,
+    this.onAternos,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppTheme.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: AppTheme.borderGray)),
-      ),
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          GestureDetector(
-            onTap: onClose,
-            behavior: HitTestBehavior.opaque,
-            child: Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  color: AppTheme.borderLight,
-                  borderRadius: BorderRadius.circular(4),
+    final maxHeight = MediaQuery.of(context).size.height * 0.80;
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: AppTheme.background,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border(top: BorderSide(color: AppTheme.borderGray)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            GestureDetector(
+              onTap: onClose,
+              behavior: HitTestBehavior.opaque,
+              child: Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    color: AppTheme.borderLight,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                 ),
               ),
             ),
-          ),
-          Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: AppTheme.accent.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(11),
-                  border: Border.all(color: AppTheme.accent.withOpacity(0.25)),
-                ),
-                child: const Center(
-                  child: FaIcon(FontAwesomeIcons.ellipsis,
-                      color: AppTheme.accent, size: 15),
+
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: AppTheme.accent.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(11),
+                      border: Border.all(
+                        color: AppTheme.accent.withOpacity(0.25),
+                      ),
+                    ),
+                    child: const Center(
+                      child: FaIcon(
+                        FontAwesomeIcons.ellipsis,
+                        color: AppTheme.accent,
+                        size: 15,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    loc.more,
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _RegionSelector(
+                      selectedIp: selectedRelayIp,
+                      onChanged: onRelayChanged,
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(color: AppTheme.borderDim, height: 1),
+                    const SizedBox(height: 12),
+
+                    _SheetTile(
+                      icon: FontAwesomeIcons.discord,
+                      color: const Color(0xFF5865F2),
+                      label: loc.discord,
+                      onTap:
+                          onDiscord ??
+                          () {
+                            onClose();
+                            navigationController.openDiscord(context);
+                          },
+                    ),
+                    const SizedBox(height: 8),
+                    _SheetTile(
+                      icon: FontAwesomeIcons.bookOpen,
+                      color: AppTheme.accent,
+                      label: loc.howToUseMenu,
+                      onTap: onHowTo,
+                    ),
+                    const SizedBox(height: 8),
+                    _SheetTile(
+                      icon: FontAwesomeIcons.terminal,
+                      color: AppTheme.info,
+                      label: loc.console,
+                      onTap:
+                          onConsole ??
+                          () {
+                            onClose();
+                            navigationController.showConsole(context);
+                          },
+                    ),
+                    const SizedBox(height: 8),
+                    _SheetTile(
+                      icon: FontAwesomeIcons.globe,
+                      color: AppTheme.success,
+                      label: loc.website,
+                      onTap:
+                          onWebsite ??
+                          () {
+                            onClose();
+                            navigationController.openWebsite(context);
+                          },
+                    ),
+                    const SizedBox(height: 8),
+                    _SheetTile(
+                      icon: FontAwesomeIcons.language,
+                      color: AppTheme.warning,
+                      label: loc.changeLanguage,
+                      onTap:
+                          onLanguage ??
+                          () {
+                            onClose();
+                            navigationController.showLanguageDialog(context);
+                          },
+                    ),
+                    const SizedBox(height: 8),
+                    _AternosTile(
+                      subtitle: loc.aternosSubtext,
+                      onTap:
+                          onAternos ??
+                          () {
+                            onClose();
+                            navigationController.openWebsiteWithCustomUrl(
+                              context,
+                              'https://aternos.org/',
+                            );
+                          },
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 12),
-              Text(
-                loc.more,
-                style: const TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          _RegionSelector(
-            selectedIp: selectedRelayIp,
-            onChanged: onRelayChanged,
-          ),
-          const SizedBox(height: 16),
-          const Divider(color: AppTheme.borderDim, height: 1),
-          const SizedBox(height: 12),
-          _SheetTile(
-            icon: FontAwesomeIcons.bookOpen,
-            color: AppTheme.accent,
-            label: loc.howToUseMenu,
-            onTap: onHowTo,
-          ),
-          const SizedBox(height: 8),
-          _SheetTile(
-            icon: FontAwesomeIcons.terminal,
-            color: AppTheme.info,
-            label: loc.console,
-            onTap: () {
-              onClose();
-              navigationController.showConsole(context);
-            },
-          ),
-          const SizedBox(height: 8),
-          _SheetTile(
-            icon: FontAwesomeIcons.globe,
-            color: AppTheme.success,
-            label: loc.website,
-            onTap: () {
-              onClose();
-              navigationController.openWebsite(context);
-            },
-          ),
-          const SizedBox(height: 8),
-          _SheetTile(
-            icon: FontAwesomeIcons.language,
-            color: AppTheme.warning,
-            label: loc.changeLanguage,
-            onTap: () {
-              onClose();
-              navigationController.showLanguageDialog(context);
-            },
-          ),
-          const SizedBox(height: 8),
-          _AternosTile(
-            subtitle: loc.aternosSubtext,
-            onTap: () {
-              onClose();
-              navigationController.openWebsiteWithCustomUrl(
-                  context, 'https://aternos.org/');
-            },
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -297,9 +373,7 @@ class MoreSheetContent extends StatelessWidget {
 class _AternosTile extends StatelessWidget {
   final String? subtitle;
   final VoidCallback onTap;
-
   const _AternosTile({this.subtitle, required this.onTap});
-
   static const _color = Color(0xFF52CAFF);
 
   @override
@@ -329,8 +403,10 @@ class _AternosTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(11),
                   child: Padding(
                     padding: const EdgeInsets.all(6),
-                    child: Image.asset('assets/icons/aternos.png',
-                        fit: BoxFit.contain),
+                    child: Image.asset(
+                      'assets/icons/aternos.png',
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
               ),
@@ -339,27 +415,34 @@ class _AternosTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Aternos',
-                        style: TextStyle(
-                          color: AppTheme.textPrimary,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        )),
+                    const Text(
+                      'Aternos',
+                      style: TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
                     if (subtitle != null) ...[
                       const SizedBox(height: 2),
-                      Text(subtitle!,
-                          style: const TextStyle(
-                            color: AppTheme.textMuted,
-                            fontSize: 11,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis),
+                      Text(
+                        subtitle!,
+                        style: const TextStyle(
+                          color: AppTheme.textMuted,
+                          fontSize: 11,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                   ],
                 ),
               ),
-              Icon(Icons.arrow_forward_ios_rounded,
-                  color: _color.withOpacity(0.45), size: 13),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: _color.withOpacity(0.45),
+                size: 13,
+              ),
             ],
           ),
         ),
@@ -413,27 +496,34 @@ class _SheetTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(label,
-                        style: const TextStyle(
-                          color: AppTheme.textPrimary,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        )),
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
                     if (subtitle != null) ...[
                       const SizedBox(height: 2),
-                      Text(subtitle!,
-                          style: const TextStyle(
-                            color: AppTheme.textMuted,
-                            fontSize: 11,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis),
+                      Text(
+                        subtitle!,
+                        style: const TextStyle(
+                          color: AppTheme.textMuted,
+                          fontSize: 11,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                   ],
                 ),
               ),
-              Icon(Icons.arrow_forward_ios_rounded,
-                  color: color.withOpacity(0.45), size: 13),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: color.withOpacity(0.45),
+                size: 13,
+              ),
             ],
           ),
         ),
@@ -445,7 +535,6 @@ class _SheetTile extends StatelessWidget {
 class _RegionSelector extends StatelessWidget {
   final String? selectedIp;
   final void Function(String?) onChanged;
-
   const _RegionSelector({required this.selectedIp, required this.onChanged});
 
   @override
@@ -480,7 +569,9 @@ class _RegionSelector extends StatelessWidget {
                     left: isFirst ? 0 : 6,
                   ),
                   padding: const EdgeInsets.symmetric(
-                      vertical: 13, horizontal: 12),
+                    vertical: 13,
+                    horizontal: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppTheme.accent.withOpacity(0.10)

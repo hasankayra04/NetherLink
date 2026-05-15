@@ -13,7 +13,6 @@ import '../util/partners_servers.dart';
 import '../constants/app_constants.dart';
 import '../theme/app_theme.dart';
 import '../widgets/connection/connection_panel.dart';
-import '../widgets/dialogs/manage_servers_dialog.dart';
 import '../widgets/components/global_notice_banner.dart';
 import '../widgets/components/app_toast.dart';
 import '../services/notification_service.dart';
@@ -28,6 +27,7 @@ class HomeScreen extends StatefulWidget {
   final NavigationController navigationController;
   final Future<List<FeaturedServer>> partnerServersFuture;
   final VoidCallback onOpenPartnerServers;
+  final VoidCallback onOpenManageServers;
   final TextEditingController ipController;
   final TextEditingController portController;
 
@@ -38,6 +38,7 @@ class HomeScreen extends StatefulWidget {
     required this.navigationController,
     required this.partnerServersFuture,
     required this.onOpenPartnerServers,
+    required this.onOpenManageServers,
     required this.ipController,
     required this.portController,
   });
@@ -54,8 +55,9 @@ class _HomeScreenState extends State<HomeScreen> {
   final ValueNotifier<bool> _debugEnabledNotifier = ValueNotifier(false);
   final ValueNotifier<List<String>> _logsNotifier = ValueNotifier([]);
   final ValueNotifier<bool> _broadcastingNotifier = ValueNotifier(false);
-  final ValueNotifier<List<UserServer>> _userServersNotifier =
-      ValueNotifier([]);
+  final ValueNotifier<List<UserServer>> _userServersNotifier = ValueNotifier(
+    [],
+  );
 
   final ScrollController _logScrollController = ScrollController();
   final ScrollController _mainScrollController = ScrollController();
@@ -65,16 +67,16 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _noticeTimer;
 
   static String _friendNameForRelay(String relayName) => switch (relayName) {
-        'EU Server' => 'NetherLinkEU',
-        'US Server' => 'NetherLinkUS',
-        _ => '-',
-      };
+    'EU Server' => 'NetherLinkEU',
+    'US Server' => 'NetherLinkUS',
+    _ => '-',
+  };
 
   @override
   void initState() {
     super.initState();
     _initializeComponents();
-    _loadUserServers();
+    loadUserServers();
     _fetchNotification();
   }
 
@@ -111,8 +113,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _fetchNotification() async {
-    final notice =
-        await NotificationService.fetchNotice(widget.selectedRelay.base);
+    final notice = await NotificationService.fetchNotice(
+      widget.selectedRelay.base,
+    );
     if (!mounted || notice == null) return;
     setState(() => _currentNotice = notice);
     _noticeTimer?.cancel();
@@ -121,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _loadUserServers() async {
+  Future<void> loadUserServers() async {
     try {
       final servers = await UserServersStorage.loadServers();
       _userServersNotifier.value = servers;
@@ -163,15 +166,21 @@ class _HomeScreenState extends State<HomeScreen> {
     final remotePortParsed = int.tryParse(widget.portController.text);
 
     if (remoteHost.isEmpty) {
-      _snack(loc.pleaseEnterServer, AppTheme.warning,
-          icon: Icons.warning_amber_rounded);
+      _snack(
+        loc.pleaseEnterServer,
+        AppTheme.warning,
+        icon: Icons.warning_amber_rounded,
+      );
       return;
     }
     if (remotePortParsed == null ||
         remotePortParsed < 1 ||
         remotePortParsed > 65535) {
-      _snack(loc.invalidPort, AppTheme.error,
-          icon: Icons.error_outline_rounded);
+      _snack(
+        loc.invalidPort,
+        AppTheme.error,
+        icon: Icons.error_outline_rounded,
+      );
       return;
     }
 
@@ -183,7 +192,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleDnsMode(
-      PanelMode mode, String host, int port, AppLocalizations loc) async {
+    PanelMode mode,
+    String host,
+    int port,
+    AppLocalizations loc,
+  ) async {
     final ok = await _broadcastManager.sendRelayConfigOnly(
       host,
       port,
@@ -207,7 +220,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleBroadcastMode(
-      PanelMode mode, String host, int port, AppLocalizations loc) async {
+    PanelMode mode,
+    String host,
+    int port,
+    AppLocalizations loc,
+  ) async {
     logger.info('Starting NetherLink');
     try {
       await WakelockPlus.enable();
@@ -256,14 +273,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _showManageServersDialog() async {
-    await showDialog(
-      context: context,
-      builder: (_) => const ManageServersDialog(),
-    );
-    await _loadUserServers();
-  }
-
   void _snack(String message, Color color, {IconData? icon}) {
     if (!mounted) return;
     AppToast.show(context, message: message, icon: icon, color: color);
@@ -288,7 +297,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onStopBroadcast: _stopBroadcast,
                 savedServers: userServers,
                 onServerSelected: _onUserServerSelected,
-                onManageServers: _showManageServersDialog,
+                onManageServers: widget.onOpenManageServers,
                 selectedRelayIp: widget.selectedRelay.ip,
                 onRelayChanged: widget.onRelayChanged,
                 nintendoDnsMode: _nintendoDnsMode,
