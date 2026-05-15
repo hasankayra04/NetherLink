@@ -326,6 +326,25 @@
   "@useSystemLanguage": {
     "description": "Button that resets localization to the system/default locale"
   },
+  "updateAvailable": "Güncelleme Mevcut",
+  "needSameWifi": "NetherLink'i çalıştıran cihaz, Minecraft oynadığınız konsolla AYNI Wi‑Fi ağına bağlı OLMALIDIR.",
+  "active": "Aktif",
+  "newVersion": "Uygulamanın yeni bir sürümü mevcut.\nEn son özellikler ve düzeltmeler için şimdi güncelleyin.",
+  "noServerYet": "Henüz kaydedilmiş sunucu yok.\nBir tane eklemek için Yönet'e dokunun.",
+  "beforeYouStart": "BAŞLAMADAN ÖNCE",
+  "stop": "Durdur",
+  "later": "Daha Sonra",
+  "continueAnyway": "Yine de Devam Et",
+  "serverNotSelected": "Sunucu seçilmedi",
+  "noWifi": "Wi‑Fi'a bağlı değil",
+  "vpnDetected": "VPN Tespit Edildi",
+  "ready": "Hazır",
+  "vpnActive": "VPN'inizin etkin olduğunu tespit ettik.\n\nLütfen NetherLink'i kullanmadan önce VPN'inizi devre dışı bırakın, aksi halde LAN yayını konsolunuza ulaşmayabilir.",
+  "updateNow": "Şimdi Güncelle",
+  "needSubscription": "Her konsolun kendi etkin çevrim içi aboneliği (Xbox Live, PS Plus, NSO) olmalıdır. Aksi halde NetherLink görünmez.",
+  "mobileActive": "Tespit edildi: Mobil Veri\n\nNetherLink'in konsolunuzla aynı ağda olması gerekir. Devam etmeden önce ev Wi‑Fi'nize veya erişim noktanıza bağlanın.",
+  "sameWifi": "Aynı Wi‑Fi Ağı",
+  "subscription": "Çevrim İçi Abonelik Gerekli",
   "couldNotOpenUrl": "URL açılamadı",
   "@couldNotOpenUrl": {
     "description": "Snackbar message when launching an external URL fails"

@@ -345,6 +345,25 @@
     "@useSystemLanguage":  {
                                "description":  "Button that resets localization to the system/default locale"
                            },
+    "updateAvailable":  "Mise à jour disponible",
+    "needSameWifi":  "L'appareil qui exécute NetherLink DOIT être sur le même réseau Wi‑Fi que la console sur laquelle vous jouez à Minecraft.",
+    "active":  "Actif",
+    "newVersion":  "Une nouvelle version de l'application est disponible.\nMettez à jour maintenant pour profiter des dernières fonctionnalités et corrections.",
+    "noServerYet":  "Aucun serveur enregistré pour le moment.\nAppuyez sur Gérer pour en ajouter un.",
+    "beforeYouStart":  "AVANT DE COMMENCER",
+    "stop":  "Arrêter",
+    "later":  "Plus tard",
+    "continueAnyway":  "Continuer quand même",
+    "serverNotSelected":  "Aucun serveur sélectionné",
+    "noWifi":  "Pas en Wi‑Fi",
+    "vpnDetected":  "VPN détecté",
+    "ready":  "Prêt",
+    "vpnActive":  "Nous avons détecté que votre VPN est actif.\n\nVeuillez le désactiver avant d'utiliser NetherLink, sinon la diffusion LAN risque de ne pas atteindre votre console.",
+    "updateNow":  "Mettre à jour",
+    "needSubscription":  "Chaque console doit disposer de son propre abonnement en ligne actif (Xbox Live, PS Plus, NSO). Sans cela, NetherLink n'apparaîtra pas.",
+    "mobileActive":  "Détecté : données mobiles\n\nNetherLink doit être sur le même réseau que votre console. Veuillez vous connecter à votre Wi‑Fi domestique ou à votre point d'accès avant de continuer.",
+    "sameWifi":  "Même réseau Wi‑Fi",
+    "subscription":  "Abonnement en ligne requis",
     "couldNotOpenUrl":  "Impossible d\u0027ouvrir l\u0027URL",
     "@couldNotOpenUrl":  {
                              "description":  "Snackbar message when launching an external URL fails"

@@ -56,7 +56,7 @@ class AppLocalizationsSw extends AppLocalizations {
   String get start => 'Anza';
 
   @override
-  String get stop => 'Stop';
+  String get stop => 'Simamisha';
 
   @override
   String get labelJava => 'Java';
@@ -233,58 +233,58 @@ class AppLocalizationsSw extends AppLocalizations {
   String get manageServersTooltip => 'Dhibiti seva';
 
   @override
-  String get noServerYet => 'No saved servers yet.\nTap Manage to add one.';
+  String get noServerYet => 'Bado hakuna seva zilizohifadhiwa.\nGusa Dhibiti ili kuongeza moja.';
 
   @override
-  String get serverNotSelected => 'No server selected';
+  String get serverNotSelected => 'Hakuna seva iliyochaguliwa';
 
   @override
-  String get ready => 'Ready';
+  String get ready => 'Tayari';
 
   @override
-  String get active => 'Active';
+  String get active => 'Inatumika';
 
   @override
-  String get vpnDetected => 'VPN Detected';
+  String get vpnDetected => 'VPN imegunduliwa';
 
   @override
-  String get noWifi => 'Not on Wi-Fi';
+  String get noWifi => 'Haupo kwenye Wi‑Fi';
 
   @override
-  String get vpnActive => 'We detected that your VPN is active.\n\nPlease disable your VPN before using NetherLink, otherwise the LAN broadcast may not reach your console.';
+  String get vpnActive => 'Tumegundua kuwa VPN yako imewashwa.\n\nTafadhali izime kabla ya kutumia NetherLink, la sivyo matangazo ya LAN yanaweza yasifikie konsoli yako.';
 
   @override
-  String get mobileActive => 'Detected: Mobile Data\n\nNetherLink needs to be on the same network as your console. Please connect to your home Wi-Fi or hotspot before continuing.';
+  String get mobileActive => 'Imegunduliwa: Data ya simu\n\nNetherLink inahitaji kuwa kwenye mtandao ule ule na konsoli yako. Unganisha kwenye Wi‑Fi ya nyumbani au hotspot kabla ya kuendelea.';
 
   @override
-  String get continueAnyway => 'Continue Anyway';
+  String get continueAnyway => 'Endelea hata hivyo';
 
   @override
-  String get sameWifi => 'Same Wi-Fi Network';
+  String get sameWifi => 'Mtandao ule ule wa Wi‑Fi';
 
   @override
-  String get needSameWifi => 'The device running NetherLink MUST be on the same Wi-Fi network as the console you play Minecraft on.';
+  String get needSameWifi => 'Kifaa kinachoendesha NetherLink LAZIMA kiwe kwenye mtandao ule ule wa Wi‑Fi na konsoli unayotumia kucheza Minecraft.';
 
   @override
-  String get subscription => 'Online Subscription Required';
+  String get subscription => 'Usajili wa mtandaoni unahitajika';
 
   @override
-  String get needSubscription => 'Each console needs its own active online subscription (Xbox Live, PS Plus, NSO). Without it, NetherLink won\'t appear.';
+  String get needSubscription => 'Kila konsoli inahitaji usajili wake wa mtandaoni ulio hai (Xbox Live, PS Plus, NSO). Bila huo, NetherLink haitaonekana.';
 
   @override
-  String get updateAvailable => 'Update Available';
+  String get updateAvailable => 'Sasisho linapatikana';
 
   @override
-  String get newVersion => 'A new version of the app is available.\nUpdate now for the latest features and fixes.';
+  String get newVersion => 'Toleo jipya la programu linapatikana.\nSasisha sasa kwa vipengele na marekebisho mapya zaidi.';
 
   @override
-  String get later => 'Later';
+  String get later => 'Baadaye';
 
   @override
-  String get updateNow => 'Update Now';
+  String get updateNow => 'Sasisha sasa';
 
   @override
-  String get beforeYouStart => 'BEFORE YOU START';
+  String get beforeYouStart => 'KABLA HUJAANZA';
 
   @override
   String get stopBroadcasting => 'Simamisha Utangazaji';

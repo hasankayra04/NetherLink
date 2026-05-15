@@ -345,6 +345,25 @@
     "@useSystemLanguage":  {
                                "description":  "Button that resets localization to the system/default locale"
                            },
+    "updateAvailable":  "Доступно обновление",
+    "needSameWifi":  "Устройство с NetherLink ДОЛЖНО быть в той же сети Wi‑Fi, что и консоль, на которой вы играете в Minecraft.",
+    "active":  "Активно",
+    "newVersion":  "Доступна новая версия приложения.\nОбновите сейчас, чтобы получить последние функции и исправления.",
+    "noServerYet":  "Сохранённых серверов пока нет.\nНажмите «Управление», чтобы добавить сервер.",
+    "beforeYouStart":  "ПЕРЕД НАЧАЛОМ",
+    "stop":  "Остановить",
+    "later":  "Позже",
+    "continueAnyway":  "Продолжить в любом случае",
+    "serverNotSelected":  "Сервер не выбран",
+    "noWifi":  "Нет подключения к Wi‑Fi",
+    "vpnDetected":  "Обнаружен VPN",
+    "ready":  "Готово",
+    "vpnActive":  "Мы обнаружили, что у вас активен VPN.\n\nПожалуйста, отключите VPN перед использованием NetherLink, иначе LAN-трансляция может не дойти до вашей консоли.",
+    "updateNow":  "Обновить сейчас",
+    "needSubscription":  "Для каждой консоли нужна отдельная активная онлайн-подписка (Xbox Live, PS Plus, NSO). Без неё NetherLink не появится.",
+    "mobileActive":  "Обнаружено: мобильные данные\n\nNetherLink должен быть в той же сети, что и ваша консоль. Перед продолжением подключитесь к домашнему Wi‑Fi или точке доступа.",
+    "sameWifi":  "Одна и та же сеть Wi‑Fi",
+    "subscription":  "Требуется онлайн-подписка",
     "couldNotOpenUrl":  "Не удалось открыть URL",
     "@couldNotOpenUrl":  {
                              "description":  "Snackbar message when launching an external URL fails"

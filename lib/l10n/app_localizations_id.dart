@@ -56,7 +56,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get start => 'Mulai';
 
   @override
-  String get stop => 'Stop';
+  String get stop => 'Berhenti';
 
   @override
   String get labelJava => 'Java';
@@ -233,58 +233,58 @@ class AppLocalizationsId extends AppLocalizations {
   String get manageServersTooltip => 'Kelola server';
 
   @override
-  String get noServerYet => 'No saved servers yet.\nTap Manage to add one.';
+  String get noServerYet => 'Belum ada server tersimpan.\nKetuk Kelola untuk menambahkan satu.';
 
   @override
-  String get serverNotSelected => 'No server selected';
+  String get serverNotSelected => 'Belum ada server yang dipilih';
 
   @override
-  String get ready => 'Ready';
+  String get ready => 'Siap';
 
   @override
-  String get active => 'Active';
+  String get active => 'Aktif';
 
   @override
-  String get vpnDetected => 'VPN Detected';
+  String get vpnDetected => 'VPN terdeteksi';
 
   @override
-  String get noWifi => 'Not on Wi-Fi';
+  String get noWifi => 'Tidak di Wi‑Fi';
 
   @override
-  String get vpnActive => 'We detected that your VPN is active.\n\nPlease disable your VPN before using NetherLink, otherwise the LAN broadcast may not reach your console.';
+  String get vpnActive => 'Kami mendeteksi VPN Anda aktif.\n\nMatikan VPN sebelum menggunakan NetherLink, jika tidak siaran LAN mungkin tidak akan mencapai konsol Anda.';
 
   @override
-  String get mobileActive => 'Detected: Mobile Data\n\nNetherLink needs to be on the same network as your console. Please connect to your home Wi-Fi or hotspot before continuing.';
+  String get mobileActive => 'Terdeteksi: Data Seluler\n\nNetherLink harus berada di jaringan yang sama dengan konsol Anda. Sambungkan ke Wi‑Fi rumah atau hotspot sebelum melanjutkan.';
 
   @override
-  String get continueAnyway => 'Continue Anyway';
+  String get continueAnyway => 'Tetap lanjutkan';
 
   @override
-  String get sameWifi => 'Same Wi-Fi Network';
+  String get sameWifi => 'Jaringan Wi‑Fi yang sama';
 
   @override
-  String get needSameWifi => 'The device running NetherLink MUST be on the same Wi-Fi network as the console you play Minecraft on.';
+  String get needSameWifi => 'Perangkat yang menjalankan NetherLink HARUS berada di jaringan Wi‑Fi yang sama dengan konsol tempat Anda bermain Minecraft.';
 
   @override
-  String get subscription => 'Online Subscription Required';
+  String get subscription => 'Langganan online diperlukan';
 
   @override
-  String get needSubscription => 'Each console needs its own active online subscription (Xbox Live, PS Plus, NSO). Without it, NetherLink won\'t appear.';
+  String get needSubscription => 'Setiap konsol memerlukan langganan online aktifnya sendiri (Xbox Live, PS Plus, NSO). Tanpa itu, NetherLink tidak akan muncul.';
 
   @override
-  String get updateAvailable => 'Update Available';
+  String get updateAvailable => 'Pembaruan tersedia';
 
   @override
-  String get newVersion => 'A new version of the app is available.\nUpdate now for the latest features and fixes.';
+  String get newVersion => 'Versi baru aplikasi tersedia.\nPerbarui sekarang untuk mendapatkan fitur dan perbaikan terbaru.';
 
   @override
-  String get later => 'Later';
+  String get later => 'Nanti';
 
   @override
-  String get updateNow => 'Update Now';
+  String get updateNow => 'Perbarui sekarang';
 
   @override
-  String get beforeYouStart => 'BEFORE YOU START';
+  String get beforeYouStart => 'SEBELUM MEMULAI';
 
   @override
   String get stopBroadcasting => 'Hentikan Siaran';

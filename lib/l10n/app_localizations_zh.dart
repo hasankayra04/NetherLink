@@ -56,7 +56,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get start => '开始';
 
   @override
-  String get stop => 'Stop';
+  String get stop => '停止';
 
   @override
   String get labelJava => 'Java';
@@ -233,58 +233,58 @@ class AppLocalizationsZh extends AppLocalizations {
   String get manageServersTooltip => '管理服务器';
 
   @override
-  String get noServerYet => 'No saved servers yet.\nTap Manage to add one.';
+  String get noServerYet => '还没有已保存的服务器。\n点击“管理”以添加一个。';
 
   @override
-  String get serverNotSelected => 'No server selected';
+  String get serverNotSelected => '未选择服务器';
 
   @override
-  String get ready => 'Ready';
+  String get ready => '就绪';
 
   @override
-  String get active => 'Active';
+  String get active => '活动中';
 
   @override
-  String get vpnDetected => 'VPN Detected';
+  String get vpnDetected => '检测到 VPN';
 
   @override
-  String get noWifi => 'Not on Wi-Fi';
+  String get noWifi => '未连接到 Wi‑Fi';
 
   @override
-  String get vpnActive => 'We detected that your VPN is active.\n\nPlease disable your VPN before using NetherLink, otherwise the LAN broadcast may not reach your console.';
+  String get vpnActive => '我们检测到您的 VPN 已开启。\n\n请先关闭 VPN 再使用 NetherLink，否则局域网广播可能无法到达您的主机。';
 
   @override
-  String get mobileActive => 'Detected: Mobile Data\n\nNetherLink needs to be on the same network as your console. Please connect to your home Wi-Fi or hotspot before continuing.';
+  String get mobileActive => '检测到：移动数据\n\nNetherLink 必须与您的主机位于同一网络。请先连接家庭 Wi‑Fi 或热点后再继续。';
 
   @override
-  String get continueAnyway => 'Continue Anyway';
+  String get continueAnyway => '仍然继续';
 
   @override
-  String get sameWifi => 'Same Wi-Fi Network';
+  String get sameWifi => '同一 Wi‑Fi 网络';
 
   @override
-  String get needSameWifi => 'The device running NetherLink MUST be on the same Wi-Fi network as the console you play Minecraft on.';
+  String get needSameWifi => '运行 NetherLink 的设备必须与您游玩 Minecraft 的主机连接到同一个 Wi‑Fi 网络。';
 
   @override
-  String get subscription => 'Online Subscription Required';
+  String get subscription => '需要在线订阅';
 
   @override
-  String get needSubscription => 'Each console needs its own active online subscription (Xbox Live, PS Plus, NSO). Without it, NetherLink won\'t appear.';
+  String get needSubscription => '每台主机都需要各自有效的在线订阅服务（Xbox Live、PS Plus、NSO）。否则 NetherLink 不会显示。';
 
   @override
-  String get updateAvailable => 'Update Available';
+  String get updateAvailable => '有可用更新';
 
   @override
-  String get newVersion => 'A new version of the app is available.\nUpdate now for the latest features and fixes.';
+  String get newVersion => '有新版本应用可用。\n立即更新以获取最新功能和修复。';
 
   @override
-  String get later => 'Later';
+  String get later => '稍后';
 
   @override
-  String get updateNow => 'Update Now';
+  String get updateNow => '立即更新';
 
   @override
-  String get beforeYouStart => 'BEFORE YOU START';
+  String get beforeYouStart => '开始之前';
 
   @override
   String get stopBroadcasting => '停止广播';

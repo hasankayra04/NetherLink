@@ -345,6 +345,25 @@
     "@useSystemLanguage":  {
                                "description":  "Button that resets localization to the system/default locale"
                            },
+    "updateAvailable":  "Pembaruan tersedia",
+    "needSameWifi":  "Perangkat yang menjalankan NetherLink HARUS berada di jaringan Wi‑Fi yang sama dengan konsol tempat Anda bermain Minecraft.",
+    "active":  "Aktif",
+    "newVersion":  "Versi baru aplikasi tersedia.\nPerbarui sekarang untuk mendapatkan fitur dan perbaikan terbaru.",
+    "noServerYet":  "Belum ada server tersimpan.\nKetuk Kelola untuk menambahkan satu.",
+    "beforeYouStart":  "SEBELUM MEMULAI",
+    "stop":  "Berhenti",
+    "later":  "Nanti",
+    "continueAnyway":  "Tetap lanjutkan",
+    "serverNotSelected":  "Belum ada server yang dipilih",
+    "noWifi":  "Tidak di Wi‑Fi",
+    "vpnDetected":  "VPN terdeteksi",
+    "ready":  "Siap",
+    "vpnActive":  "Kami mendeteksi VPN Anda aktif.\n\nMatikan VPN sebelum menggunakan NetherLink, jika tidak siaran LAN mungkin tidak akan mencapai konsol Anda.",
+    "updateNow":  "Perbarui sekarang",
+    "needSubscription":  "Setiap konsol memerlukan langganan online aktifnya sendiri (Xbox Live, PS Plus, NSO). Tanpa itu, NetherLink tidak akan muncul.",
+    "mobileActive":  "Terdeteksi: Data Seluler\n\nNetherLink harus berada di jaringan yang sama dengan konsol Anda. Sambungkan ke Wi‑Fi rumah atau hotspot sebelum melanjutkan.",
+    "sameWifi":  "Jaringan Wi‑Fi yang sama",
+    "subscription":  "Langganan online diperlukan",
     "couldNotOpenUrl":  "Tidak dapat membuka URL",
     "@couldNotOpenUrl":  {
                              "description":  "Snackbar message when launching an external URL fails"

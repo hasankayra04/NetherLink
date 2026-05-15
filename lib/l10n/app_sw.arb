@@ -345,6 +345,25 @@
     "@useSystemLanguage":  {
                                "description":  "Button that resets localization to the system/default locale"
                            },
+    "updateAvailable":  "Sasisho linapatikana",
+    "needSameWifi":  "Kifaa kinachoendesha NetherLink LAZIMA kiwe kwenye mtandao ule ule wa Wi‑Fi na konsoli unayotumia kucheza Minecraft.",
+    "active":  "Inatumika",
+    "newVersion":  "Toleo jipya la programu linapatikana.\nSasisha sasa kwa vipengele na marekebisho mapya zaidi.",
+    "noServerYet":  "Bado hakuna seva zilizohifadhiwa.\nGusa Dhibiti ili kuongeza moja.",
+    "beforeYouStart":  "KABLA HUJAANZA",
+    "stop":  "Simamisha",
+    "later":  "Baadaye",
+    "continueAnyway":  "Endelea hata hivyo",
+    "serverNotSelected":  "Hakuna seva iliyochaguliwa",
+    "noWifi":  "Haupo kwenye Wi‑Fi",
+    "vpnDetected":  "VPN imegunduliwa",
+    "ready":  "Tayari",
+    "vpnActive":  "Tumegundua kuwa VPN yako imewashwa.\n\nTafadhali izime kabla ya kutumia NetherLink, la sivyo matangazo ya LAN yanaweza yasifikie konsoli yako.",
+    "updateNow":  "Sasisha sasa",
+    "needSubscription":  "Kila konsoli inahitaji usajili wake wa mtandaoni ulio hai (Xbox Live, PS Plus, NSO). Bila huo, NetherLink haitaonekana.",
+    "mobileActive":  "Imegunduliwa: Data ya simu\n\nNetherLink inahitaji kuwa kwenye mtandao ule ule na konsoli yako. Unganisha kwenye Wi‑Fi ya nyumbani au hotspot kabla ya kuendelea.",
+    "sameWifi":  "Mtandao ule ule wa Wi‑Fi",
+    "subscription":  "Usajili wa mtandaoni unahitajika",
     "couldNotOpenUrl":  "Haikuweza kufungua URL",
     "@couldNotOpenUrl":  {
                              "description":  "Snackbar message when launching an external URL fails"
