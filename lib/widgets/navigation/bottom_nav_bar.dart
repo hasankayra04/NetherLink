@@ -11,6 +11,7 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
   final VoidCallback? onHelpTapOverride;
   final VoidCallback? onMoreTapOverride;
   final VoidCallback? onPartnerServersTap;
+  final VoidCallback? onProfileTap;
   final VoidCallback? onAnyTap;
   final bool dark;
   final String? selectedRelayIp;
@@ -24,6 +25,7 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
     this.onHelpTapOverride,
     this.onMoreTapOverride,
     this.onPartnerServersTap,
+    this.onProfileTap,
     this.onAnyTap,
     this.activeItem,
     this.dark = true,
@@ -47,7 +49,7 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
             children: [
               _NavItem(
                 icon: FontAwesomeIcons.house,
-                label: "Home",
+                label: 'Home',
                 isActive: activeItem == 'home',
                 onTap: () {
                   onAnyTap?.call();
@@ -61,6 +63,15 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
                 onTap: () {
                   onAnyTap?.call();
                   onPartnerServersTap?.call();
+                },
+              ),
+              _NavItem(
+                icon: FontAwesomeIcons.userGroup,
+                label: 'Profile',
+                isActive: activeItem == 'profile',
+                onTap: () {
+                  onAnyTap?.call();
+                  onProfileTap?.call();
                 },
               ),
               _NavItem(
@@ -160,7 +171,8 @@ class _NavItem extends StatelessWidget {
                 style: TextStyle(
                   color: color,
                   fontSize: 10,
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                  fontWeight:
+                      isActive ? FontWeight.w700 : FontWeight.w500,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -296,8 +308,7 @@ class MoreSheetContent extends StatelessWidget {
                       icon: FontAwesomeIcons.discord,
                       color: const Color(0xFF5865F2),
                       label: loc.discord,
-                      onTap:
-                          onDiscord ??
+                      onTap: onDiscord ??
                           () {
                             onClose();
                             navigationController.openDiscord(context);
@@ -315,8 +326,7 @@ class MoreSheetContent extends StatelessWidget {
                       icon: FontAwesomeIcons.terminal,
                       color: AppTheme.info,
                       label: loc.console,
-                      onTap:
-                          onConsole ??
+                      onTap: onConsole ??
                           () {
                             onClose();
                             navigationController.showConsole(context);
@@ -327,8 +337,7 @@ class MoreSheetContent extends StatelessWidget {
                       icon: FontAwesomeIcons.globe,
                       color: AppTheme.success,
                       label: loc.website,
-                      onTap:
-                          onWebsite ??
+                      onTap: onWebsite ??
                           () {
                             onClose();
                             navigationController.openWebsite(context);
@@ -339,8 +348,7 @@ class MoreSheetContent extends StatelessWidget {
                       icon: FontAwesomeIcons.language,
                       color: AppTheme.warning,
                       label: loc.changeLanguage,
-                      onTap:
-                          onLanguage ??
+                      onTap: onLanguage ??
                           () {
                             onClose();
                             navigationController.showLanguageDialog(context);
@@ -349,8 +357,7 @@ class MoreSheetContent extends StatelessWidget {
                     const SizedBox(height: 8),
                     _AternosTile(
                       subtitle: loc.aternosSubtext,
-                      onTap:
-                          onAternos ??
+                      onTap: onAternos ??
                           () {
                             onClose();
                             navigationController.openWebsiteWithCustomUrl(
@@ -535,7 +542,8 @@ class _SheetTile extends StatelessWidget {
 class _RegionSelector extends StatelessWidget {
   final String? selectedIp;
   final void Function(String?) onChanged;
-  const _RegionSelector({required this.selectedIp, required this.onChanged});
+  const _RegionSelector(
+      {required this.selectedIp, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {

@@ -24,6 +24,8 @@ dependencies:
   flutter_svg: ^2.2.4
   mc_server_info: ^1.0.0
   connectivity_plus: ^7.1.1
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -46,5 +48,3 @@ msix_config:
   publisher: CN=ED8BFBA1-D05A-4503-813F-9B89DB1BE8A2
   logo_path: windows\runner\resources\app_icon.ico
   store: true
-
-

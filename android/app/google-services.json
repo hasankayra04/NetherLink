@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "670852401318",
+    "project_id": "netherlinkadmin",
+    "storage_bucket": "netherlinkadmin.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:670852401318:android:9425bef5fdc0149c004c67",
+        "android_client_info": {
+          "package_name": "net.netherdev.netherLink"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAAj4Z9jhwT52X3MfUdKsUTm991p95fEXs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

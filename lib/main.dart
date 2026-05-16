@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
 import 'l10n/app_localizations.dart';
@@ -6,6 +8,9 @@ import 'services/locale_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   await loadSavedLocale();
   runApp(const NetherLinkApp());
 }
@@ -26,7 +31,6 @@ class NetherLinkApp extends StatelessWidget {
           localeResolutionCallback:
               (Locale? platformLocale, Iterable<Locale> supportedLocales) {
                 if (locale != null) return locale;
-
                 if (platformLocale != null) {
                   for (final supported in supportedLocales) {
                     if (supported.languageCode == platformLocale.languageCode) {
@@ -34,7 +38,6 @@ class NetherLinkApp extends StatelessWidget {
                     }
                   }
                 }
-
                 return const Locale('en');
               },
           scrollBehavior: const MaterialScrollBehavior().copyWith(

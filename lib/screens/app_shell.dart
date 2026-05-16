@@ -17,6 +17,7 @@ import '../theme/app_theme.dart';
 import 'home_screen.dart';
 import 'partner_servers_screen.dart';
 import 'manage_servers_screen.dart';
+import 'profile_screen.dart';
 
 enum _ActiveSheet { none, help, howTo, more }
 
@@ -24,6 +25,7 @@ const int _pageHome = 0;
 const int _pagePartners = 1;
 const int _pageManageServers = 2;
 const int _pageAddEditServer = 3;
+const int _pageProfile = 4;
 
 class AppShell extends StatefulWidget {
   final RelayPingResult? initialRelay;
@@ -156,16 +158,17 @@ class _AppShellState extends State<AppShell>
   }
 
   static String _friendNameForRelay(String relayName) => switch (relayName) {
-    'EU Server' => 'NetherLinkEU',
-    'US Server' => 'NetherLinkUS',
-    _ => '-',
-  };
+        'EU Server' => 'NetherLinkEU',
+        'US Server' => 'NetherLinkUS',
+        _ => '-',
+      };
 
   String? get _activeNavItem {
     if (_pageIndex == _pageHome && _activeSheet == _ActiveSheet.none) {
       return 'home';
     }
     if (_pageIndex == _pagePartners) return 'partners';
+    if (_pageIndex == _pageProfile) return 'profile';
     switch (_activeSheet) {
       case _ActiveSheet.help:
         return 'support';
@@ -221,6 +224,7 @@ class _AppShellState extends State<AppShell>
           activeItem: _activeNavItem,
           onHomeTap: () => _goTo(_pageHome),
           onPartnerServersTap: () => _goTo(_pagePartners),
+          onProfileTap: () => _goTo(_pageProfile),
           onAnyTap: null,
           onHelpTapOverride: () {
             if (_activeSheet == _ActiveSheet.help) {
@@ -275,6 +279,7 @@ class _AppShellState extends State<AppShell>
                     onCancel: () =>
                         setState(() => _pageIndex = _pageManageServers),
                   ),
+                  const ProfileScreen(),
                 ],
               ),
 
@@ -284,7 +289,8 @@ class _AppShellState extends State<AppShell>
                   builder: (_, __) => GestureDetector(
                     onTap: _closeSheet,
                     child: Container(
-                      color: Colors.black.withOpacity(0.45 * _sheetAnim.value),
+                      color:
+                          Colors.black.withOpacity(0.45 * _sheetAnim.value),
                     ),
                   ),
                 ),
