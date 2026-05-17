@@ -144,7 +144,7 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color activeColor = accentColor ?? AppTheme.accent;
+    final Color activeColor   = accentColor ?? AppTheme.accent;
     final Color inactiveColor = accentColor ?? AppTheme.textSecondary;
     final Color color = isActive ? activeColor : inactiveColor;
 
@@ -171,8 +171,7 @@ class _NavItem extends StatelessWidget {
                 style: TextStyle(
                   color: color,
                   fontSize: 10,
-                  fontWeight:
-                      isActive ? FontWeight.w700 : FontWeight.w500,
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -254,7 +253,6 @@ class MoreSheetContent extends StatelessWidget {
                 ),
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Row(
@@ -289,7 +287,6 @@ class MoreSheetContent extends StatelessWidget {
                 ],
               ),
             ),
-
             Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
@@ -303,7 +300,6 @@ class MoreSheetContent extends StatelessWidget {
                     const SizedBox(height: 16),
                     const Divider(color: AppTheme.borderDim, height: 1),
                     const SizedBox(height: 12),
-
                     _SheetTile(
                       icon: FontAwesomeIcons.discord,
                       color: const Color(0xFF5865F2),
@@ -562,10 +558,10 @@ class _RegionSelector extends StatelessWidget {
         const SizedBox(height: 8),
         Row(
           children: AppConstants.relayServers.map((relay) {
-            final ip = relay['ip'] as String;
-            final name = relay['name'] as String;
+            final ip       = relay['ip'] as String;
+            final name     = relay['name'] as String;
             final isSelected = selectedIp == ip;
-            final isFirst = relay == AppConstants.relayServers.first;
+            final isFirst  = relay == AppConstants.relayServers.first;
 
             return Expanded(
               child: GestureDetector(

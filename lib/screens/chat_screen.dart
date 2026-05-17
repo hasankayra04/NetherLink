@@ -1,0 +1,449 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
+import '../models/message_model.dart';
+import '../models/user_model.dart';
+import '../services/auth_service.dart';
+import '../services/message_service.dart';
+
+class ChatScreen extends StatefulWidget {
+  final FriendModel friend;
+  const ChatScreen({super.key, required this.friend});
+
+  @override
+  State<ChatScreen> createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
+  final _inputCtrl  = TextEditingController();
+  final _scrollCtrl = ScrollController();
+  StreamSubscription<MessageModel>? _sub;
+
+  List<MessageModel> _messages = [];
+  bool _loading      = true;
+  bool _sending      = false;
+  bool _loadingMore  = false;
+  bool _hasMore      = true;
+  String? _myUid;
+
+  @override
+  void initState() {
+    super.initState();
+    _myUid = AuthService.currentUser?.uid;
+    _loadMessages();
+    _sub = MessageService.incoming.listen(_onIncoming);
+    _scrollCtrl.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    _inputCtrl.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollCtrl.position.pixels <= 80 && !_loadingMore && _hasMore) {
+      _loadMore();
+    }
+  }
+
+  void _onIncoming(MessageModel msg) {
+    if (!mounted) return;
+    final isRelevant =
+        (msg.senderUid == widget.friend.firebaseUid && msg.receiverUid == _myUid) ||
+        (msg.senderUid == _myUid && msg.receiverUid == widget.friend.firebaseUid);
+    if (!isRelevant) return;
+    setState(() => _messages = [..._messages, msg]);
+    _scrollToBottom();
+    MessageService.markRead(widget.friend.username);
+  }
+
+  Future<void> _loadMessages() async {
+    setState(() => _loading = true);
+    final msgs = await MessageService.getMessages(widget.friend.username);
+    if (!mounted) return;
+    setState(() {
+      _messages = msgs;
+      _loading  = false;
+      _hasMore  = msgs.length >= 50;
+    });
+    await Future.delayed(const Duration(milliseconds: 50));
+    _scrollToBottom(animate: false);
+  }
+
+  Future<void> _loadMore() async {
+    if (_messages.isEmpty) return;
+    setState(() => _loadingMore = true);
+    final oldest = _messages.first.createdAt.toIso8601String();
+    final older  = await MessageService.getMessages(
+      widget.friend.username,
+      before: oldest,
+    );
+    if (!mounted) return;
+    setState(() {
+      _messages    = [...older, ..._messages];
+      _loadingMore = false;
+      _hasMore     = older.length >= 50;
+    });
+  }
+
+  void _scrollToBottom({bool animate = true}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollCtrl.hasClients) return;
+      if (animate) {
+        _scrollCtrl.animateTo(
+          _scrollCtrl.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+      } else {
+        _scrollCtrl.jumpTo(_scrollCtrl.position.maxScrollExtent);
+      }
+    });
+  }
+
+  Future<void> _send() async {
+    final text = _inputCtrl.text.trim();
+    if (text.isEmpty || _sending) return;
+    _inputCtrl.clear();
+    setState(() => _sending = true);
+    final msg = await MessageService.sendMessage(widget.friend.username, text);
+    if (!mounted) return;
+    setState(() => _sending = false);
+    if (msg != null) {
+      setState(() => _messages = [..._messages, msg]);
+      _scrollToBottom();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.background,
+      appBar: AppBar(
+        backgroundColor: AppTheme.surface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: AppTheme.textPrimary),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Row(
+          children: [
+            _Avatar(initials: widget.friend.initials, size: 34),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.friend.displayLabel,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  '@${widget.friend.username}',
+                  style: const TextStyle(color: AppTheme.textMuted, fontSize: 11),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: _loading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                        color: AppTheme.accent, strokeWidth: 2),
+                  )
+                : _messages.isEmpty
+                    ? const _EmptyChat()
+                    : ListView.builder(
+                        controller: _scrollCtrl,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        itemCount: _messages.length + (_loadingMore ? 1 : 0),
+                        itemBuilder: (_, i) {
+                          if (_loadingMore && i == 0) {
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                              child: Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                      color: AppTheme.accent, strokeWidth: 2),
+                                ),
+                              ),
+                            );
+                          }
+                          final idx = _loadingMore ? i - 1 : i;
+                          final msg = _messages[idx];
+                          final isMine = msg.senderUid == _myUid;
+                          final showDate = idx == 0 ||
+                              !_isSameDay(
+                                _messages[idx - 1].createdAt,
+                                msg.createdAt,
+                              );
+                          return Column(
+                            children: [
+                              if (showDate) _DateDivider(date: msg.createdAt),
+                              _Bubble(msg: msg, isMine: isMine),
+                            ],
+                          );
+                        },
+                      ),
+          ),
+          _InputBar(
+            controller: _inputCtrl,
+            sending: _sending,
+            onSend: _send,
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+}
+
+class _Bubble extends StatelessWidget {
+  final MessageModel msg;
+  final bool isMine;
+  const _Bubble({required this.msg, required this.isMine});
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: EdgeInsets.only(
+          top: 2,
+          bottom: 2,
+          left: isMine ? 60 : 0,
+          right: isMine ? 0 : 60,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isMine
+              ? AppTheme.accent.withOpacity(0.85)
+              : AppTheme.surfaceRaised,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(16),
+            topRight: const Radius.circular(16),
+            bottomLeft: Radius.circular(isMine ? 16 : 4),
+            bottomRight: Radius.circular(isMine ? 4 : 16),
+          ),
+          border: isMine ? null : Border.all(color: AppTheme.borderGray),
+        ),
+        child: Column(
+          crossAxisAlignment:
+              isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: [
+            Text(
+              msg.content,
+              style: TextStyle(
+                color: isMine ? Colors.white : AppTheme.textPrimary,
+                fontSize: 14,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              _timeLabel(msg.createdAt),
+              style: TextStyle(
+                color: isMine
+                    ? Colors.white.withOpacity(0.65)
+                    : AppTheme.textMuted,
+                fontSize: 10,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _timeLabel(DateTime dt) {
+    final local = dt.toLocal();
+    return '${local.hour.toString().padLeft(2, '0')}:'
+        '${local.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+class _DateDivider extends StatelessWidget {
+  final DateTime date;
+  const _DateDivider({required this.date});
+
+  @override
+  Widget build(BuildContext context) {
+    final now   = DateTime.now();
+    final local = date.toLocal();
+    String label;
+    if (local.year == now.year &&
+        local.month == now.month &&
+        local.day == now.day) {
+      label = 'Today';
+    } else if (local.year == now.year &&
+        local.month == now.month &&
+        local.day == now.day - 1) {
+      label = 'Yesterday';
+    } else {
+      label =
+          '${local.day.toString().padLeft(2, '0')}/'
+          '${local.month.toString().padLeft(2, '0')}/'
+          '${local.year}';
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: [
+          const Expanded(child: Divider(color: AppTheme.borderDim)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Text(label,
+                style: const TextStyle(
+                    color: AppTheme.textMuted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500)),
+          ),
+          const Expanded(child: Divider(color: AppTheme.borderDim)),
+        ],
+      ),
+    );
+  }
+}
+
+class _InputBar extends StatelessWidget {
+  final TextEditingController controller;
+  final bool sending;
+  final VoidCallback onSend;
+  const _InputBar(
+      {required this.controller,
+      required this.sending,
+      required this.onSend});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 8, 8, 12),
+      decoration: const BoxDecoration(
+        color: AppTheme.surface,
+        border: Border(top: BorderSide(color: AppTheme.borderGray, width: 0.5)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: controller,
+                style: const TextStyle(
+                    color: AppTheme.textPrimary, fontSize: 14),
+                maxLines: 4,
+                minLines: 1,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => onSend(),
+                decoration: InputDecoration(
+                  hintText: 'Message...',
+                  hintStyle: const TextStyle(
+                      color: AppTheme.textMuted, fontSize: 14),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide:
+                        const BorderSide(color: AppTheme.borderGray),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide:
+                        const BorderSide(color: AppTheme.borderGray),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: const BorderSide(
+                        color: AppTheme.accent, width: 1.5),
+                  ),
+                  filled: true,
+                  fillColor: AppTheme.surfaceRaised,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: sending ? null : onSend,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: sending
+                      ? AppTheme.accent.withOpacity(0.4)
+                      : AppTheme.accent,
+                  shape: BoxShape.circle,
+                ),
+                child: sending
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2),
+                      )
+                    : const Icon(Icons.send_rounded,
+                        color: Colors.white, size: 18),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyChat extends StatelessWidget {
+  const _EmptyChat();
+
+  @override
+  Widget build(BuildContext context) => const Center(
+        child: Text(
+          'No messages yet.\nSay hello!',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+              color: AppTheme.textMuted, fontSize: 14, height: 1.6),
+        ),
+      );
+}
+
+class _Avatar extends StatelessWidget {
+  final String initials;
+  final double size;
+  const _Avatar({required this.initials, required this.size});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: AppTheme.accent.withOpacity(0.15),
+          shape: BoxShape.circle,
+          border: Border.all(color: AppTheme.accent.withOpacity(0.30)),
+        ),
+        child: Center(
+          child: Text(
+            initials,
+            style: TextStyle(
+              color: AppTheme.accent,
+              fontSize: size * 0.36,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      );
+}

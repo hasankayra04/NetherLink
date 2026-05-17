@@ -7,6 +7,8 @@ import '../services/user_service.dart';
 import '../models/user_model.dart';
 import '../widgets/components/app_toast.dart';
 import 'register_screen.dart';
+import 'chat_screen.dart';
+import 'conversations_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -31,7 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 3, vsync: this);
+    _tabs = TabController(length: 4, vsync: this);
     _authSubscription = AuthService.userStream.listen((_) => _checkAuth());
     _checkAuth();
   }
@@ -98,6 +100,12 @@ class _ProfileScreenState extends State<ProfileScreen>
     ));
   }
 
+  void _openChat(FriendModel friend) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => ChatScreen(friend: friend)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_authState == _AuthState.loading) {
@@ -161,6 +169,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ],
                 ),
               ),
+              const Tab(text: 'CHATS'),
             ],
           ),
         ),
@@ -177,6 +186,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 loading: _loadingFriends,
                 onRefresh: _fetchFriends,
                 onRemove: _removeFriend,
+                onChat: _openChat,
               ),
               _RequestsTab(
                 requests: _requests,
@@ -185,6 +195,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 onAccept: _acceptRequest,
                 onDecline: _declineRequest,
               ),
+              const ConversationsScreen(),
             ],
           ),
         ),
@@ -360,7 +371,6 @@ class _NotLoggedInViewState extends State<_NotLoggedInView> {
       } else {
         await AuthService.signInWithEmail(email, pass);
       }
-
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -779,11 +789,13 @@ class _FriendsTab extends StatelessWidget {
   final bool loading;
   final Future<void> Function() onRefresh;
   final Future<void> Function(FriendModel) onRemove;
+  final void Function(FriendModel) onChat;
   const _FriendsTab({
     required this.friends,
     required this.loading,
     required this.onRefresh,
     required this.onRemove,
+    required this.onChat,
   });
 
   @override
@@ -813,7 +825,10 @@ class _FriendsTab extends StatelessWidget {
             ...online.map((f) => Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: _FriendTile(
-                      friend: f, onRemove: () => onRemove(f)),
+                    friend: f,
+                    onRemove: () => onRemove(f),
+                    onChat: () => onChat(f),
+                  ),
                 )),
             const SizedBox(height: 8),
           ],
@@ -823,7 +838,10 @@ class _FriendsTab extends StatelessWidget {
             ...offline.map((f) => Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: _FriendTile(
-                      friend: f, onRemove: () => onRemove(f)),
+                    friend: f,
+                    onRemove: () => onRemove(f),
+                    onChat: () => onChat(f),
+                  ),
                 )),
           ],
         ],
@@ -835,7 +853,12 @@ class _FriendsTab extends StatelessWidget {
 class _FriendTile extends StatelessWidget {
   final FriendModel friend;
   final VoidCallback onRemove;
-  const _FriendTile({required this.friend, required this.onRemove});
+  final VoidCallback onChat;
+  const _FriendTile({
+    required this.friend,
+    required this.onRemove,
+    required this.onChat,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -898,6 +921,14 @@ class _FriendTile extends StatelessWidget {
                   ]),
                 ],
               ],
+            ),
+          ),
+          GestureDetector(
+            onTap: onChat,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Icon(Icons.chat_bubble_rounded,
+                  color: AppTheme.accent.withOpacity(0.70), size: 18),
             ),
           ),
           GestureDetector(

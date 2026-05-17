@@ -56,6 +56,7 @@ class FriendSession {
 }
 
 class FriendModel {
+  final String firebaseUid;
   final String username;
   final String? displayName;
   final String? avatarUrl;
@@ -64,6 +65,7 @@ class FriendModel {
   final String? lastSeenAt;
 
   const FriendModel({
+    required this.firebaseUid,
     required this.username,
     this.displayName,
     this.avatarUrl,
@@ -73,6 +75,7 @@ class FriendModel {
   });
 
   factory FriendModel.fromJson(Map<String, dynamic> json) => FriendModel(
+        firebaseUid: json['firebaseUid'] as String? ?? '',
         username: json['username'] as String,
         displayName: json['displayName'] as String?,
         avatarUrl: json['avatarUrl'] as String?,

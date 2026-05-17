@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../services/navigation_controller.dart';
 import '../services/locale_provider.dart';
 import '../services/region_detector.dart';
+import '../services/auth_service.dart';
+import '../services/message_service.dart';
 import '../constants/app_constants.dart';
 import '../widgets/navigation/bottom_nav_bar.dart';
 import '../widgets/navigation/howto_menu.dart';
@@ -21,11 +23,11 @@ import 'profile_screen.dart';
 
 enum _ActiveSheet { none, help, howTo, more }
 
-const int _pageHome = 0;
-const int _pagePartners = 1;
-const int _pageManageServers = 2;
-const int _pageAddEditServer = 3;
-const int _pageProfile = 4;
+const int _pageHome      = 0;
+const int _pagePartners  = 1;
+const int _pageManageServers  = 2;
+const int _pageAddEditServer  = 3;
+const int _pageProfile   = 4;
 
 class AppShell extends StatefulWidget {
   final RelayPingResult? initialRelay;
@@ -40,12 +42,13 @@ class _AppShellState extends State<AppShell>
   late final NavigationController navigationController;
   late final Future<List<FeaturedServer>> _partnerServersFuture;
   late final Logger logger;
+  StreamSubscription? _authSub;
 
   final ValueNotifier<bool> _debugEnabledNotifier = ValueNotifier(false);
   final ValueNotifier<List<String>> _logsNotifier = ValueNotifier([]);
   final ScrollController _logScrollController = ScrollController();
 
-  final TextEditingController _ipController = TextEditingController();
+  final TextEditingController _ipController   = TextEditingController();
   final TextEditingController _portController = TextEditingController();
 
   late RelayPingResult _selectedRelay;
@@ -74,6 +77,14 @@ class _AppShellState extends State<AppShell>
 
     logger = Logger(debugEnabled: false, logCallback: (_) {});
     _initNavigationController();
+
+    _authSub = AuthService.userStream.listen((user) {
+      if (user != null) {
+        MessageService.connect();
+      } else {
+        MessageService.disconnect();
+      }
+    });
   }
 
   RelayPingResult _fallbackRelay() {
@@ -168,7 +179,7 @@ class _AppShellState extends State<AppShell>
       return 'home';
     }
     if (_pageIndex == _pagePartners) return 'partners';
-    if (_pageIndex == _pageProfile) return 'profile';
+    if (_pageIndex == _pageProfile)  return 'profile';
     switch (_activeSheet) {
       case _ActiveSheet.help:
         return 'support';
@@ -195,6 +206,8 @@ class _AppShellState extends State<AppShell>
 
   @override
   void dispose() {
+    _authSub?.cancel();
+    MessageService.disconnect();
     _sheetAnimController.dispose();
     _logScrollController.dispose();
     _logsNotifier.dispose();
@@ -289,8 +302,7 @@ class _AppShellState extends State<AppShell>
                   builder: (_, __) => GestureDetector(
                     onTap: _closeSheet,
                     child: Container(
-                      color:
-                          Colors.black.withOpacity(0.45 * _sheetAnim.value),
+                      color: Colors.black.withOpacity(0.45 * _sheetAnim.value),
                     ),
                   ),
                 ),
