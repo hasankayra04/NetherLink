@@ -22,8 +22,9 @@ class UserService {
           .timeout(_timeout);
       if (res.statusCode == 200) {
         return UserModel.fromJson(
-            (jsonDecode(res.body) as Map<String, dynamic>)['user']
-                as Map<String, dynamic>);
+          (jsonDecode(res.body) as Map<String, dynamic>)['user']
+              as Map<String, dynamic>,
+        );
       }
     } catch (_) {}
     return null;
@@ -76,18 +77,91 @@ class UserService {
           .timeout(_timeout);
       if (res.statusCode == 200) {
         return UserModel.fromJson(
-            (jsonDecode(res.body) as Map<String, dynamic>)['user']
-                as Map<String, dynamic>);
+          (jsonDecode(res.body) as Map<String, dynamic>)['user']
+              as Map<String, dynamic>,
+        );
       }
     } catch (_) {}
     return null;
   }
 
+  static Future<
+    ({String? userCode, String? verificationUri, int? expiresIn, String? error})
+  >
+  startXboxLink() async {
+    try {
+      final res = await http
+          .post(
+            Uri.parse('$_base/api/users/me/xbox/start'),
+            headers: await _headers(),
+          )
+          .timeout(const Duration(seconds: 35));
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      if (res.statusCode == 200) {
+        return (
+          userCode: body['userCode'] as String?,
+          verificationUri: body['verificationUri'] as String?,
+          expiresIn: body['expiresIn'] as int?,
+          error: null,
+        );
+      }
+      return (
+        userCode: null,
+        verificationUri: null,
+        expiresIn: null,
+        error: body['error'] as String?,
+      );
+    } catch (_) {
+      return (
+        userCode: null,
+        verificationUri: null,
+        expiresIn: null,
+        error: 'network_error',
+      );
+    }
+  }
+
+  static Future<({String status, String? gamertag, String? error})>
+  getXboxStatus() async {
+    try {
+      final res = await http
+          .get(
+            Uri.parse('$_base/api/users/me/xbox/status'),
+            headers: await _headers(),
+          )
+          .timeout(_timeout);
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      return (
+        status: body['status'] as String? ?? 'none',
+        gamertag: body['gamertag'] as String?,
+        error: body['error'] as String?,
+      );
+    } catch (_) {
+      return (status: 'error', gamertag: null, error: 'network_error');
+    }
+  }
+
+  static Future<bool> unlinkXbox() async {
+    try {
+      final res = await http
+          .delete(
+            Uri.parse('$_base/api/users/me/xbox'),
+            headers: await _headers(),
+          )
+          .timeout(_timeout);
+      return res.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
   static Future<List<FriendModel>> getFriends() async {
     try {
       final res = await http
-          .get(Uri.parse('$_base/api/users/me/friends'),
-              headers: await _headers())
+          .get(
+            Uri.parse('$_base/api/users/me/friends'),
+            headers: await _headers(),
+          )
           .timeout(_timeout);
       if (res.statusCode == 200) {
         final list =
@@ -104,8 +178,10 @@ class UserService {
   static Future<List<FriendRequest>> getFriendRequests() async {
     try {
       final res = await http
-          .get(Uri.parse('$_base/api/users/me/friend-requests'),
-              headers: await _headers())
+          .get(
+            Uri.parse('$_base/api/users/me/friend-requests'),
+            headers: await _headers(),
+          )
           .timeout(_timeout);
       if (res.statusCode == 200) {
         final list =
@@ -128,8 +204,7 @@ class UserService {
           )
           .timeout(_timeout);
       if (res.statusCode == 201) return null;
-      return (jsonDecode(res.body) as Map<String, dynamic>)['error']
-          as String?;
+      return (jsonDecode(res.body) as Map<String, dynamic>)['error'] as String?;
     } catch (_) {
       return 'network_error';
     }
@@ -166,13 +241,16 @@ class UserService {
   static Future<UserModel?> getProfile(String username) async {
     try {
       final res = await http
-          .get(Uri.parse('$_base/api/users/$username'),
-              headers: await _headers())
+          .get(
+            Uri.parse('$_base/api/users/$username'),
+            headers: await _headers(),
+          )
           .timeout(_timeout);
       if (res.statusCode == 200) {
         return UserModel.fromJson(
-            (jsonDecode(res.body) as Map<String, dynamic>)['user']
-                as Map<String, dynamic>);
+          (jsonDecode(res.body) as Map<String, dynamic>)['user']
+              as Map<String, dynamic>,
+        );
       }
     } catch (_) {}
     return null;

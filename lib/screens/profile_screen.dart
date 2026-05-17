@@ -8,6 +8,7 @@ import '../services/message_service.dart';
 import '../models/user_model.dart';
 import '../widgets/components/app_toast.dart';
 import 'register_screen.dart';
+import 'xbox_link_screen.dart';
 import 'chat_screen.dart';
 import 'conversations_screen.dart';
 
@@ -80,7 +81,10 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
 
     final me = await UserService.getMe();
-    if (!mounted) { _checking = false; return; }
+    if (!mounted) {
+      _checking = false;
+      return;
+    }
 
     if (me == null) {
       setState(() => _authState = _AuthState.notRegistered);
@@ -106,34 +110,49 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Future<void> _fetchFriends() async {
     final friends = await UserService.getFriends();
-    if (mounted) setState(() { _friends = friends; _loadingFriends = false; });
+    if (mounted)
+      setState(() {
+        _friends = friends;
+        _loadingFriends = false;
+      });
   }
 
   Future<void> _fetchRequests() async {
     final requests = await UserService.getFriendRequests();
-    if (mounted) setState(() { _requests = requests; _loadingRequests = false; });
+    if (mounted)
+      setState(() {
+        _requests = requests;
+        _loadingRequests = false;
+      });
   }
 
   void _openRegister() {
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => RegisterScreen(onRegistered: () {
-        Navigator.of(context).pop();
-        _checkAuth();
-      }),
-    ));
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RegisterScreen(
+          onRegistered: () {
+            Navigator.of(context).pop();
+            _checkAuth();
+          },
+        ),
+      ),
+    );
   }
 
   void _openChat(FriendModel friend) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => ChatScreen(friend: friend)),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => ChatScreen(friend: friend)));
   }
 
   @override
   Widget build(BuildContext context) {
     if (_authState == _AuthState.loading) {
       return const Center(
-        child: CircularProgressIndicator(color: AppTheme.accent, strokeWidth: 2),
+        child: CircularProgressIndicator(
+          color: AppTheme.accent,
+          strokeWidth: 2,
+        ),
       );
     }
 
@@ -147,10 +166,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     return Column(
       children: [
-        _Header(
-          me: _me,
-          onAddFriend: _showAddFriendDialog,
-        ),
+        _Header(me: _me, onAddFriend: _showAddFriendDialog),
         Container(
           color: AppTheme.surface,
           child: TabBar(
@@ -160,7 +176,10 @@ class _ProfileScreenState extends State<ProfileScreen>
             labelColor: AppTheme.accent,
             unselectedLabelColor: AppTheme.textMuted,
             labelStyle: const TextStyle(
-                fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.4),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.4,
+            ),
             tabs: [
               const Tab(text: 'PROFILE'),
               const Tab(text: 'FRIENDS'),
@@ -168,25 +187,33 @@ class _ProfileScreenState extends State<ProfileScreen>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('REQUESTS',
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.4)),
+                    const Text(
+                      'REQUESTS',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
                     if (_requests.isNotEmpty) ...[
                       const SizedBox(width: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: AppTheme.accent,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Text('${_requests.length}',
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700)),
+                        child: Text(
+                          '${_requests.length}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                     ],
                   ],
@@ -247,8 +274,11 @@ class _ProfileScreenState extends State<ProfileScreen>
           style: const TextStyle(color: AppTheme.textPrimary),
           decoration: const InputDecoration(
             hintText: 'username',
-            prefixIcon: Icon(Icons.alternate_email_rounded,
-                size: 18, color: AppTheme.textMuted),
+            prefixIcon: Icon(
+              Icons.alternate_email_rounded,
+              size: 18,
+              color: AppTheme.textMuted,
+            ),
           ),
           onSubmitted: (_) {
             Navigator.of(ctx).pop();
@@ -277,22 +307,27 @@ class _ProfileScreenState extends State<ProfileScreen>
     final error = await UserService.sendFriendRequest(username);
     if (!mounted) return;
     if (error == null) {
-      AppToast.show(context,
-          message: 'Friend request sent to @$username',
-          icon: Icons.check_circle_rounded,
-          color: AppTheme.success);
+      AppToast.show(
+        context,
+        message: 'Friend request sent to @$username',
+        icon: Icons.check_circle_rounded,
+        color: AppTheme.success,
+      );
     } else {
       final msg = switch (error) {
         'already_friends' => 'You are already friends with @$username.',
-        'request_pending' => 'There is already a pending request with @$username.',
+        'request_pending' =>
+          'There is already a pending request with @$username.',
         'not_found' => 'User @$username not found.',
         'blocked' => 'You cannot send a request to @$username.',
         _ => 'Something went wrong. Please try again.',
       };
-      AppToast.show(context,
-          message: msg,
-          icon: Icons.error_outline_rounded,
-          color: AppTheme.error);
+      AppToast.show(
+        context,
+        message: msg,
+        icon: Icons.error_outline_rounded,
+        color: AppTheme.error,
+      );
     }
   }
 
@@ -300,10 +335,12 @@ class _ProfileScreenState extends State<ProfileScreen>
     final ok = await UserService.acceptFriendRequest(req.requesterUsername);
     if (!mounted) return;
     if (ok) {
-      AppToast.show(context,
-          message: 'Friend request from @${req.requesterUsername} accepted',
-          icon: Icons.check_circle_rounded,
-          color: AppTheme.success);
+      AppToast.show(
+        context,
+        message: 'Friend request from @${req.requesterUsername} accepted',
+        icon: Icons.check_circle_rounded,
+        color: AppTheme.success,
+      );
       await Future.wait([_fetchFriends(), _fetchRequests()]);
     }
   }
@@ -312,10 +349,12 @@ class _ProfileScreenState extends State<ProfileScreen>
     final ok = await UserService.removeFriend(req.requesterUsername);
     if (!mounted) return;
     if (ok) {
-      AppToast.show(context,
-          message: 'Request from @${req.requesterUsername} declined',
-          icon: Icons.close_rounded,
-          color: AppTheme.textMuted);
+      AppToast.show(
+        context,
+        message: 'Request from @${req.requesterUsername} declined',
+        icon: Icons.close_rounded,
+        color: AppTheme.textMuted,
+      );
       await _fetchRequests();
     }
   }
@@ -351,10 +390,12 @@ class _ProfileScreenState extends State<ProfileScreen>
     final ok = await UserService.removeFriend(friend.username);
     if (!mounted) return;
     if (ok) {
-      AppToast.show(context,
-          message: '@${friend.username} removed from your friends',
-          icon: Icons.person_remove_rounded,
-          color: AppTheme.textMuted);
+      AppToast.show(
+        context,
+        message: '@${friend.username} removed from your friends',
+        icon: Icons.person_remove_rounded,
+        color: AppTheme.textMuted,
+      );
       await _fetchFriends();
     }
   }
@@ -392,7 +433,10 @@ class _NotLoggedInViewState extends State<_NotLoggedInView> {
       setState(() => _error = 'Please enter your email and password.');
       return;
     }
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       if (_isRegisterMode) {
         await AuthService.createAccountWithEmail(email, pass);
@@ -403,8 +447,9 @@ class _NotLoggedInViewState extends State<_NotLoggedInView> {
       if (!mounted) return;
       setState(() {
         _error = switch (e.code) {
-          'user-not-found' || 'wrong-password' || 'invalid-credential' =>
-            'Incorrect email or password.',
+          'user-not-found' ||
+          'wrong-password' ||
+          'invalid-credential' => 'Incorrect email or password.',
           'email-already-in-use' => 'This email address is already in use.',
           'weak-password' => 'Password must be at least 6 characters.',
           'invalid-email' => 'Invalid email address.',
@@ -434,22 +479,29 @@ class _NotLoggedInViewState extends State<_NotLoggedInView> {
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: AppTheme.accent.withOpacity(0.30)),
                 ),
-                child: const Icon(Icons.person_rounded,
-                    color: AppTheme.accent, size: 28),
+                child: const Icon(
+                  Icons.person_rounded,
+                  color: AppTheme.accent,
+                  size: 28,
+                ),
               ),
               const SizedBox(height: 20),
               Text(
                 _isRegisterMode ? 'Create account' : 'Sign in',
                 style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700),
+                  color: AppTheme.textPrimary,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 6),
               const Text(
                 'Sign in to add friends and share your sessions.',
                 style: TextStyle(
-                    color: AppTheme.textSecondary, fontSize: 13, height: 1.5),
+                  color: AppTheme.textSecondary,
+                  fontSize: 13,
+                  height: 1.5,
+                ),
               ),
               const SizedBox(height: 28),
               TextField(
@@ -460,8 +512,11 @@ class _NotLoggedInViewState extends State<_NotLoggedInView> {
                 style: const TextStyle(color: AppTheme.textPrimary),
                 decoration: const InputDecoration(
                   hintText: 'Email address',
-                  prefixIcon: Icon(Icons.email_rounded,
-                      size: 18, color: AppTheme.textMuted),
+                  prefixIcon: Icon(
+                    Icons.email_rounded,
+                    size: 18,
+                    color: AppTheme.textMuted,
+                  ),
                 ),
                 onChanged: (_) {
                   if (_error != null) setState(() => _error = null);
@@ -475,8 +530,11 @@ class _NotLoggedInViewState extends State<_NotLoggedInView> {
                 style: const TextStyle(color: AppTheme.textPrimary),
                 decoration: const InputDecoration(
                   hintText: 'Password',
-                  prefixIcon: Icon(Icons.lock_rounded,
-                      size: 18, color: AppTheme.textMuted),
+                  prefixIcon: Icon(
+                    Icons.lock_rounded,
+                    size: 18,
+                    color: AppTheme.textMuted,
+                  ),
                 ),
                 onSubmitted: (_) => _submit(),
                 onChanged: (_) {
@@ -487,7 +545,9 @@ class _NotLoggedInViewState extends State<_NotLoggedInView> {
                 const SizedBox(height: 14),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 12),
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: AppTheme.error.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(10),
@@ -495,13 +555,20 @@ class _NotLoggedInViewState extends State<_NotLoggedInView> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline_rounded,
-                          color: AppTheme.error, size: 16),
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        color: AppTheme.error,
+                        size: 16,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: Text(_error!,
-                            style: const TextStyle(
-                                color: AppTheme.error, fontSize: 13)),
+                        child: Text(
+                          _error!,
+                          style: const TextStyle(
+                            color: AppTheme.error,
+                            fontSize: 13,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -511,18 +578,24 @@ class _NotLoggedInViewState extends State<_NotLoggedInView> {
               ElevatedButton(
                 onPressed: _loading ? null : _submit,
                 style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16)),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
                 child: _loading
                     ? const SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2),
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
                       )
                     : Text(
                         _isRegisterMode ? 'Create account' : 'Sign in',
                         style: const TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 15)),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
               ),
               const SizedBox(height: 14),
               TextButton(
@@ -533,7 +606,9 @@ class _NotLoggedInViewState extends State<_NotLoggedInView> {
                       ? 'Already have an account? Sign in'
                       : 'No account yet? Register',
                   style: const TextStyle(
-                      color: AppTheme.textSecondary, fontSize: 13),
+                    color: AppTheme.textSecondary,
+                    fontSize: 13,
+                  ),
                 ),
               ),
             ],
@@ -566,31 +641,45 @@ class _NotRegisteredView extends StatelessWidget {
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: AppTheme.accent.withOpacity(0.30)),
               ),
-              child: const Icon(Icons.person_add_rounded,
-                  color: AppTheme.accent, size: 28),
+              child: const Icon(
+                Icons.person_add_rounded,
+                color: AppTheme.accent,
+                size: 28,
+              ),
             ),
             const SizedBox(height: 20),
-            const Text('Profile not set up yet',
-                style: TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700)),
+            const Text(
+              'Profile not set up yet',
+              style: TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             const SizedBox(height: 8),
             const Text(
               'Choose a username to add friends and share your sessions.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  color: AppTheme.textSecondary, fontSize: 13, height: 1.5),
+                color: AppTheme.textSecondary,
+                fontSize: 13,
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: onRegister,
               icon: const Icon(Icons.arrow_forward_rounded, size: 16),
-              label: const Text('Create profile',
-                  style: TextStyle(fontWeight: FontWeight.w700)),
+              label: const Text(
+                'Create profile',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
               style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 24, vertical: 14)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
+              ),
             ),
           ],
         ),
@@ -622,14 +711,19 @@ class _Header extends StatelessWidget {
                 Text(
                   me?.displayLabel ?? '—',
                   style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700),
+                    color: AppTheme.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 if (me?.username != null)
-                  Text('@${me!.username}',
-                      style: const TextStyle(
-                          color: AppTheme.textMuted, fontSize: 12)),
+                  Text(
+                    '@${me!.username}',
+                    style: const TextStyle(
+                      color: AppTheme.textMuted,
+                      fontSize: 12,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -650,7 +744,11 @@ class _ProfileTab extends StatelessWidget {
   final UserModel? me;
   final Future<void> Function() onRefresh;
   final Future<void> Function() onSignOut;
-  const _ProfileTab({required this.me, required this.onRefresh, required this.onSignOut});
+  const _ProfileTab({
+    required this.me,
+    required this.onRefresh,
+    required this.onSignOut,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -671,6 +769,8 @@ class _ProfileTab extends StatelessWidget {
               value: me!.bio!,
             ),
           ],
+          const SizedBox(height: 12),
+          _XboxCard(me: me!, onRefresh: onRefresh),
           const SizedBox(height: 24),
           OutlinedButton.icon(
             onPressed: onSignOut,
@@ -683,6 +783,224 @@ class _ProfileTab extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}
+
+class _XboxCard extends StatefulWidget {
+  final UserModel me;
+  final Future<void> Function() onRefresh;
+  const _XboxCard({required this.me, required this.onRefresh});
+
+  @override
+  State<_XboxCard> createState() => _XboxCardState();
+}
+
+class _XboxCardState extends State<_XboxCard> {
+  bool _unlinking = false;
+
+  Future<void> _openLinkScreen() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => XboxLinkScreen(
+          onLinked: () {
+            Navigator.of(context).pop();
+            widget.onRefresh();
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _unlink() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surfaceRaised,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: AppTheme.borderGray),
+        ),
+        title: const Text('Unlink Xbox account'),
+        content: const Text(
+          'Are you sure you want to unlink your Xbox account?',
+          style: TextStyle(color: AppTheme.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error),
+            child: const Text('Unlink'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _unlinking = true);
+    await UserService.unlinkXbox();
+    if (!mounted) return;
+    setState(() => _unlinking = false);
+    widget.onRefresh();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const xboxGreen = Color(0xFF107C10);
+    final linked = widget.me.xboxGamertag != null;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceRaised,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: linked ? xboxGreen.withOpacity(0.35) : AppTheme.borderGray,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: xboxGreen.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.sports_esports_rounded,
+                  color: xboxGreen,
+                  size: 17,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'Xbox Account',
+                style: TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+              const Spacer(),
+              if (linked)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: xboxGreen.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    'Linked',
+                    style: TextStyle(
+                      color: xboxGreen,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (linked) ...[
+            Row(
+              children: [
+                const Icon(
+                  Icons.person_rounded,
+                  size: 14,
+                  color: AppTheme.textMuted,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  widget.me.xboxGamertag!,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            if (widget.me.xboxXuid != null) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.tag_rounded,
+                    size: 14,
+                    color: AppTheme.textMuted,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    widget.me.xboxXuid!,
+                    style: const TextStyle(
+                      color: AppTheme.textMuted,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: _unlinking ? null : _unlink,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.error,
+                side: BorderSide(color: AppTheme.error.withOpacity(0.40)),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+              child: _unlinking
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        color: AppTheme.error,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      'Unlink',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ] else ...[
+            const Text(
+              'Link your Xbox account to show your gamertag on your profile.',
+              style: TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 12,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: _openLinkScreen,
+              icon: const Icon(Icons.link_rounded, size: 16),
+              label: const Text(
+                'Link Xbox Account',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: xboxGreen,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -707,8 +1025,7 @@ class _EditProfileCardState extends State<_EditProfileCard> {
   @override
   void initState() {
     super.initState();
-    _displayNameCtrl =
-        TextEditingController(text: widget.me.displayName ?? '');
+    _displayNameCtrl = TextEditingController(text: widget.me.displayName ?? '');
     _bioCtrl = TextEditingController(text: widget.me.bio ?? '');
   }
 
@@ -726,14 +1043,19 @@ class _EditProfileCardState extends State<_EditProfileCard> {
       bio: _bioCtrl.text.trim(),
     );
     if (!mounted) return;
-    setState(() { _saving = false; _editing = false; });
+    setState(() {
+      _saving = false;
+      _editing = false;
+    });
     if (updated != null) {
       await widget.onUpdated();
       if (mounted) {
-        AppToast.show(context,
-            message: 'Profile updated',
-            icon: Icons.check_circle_rounded,
-            color: AppTheme.success);
+        AppToast.show(
+          context,
+          message: 'Profile updated',
+          icon: Icons.check_circle_rounded,
+          color: AppTheme.success,
+        );
       }
     }
   }
@@ -746,18 +1068,22 @@ class _EditProfileCardState extends State<_EditProfileCard> {
         color: AppTheme.surfaceRaised,
         borderRadius: BorderRadius.circular(14),
         border: const Border.fromBorderSide(
-            BorderSide(color: AppTheme.borderGray)),
+          BorderSide(color: AppTheme.borderGray),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              const Text('Profile',
-                  style: TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14)),
+              const Text(
+                'Profile',
+                style: TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
               const Spacer(),
               if (!_editing)
                 TextButton.icon(
@@ -765,9 +1091,12 @@ class _EditProfileCardState extends State<_EditProfileCard> {
                   icon: const Icon(Icons.edit_rounded, size: 14),
                   label: const Text('Edit'),
                   style: TextButton.styleFrom(
-                      foregroundColor: AppTheme.accent,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4)),
+                    foregroundColor: AppTheme.accent,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -788,42 +1117,47 @@ class _EditProfileCardState extends State<_EditProfileCard> {
               style: const TextStyle(color: AppTheme.textPrimary),
               maxLines: 3,
               decoration: const InputDecoration(
-                  hintText: 'Tell something about yourself'),
+                hintText: 'Tell something about yourself',
+              ),
             ),
             const SizedBox(height: 16),
-            Row(children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _saving
-                      ? null
-                      : () => setState(() => _editing = false),
-                  child: const Text('Cancel'),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _saving
+                        ? null
+                        : () => setState(() => _editing = false),
+                    child: const Text('Cancel'),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _saving ? null : _save,
-                  child: _saving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2))
-                      : const Text('Save'),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _saving ? null : _save,
+                    child: _saving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text('Save'),
+                  ),
                 ),
-              ),
-            ]),
+              ],
+            ),
           ] else ...[
             _ProfileRow(
-                label: 'Display name',
-                value: widget.me.displayName?.isNotEmpty == true
-                    ? widget.me.displayName!
-                    : '—'),
+              label: 'Display name',
+              value: widget.me.displayName?.isNotEmpty == true
+                  ? widget.me.displayName!
+                  : '—',
+            ),
             const SizedBox(height: 8),
-            _ProfileRow(
-                label: 'Username',
-                value: '@${widget.me.username}'),
+            _ProfileRow(label: 'Username', value: '@${widget.me.username}'),
           ],
         ],
       ),
@@ -871,27 +1205,31 @@ class _FriendsTab extends StatelessWidget {
           if (online.isNotEmpty) ...[
             _SectionLabel('ONLINE — ${online.length}'),
             const SizedBox(height: 8),
-            ...online.map((f) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: _FriendTile(
-                    friend: f,
-                    onRemove: () => onRemove(f),
-                    onChat: () => onChat(f),
-                  ),
-                )),
+            ...online.map(
+              (f) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _FriendTile(
+                  friend: f,
+                  onRemove: () => onRemove(f),
+                  onChat: () => onChat(f),
+                ),
+              ),
+            ),
             const SizedBox(height: 8),
           ],
           if (offline.isNotEmpty) ...[
             _SectionLabel('OFFLINE — ${offline.length}'),
             const SizedBox(height: 8),
-            ...offline.map((f) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: _FriendTile(
-                    friend: f,
-                    onRemove: () => onRemove(f),
-                    onChat: () => onChat(f),
-                  ),
-                )),
+            ...offline.map(
+              (f) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _FriendTile(
+                  friend: f,
+                  onRemove: () => onRemove(f),
+                  onChat: () => onChat(f),
+                ),
+              ),
+            ),
           ],
         ],
       ),
@@ -938,8 +1276,7 @@ class _FriendTile extends StatelessWidget {
                         ? AppTheme.success
                         : AppTheme.textDisabled,
                     shape: BoxShape.circle,
-                    border: Border.all(
-                        color: AppTheme.surfaceRaised, width: 2),
+                    border: Border.all(color: AppTheme.surfaceRaised, width: 2),
                   ),
                 ),
               ),
@@ -950,24 +1287,40 @@ class _FriendTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(friend.displayLabel,
-                    style: const TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13)),
-                Text('@${friend.username}',
-                    style: const TextStyle(
-                        color: AppTheme.textMuted, fontSize: 11)),
+                Text(
+                  friend.displayLabel,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  '@${friend.username}',
+                  style: const TextStyle(
+                    color: AppTheme.textMuted,
+                    fontSize: 11,
+                  ),
+                ),
                 if (friend.online && friend.session != null) ...[
                   const SizedBox(height: 3),
-                  Row(children: [
-                    const Icon(Icons.sports_esports_rounded,
-                        size: 11, color: AppTheme.success),
-                    const SizedBox(width: 4),
-                    Text(friend.session!.serverIp,
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.sports_esports_rounded,
+                        size: 11,
+                        color: AppTheme.success,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        friend.session!.serverIp,
                         style: const TextStyle(
-                            color: AppTheme.success, fontSize: 11)),
-                  ]),
+                          color: AppTheme.success,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ],
             ),
@@ -976,16 +1329,22 @@ class _FriendTile extends StatelessWidget {
             onTap: onChat,
             child: Padding(
               padding: const EdgeInsets.all(8),
-              child: Icon(Icons.chat_bubble_rounded,
-                  color: AppTheme.accent.withOpacity(0.70), size: 18),
+              child: Icon(
+                Icons.chat_bubble_rounded,
+                color: AppTheme.accent.withOpacity(0.70),
+                size: 18,
+              ),
             ),
           ),
           GestureDetector(
             onTap: onRemove,
             child: const Padding(
               padding: EdgeInsets.all(8),
-              child: Icon(Icons.person_remove_rounded,
-                  color: AppTheme.textMuted, size: 18),
+              child: Icon(
+                Icons.person_remove_rounded,
+                color: AppTheme.textMuted,
+                size: 18,
+              ),
             ),
           ),
         ],
@@ -1042,10 +1401,11 @@ class _RequestTile extends StatelessWidget {
   final FriendRequest request;
   final VoidCallback onAccept;
   final VoidCallback onDecline;
-  const _RequestTile(
-      {required this.request,
-      required this.onAccept,
-      required this.onDecline});
+  const _RequestTile({
+    required this.request,
+    required this.onAccept,
+    required this.onDecline,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1064,28 +1424,37 @@ class _RequestTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(request.displayLabel,
-                    style: const TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13)),
-                Text('@${request.requesterUsername}',
-                    style: const TextStyle(
-                        color: AppTheme.textMuted, fontSize: 11)),
+                Text(
+                  request.displayLabel,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  '@${request.requesterUsername}',
+                  style: const TextStyle(
+                    color: AppTheme.textMuted,
+                    fontSize: 11,
+                  ),
+                ),
               ],
             ),
           ),
           Row(
             children: [
               _SmallBtn(
-                  icon: Icons.close_rounded,
-                  color: AppTheme.error,
-                  onTap: onDecline),
+                icon: Icons.close_rounded,
+                color: AppTheme.error,
+                onTap: onDecline,
+              ),
               const SizedBox(width: 8),
               _SmallBtn(
-                  icon: Icons.check_rounded,
-                  color: AppTheme.success,
-                  onTap: onAccept),
+                icon: Icons.check_rounded,
+                color: AppTheme.success,
+                onTap: onAccept,
+              ),
             ],
           ),
         ],
@@ -1129,8 +1498,11 @@ class _SmallBtn extends StatelessWidget {
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
-  const _SmallBtn(
-      {required this.icon, required this.color, required this.onTap});
+  const _SmallBtn({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1154,8 +1526,11 @@ class _IconBtn extends StatelessWidget {
   final IconData icon;
   final String tooltip;
   final VoidCallback onTap;
-  const _IconBtn(
-      {required this.icon, required this.tooltip, required this.onTap});
+  const _IconBtn({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1183,12 +1558,15 @@ class _SectionLabel extends StatelessWidget {
   const _SectionLabel(this.text);
 
   @override
-  Widget build(BuildContext context) => Text(text,
-      style: const TextStyle(
-          color: AppTheme.textMuted,
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.4));
+  Widget build(BuildContext context) => Text(
+    text,
+    style: const TextStyle(
+      color: AppTheme.textMuted,
+      fontSize: 10,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 1.4,
+    ),
+  );
 }
 
 class _ProfileRow extends StatelessWidget {
@@ -1203,14 +1581,16 @@ class _ProfileRow extends StatelessWidget {
       children: [
         SizedBox(
           width: 120,
-          child: Text(label,
-              style: const TextStyle(
-                  color: AppTheme.textMuted, fontSize: 12)),
+          child: Text(
+            label,
+            style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+          ),
         ),
         Expanded(
-          child: Text(value,
-              style: const TextStyle(
-                  color: AppTheme.textPrimary, fontSize: 13)),
+          child: Text(
+            value,
+            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
+          ),
         ),
       ],
     );
@@ -1222,20 +1602,26 @@ class _FieldLabel extends StatelessWidget {
   const _FieldLabel(this.text);
 
   @override
-  Widget build(BuildContext context) => Text(text,
-      style: const TextStyle(
-          color: AppTheme.textSecondary,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.4));
+  Widget build(BuildContext context) => Text(
+    text,
+    style: const TextStyle(
+      color: AppTheme.textSecondary,
+      fontSize: 11,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.4,
+    ),
+  );
 }
 
 class _InfoCard extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  const _InfoCard(
-      {required this.icon, required this.label, required this.value});
+  const _InfoCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1245,27 +1631,36 @@ class _InfoCard extends StatelessWidget {
         color: AppTheme.surfaceRaised,
         borderRadius: BorderRadius.circular(12),
         border: const Border.fromBorderSide(
-            BorderSide(color: AppTheme.borderGray)),
+          BorderSide(color: AppTheme.borderGray),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Icon(icon, size: 14, color: AppTheme.textMuted),
-            const SizedBox(width: 6),
-            Text(label,
+          Row(
+            children: [
+              Icon(icon, size: 14, color: AppTheme.textMuted),
+              const SizedBox(width: 6),
+              Text(
+                label,
                 style: const TextStyle(
-                    color: AppTheme.textMuted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.4)),
-          ]),
+                  color: AppTheme.textMuted,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.4,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 8),
-          Text(value,
-              style: const TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 13,
-                  height: 1.5)),
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 13,
+              height: 1.5,
+            ),
+          ),
         ],
       ),
     );
@@ -1277,39 +1672,45 @@ class _LoadingBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Center(
-        child: CircularProgressIndicator(
-            color: AppTheme.accent, strokeWidth: 2),
-      );
+    child: CircularProgressIndicator(color: AppTheme.accent, strokeWidth: 2),
+  );
 }
 
 class _EmptyBody extends StatelessWidget {
   final IconData icon;
   final String message;
   final String sub;
-  const _EmptyBody(
-      {required this.icon, required this.message, required this.sub});
+  const _EmptyBody({
+    required this.icon,
+    required this.message,
+    required this.sub,
+  });
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: AppTheme.textDisabled, size: 40),
-              const SizedBox(height: 12),
-              Text(message,
-                  style: const TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600)),
-              const SizedBox(height: 4),
-              Text(sub,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      color: AppTheme.textMuted, fontSize: 12)),
-            ],
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: AppTheme.textDisabled, size: 40),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-      );
+          const SizedBox(height: 4),
+          Text(
+            sub,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+          ),
+        ],
+      ),
+    ),
+  );
 }

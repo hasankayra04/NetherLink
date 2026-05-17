@@ -5,6 +5,8 @@ class UserModel {
   final String? bio;
   final String? createdAt;
   final String? lastSeenAt;
+  final String? xboxGamertag;
+  final String? xboxXuid;
 
   const UserModel({
     required this.username,
@@ -13,16 +15,20 @@ class UserModel {
     this.bio,
     this.createdAt,
     this.lastSeenAt,
+    this.xboxGamertag,
+    this.xboxXuid,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
-        username: json['username'] as String,
-        displayName: json['displayName'] as String?,
-        avatarUrl: json['avatarUrl'] as String?,
-        bio: json['bio'] as String?,
-        createdAt: json['createdAt'] as String?,
-        lastSeenAt: json['lastSeenAt'] as String?,
-      );
+    username: json['username'] as String,
+    displayName: json['displayName'] as String?,
+    avatarUrl: json['avatarUrl'] as String?,
+    bio: json['bio'] as String?,
+    createdAt: json['createdAt'] as String?,
+    lastSeenAt: json['lastSeenAt'] as String?,
+    xboxGamertag: json['xboxGamertag'] as String?,
+    xboxXuid: json['xboxXuid'] as String?,
+  );
 
   String get displayLabel =>
       displayName?.isNotEmpty == true ? displayName! : username;
@@ -49,10 +55,10 @@ class FriendSession {
   });
 
   factory FriendSession.fromJson(Map<String, dynamic> json) => FriendSession(
-        serverIp: json['serverIp'] as String,
-        serverPort: json['serverPort'] as int,
-        startedAt: json['startedAt'] as String?,
-      );
+    serverIp: json['serverIp'] as String,
+    serverPort: json['serverPort'] as int,
+    startedAt: json['startedAt'] as String?,
+  );
 }
 
 class FriendModel {
@@ -75,16 +81,16 @@ class FriendModel {
   });
 
   factory FriendModel.fromJson(Map<String, dynamic> json) => FriendModel(
-        firebaseUid: json['firebaseUid'] as String? ?? '',
-        username: json['username'] as String,
-        displayName: json['displayName'] as String?,
-        avatarUrl: json['avatarUrl'] as String?,
-        online: json['online'] as bool? ?? false,
-        session: json['session'] != null
-            ? FriendSession.fromJson(json['session'] as Map<String, dynamic>)
-            : null,
-        lastSeenAt: json['lastSeenAt'] as String?,
-      );
+    firebaseUid: json['firebaseUid'] as String? ?? '',
+    username: json['username'] as String,
+    displayName: json['displayName'] as String?,
+    avatarUrl: json['avatarUrl'] as String?,
+    online: json['online'] as bool? ?? false,
+    session: json['session'] != null
+        ? FriendSession.fromJson(json['session'] as Map<String, dynamic>)
+        : null,
+    lastSeenAt: json['lastSeenAt'] as String?,
+  );
 
   String get displayLabel =>
       displayName?.isNotEmpty == true ? displayName! : username;
