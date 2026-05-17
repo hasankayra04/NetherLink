@@ -180,6 +180,9 @@ class _ProfileScreenState extends State<ProfileScreen>
               _ProfileTab(
                 me: _me,
                 onRefresh: () async => _fetchMe(),
+                onSignOut: () async {
+                  await FirebaseAuth.instance.signOut();
+                },
               ),
               _FriendsTab(
                 friends: _friends,
@@ -615,7 +618,8 @@ class _Header extends StatelessWidget {
 class _ProfileTab extends StatelessWidget {
   final UserModel? me;
   final Future<void> Function() onRefresh;
-  const _ProfileTab({required this.me, required this.onRefresh});
+  final Future<void> Function() onSignOut;
+  const _ProfileTab({required this.me, required this.onRefresh, required this.onSignOut});
 
   @override
   Widget build(BuildContext context) {
@@ -636,6 +640,18 @@ class _ProfileTab extends StatelessWidget {
               value: me!.bio!,
             ),
           ],
+          const SizedBox(height: 24),
+          OutlinedButton.icon(
+            onPressed: onSignOut,
+            icon: const Icon(Icons.logout_rounded, size: 16),
+            label: const Text('Sign out'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.error,
+              side: BorderSide(color: AppTheme.error.withOpacity(0.40)),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+          ),
+          const SizedBox(height: 8),
         ],
       ),
     );
