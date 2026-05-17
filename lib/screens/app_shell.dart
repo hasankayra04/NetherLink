@@ -46,6 +46,8 @@ class _AppShellState extends State<AppShell>
   final TextEditingController _ipController = TextEditingController();
   final TextEditingController _portController = TextEditingController();
 
+  final GlobalKey<ManageServersScreenState> _manageServersKey = GlobalKey();
+
   late RelayPingResult _selectedRelay;
   int _pageIndex = _pageHome;
   int? _editingServerIndex;
@@ -264,14 +266,17 @@ class _AppShellState extends State<AppShell>
                     onBack: () => _goTo(_pageHome),
                   ),
                   ManageServersScreen(
+                    key: _manageServersKey,
                     onBack: () => _goTo(_pageHome),
                     onAddServer: _openAddServer,
                     onEditServer: _openEditServer,
                   ),
                   AddEditServerScreen(
                     editingIndex: _editingServerIndex,
-                    onSaved: () =>
-                        setState(() => _pageIndex = _pageManageServers),
+                    onSaved: () {
+                      _manageServersKey.currentState?.reload();
+                      setState(() => _pageIndex = _pageManageServers);
+                    },
                     onCancel: () =>
                         setState(() => _pageIndex = _pageManageServers),
                   ),
