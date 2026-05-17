@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_theme.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
+import '../services/message_service.dart';
 import '../models/user_model.dart';
 import '../widgets/components/app_toast.dart';
 import 'register_screen.dart';
@@ -21,6 +22,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
   StreamSubscription<User?>? _authSubscription;
+  StreamSubscription<({String uid, bool online})>? _presenceSub;
   bool _checking = false;
 
   _AuthState _authState = _AuthState.loading;
@@ -35,14 +37,35 @@ class _ProfileScreenState extends State<ProfileScreen>
     super.initState();
     _tabs = TabController(length: 4, vsync: this);
     _authSubscription = AuthService.userStream.listen((_) => _checkAuth());
+    _presenceSub = MessageService.presenceStream.listen(_onPresence);
     _checkAuth();
   }
 
   @override
   void dispose() {
     _authSubscription?.cancel();
+    _presenceSub?.cancel();
     _tabs.dispose();
     super.dispose();
+  }
+
+  void _onPresence(({String uid, bool online}) event) {
+    if (!mounted) return;
+    final idx = _friends.indexWhere((f) => f.firebaseUid == event.uid);
+    if (idx == -1) return;
+    final f = _friends[idx];
+    final updated = FriendModel(
+      firebaseUid: f.firebaseUid,
+      username: f.username,
+      displayName: f.displayName,
+      avatarUrl: f.avatarUrl,
+      online: event.online,
+      session: event.online ? f.session : null,
+      lastSeenAt: f.lastSeenAt,
+    );
+    setState(() {
+      _friends = List.of(_friends)..[idx] = updated;
+    });
   }
 
   Future<void> _checkAuth() async {
@@ -339,6 +362,8 @@ class _ProfileScreenState extends State<ProfileScreen>
 
 enum _AuthState { loading, notLoggedIn, notRegistered, loggedIn }
 
+// ─── Not logged in ────────────────────────────────────────────────────────────
+
 class _NotLoggedInView extends StatefulWidget {
   const _NotLoggedInView();
 
@@ -519,6 +544,8 @@ class _NotLoggedInViewState extends State<_NotLoggedInView> {
   }
 }
 
+// ─── Not registered ───────────────────────────────────────────────────────────
+
 class _NotRegisteredView extends StatelessWidget {
   final VoidCallback onRegister;
   const _NotRegisteredView({required this.onRegister});
@@ -572,6 +599,8 @@ class _NotRegisteredView extends StatelessWidget {
   }
 }
 
+// ─── Header ───────────────────────────────────────────────────────────────────
+
 class _Header extends StatelessWidget {
   final UserModel? me;
   final VoidCallback onAddFriend;
@@ -614,6 +643,8 @@ class _Header extends StatelessWidget {
     );
   }
 }
+
+// ─── Profile tab ──────────────────────────────────────────────────────────────
 
 class _ProfileTab extends StatelessWidget {
   final UserModel? me;
@@ -800,6 +831,8 @@ class _EditProfileCardState extends State<_EditProfileCard> {
   }
 }
 
+// ─── Friends tab ──────────────────────────────────────────────────────────────
+
 class _FriendsTab extends StatelessWidget {
   final List<FriendModel> friends;
   final bool loading;
@@ -961,6 +994,8 @@ class _FriendTile extends StatelessWidget {
   }
 }
 
+// ─── Requests tab ─────────────────────────────────────────────────────────────
+
 class _RequestsTab extends StatelessWidget {
   final List<FriendRequest> requests;
   final bool loading;
@@ -1058,6 +1093,8 @@ class _RequestTile extends StatelessWidget {
     );
   }
 }
+
+// ─── Shared small widgets ─────────────────────────────────────────────────────
 
 class _Avatar extends StatelessWidget {
   final String initials;

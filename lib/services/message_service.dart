@@ -14,6 +14,11 @@ class MessageService {
   static final _incoming = StreamController<MessageModel>.broadcast();
   static Stream<MessageModel> get incoming => _incoming.stream;
 
+  static final _presenceController =
+      StreamController<({String uid, bool online})>.broadcast();
+  static Stream<({String uid, bool online})> get presenceStream =>
+      _presenceController.stream;
+
   static bool _connected = false;
   static Timer? _reconnectTimer;
 
@@ -44,6 +49,11 @@ class MessageService {
             if (json['type'] == 'message') {
               _incoming.add(MessageModel.fromJson(
                 json['data'] as Map<String, dynamic>,
+              ));
+            } else if (json['type'] == 'presence') {
+              _presenceController.add((
+                uid: json['uid'] as String,
+                online: json['online'] as bool,
               ));
             }
           } catch (_) {}
