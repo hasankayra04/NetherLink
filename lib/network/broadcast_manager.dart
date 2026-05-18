@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import '../util/Logger.dart';
+import '../util/logger.dart';
 import '../constants/app_constants.dart';
 import 'socket_handler.dart';
 import 'relay_config_sender.dart';
