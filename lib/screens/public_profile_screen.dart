@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 import '../models/user_model.dart';
 import '../services/user_service.dart';
@@ -330,6 +331,12 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               ),
             ),
           ],
+
+          // Skin preview
+          if (u.javaUuid != null) ...[
+            const SizedBox(height: 12),
+            _PublicSkinCard(javaUuid: u.javaUuid!),
+          ],
         ],
       ),
     );
@@ -648,6 +655,101 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _PublicSkinCard extends StatelessWidget {
+  final String javaUuid;
+  const _PublicSkinCard({required this.javaUuid});
+
+  String get _renderUrl =>
+      'https://crafatar.com/renders/body/$javaUuid?overlay&scale=10';
+  String get _skinUrl => 'https://crafatar.com/skins/$javaUuid';
+
+  Future<void> _download() async {
+    final uri = Uri.parse(_skinUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceRaised,
+        borderRadius: BorderRadius.circular(12),
+        border: const Border.fromBorderSide(
+          BorderSide(color: AppTheme.borderGray),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.checkroom_rounded,
+                size: 14,
+                color: AppTheme.textMuted,
+              ),
+              const SizedBox(width: 6),
+              const Text(
+                'SKIN',
+                style: TextStyle(
+                  color: AppTheme.textMuted,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.4,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: SizedBox(
+              height: 180,
+              child: Image.network(
+                _renderUrl,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.none,
+                loadingBuilder: (_, child, progress) {
+                  if (progress == null) return child;
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: AppTheme.accent,
+                      strokeWidth: 2,
+                    ),
+                  );
+                },
+                errorBuilder: (_, __, ___) => const Center(
+                  child: Icon(
+                    Icons.broken_image_rounded,
+                    color: AppTheme.textMuted,
+                    size: 48,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            onPressed: _download,
+            icon: const Icon(Icons.download_rounded, size: 15),
+            label: const Text(
+              'Download skin (PNG)',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.accent,
+              side: BorderSide(color: AppTheme.accent.withOpacity(0.40)),
+              padding: const EdgeInsets.symmetric(vertical: 9),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

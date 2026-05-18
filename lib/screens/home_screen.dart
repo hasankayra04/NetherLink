@@ -29,6 +29,7 @@ class HomeScreen extends StatefulWidget {
   final Future<List<FeaturedServer>> partnerServersFuture;
   final VoidCallback onOpenPartnerServers;
   final VoidCallback onOpenManageServers;
+  final VoidCallback? onOpenMore;
   final TextEditingController ipController;
   final TextEditingController portController;
 
@@ -42,6 +43,7 @@ class HomeScreen extends StatefulWidget {
     required this.onOpenManageServers,
     required this.ipController,
     required this.portController,
+    this.onOpenMore,
   });
 
   @override
@@ -296,33 +298,64 @@ class HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
-          child: SingleChildScrollView(
-            controller: _mainScrollController,
-            physics: const ClampingScrollPhysics(),
-            child: ValueListenableBuilder<List<UserServer>>(
-              valueListenable: _userServersNotifier,
-              builder: (context, userServers, _) => ConnectionPanel(
-                ipController: widget.ipController,
-                portController: widget.portController,
-                broadcastingNotifier: _broadcastingNotifier,
-                onStartBroadcast: _startBroadcast,
-                onStopBroadcast: _stopBroadcast,
-                savedServers: userServers,
-                onServerSelected: _onUserServerSelected,
-                onManageServers: widget.onOpenManageServers,
-                selectedRelayIp: widget.selectedRelay.ip,
-                onRelayChanged: widget.onRelayChanged,
-                nintendoDnsMode: _nintendoDnsMode,
-                onNintendoDnsModeChanged: (value) =>
-                    setState(() => _nintendoDnsMode = value),
-                navigationController: widget.navigationController,
-                partnerServersFuture: widget.partnerServersFuture,
-                onOpenPartnerServers: widget.onOpenPartnerServers,
+        Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
+              child: Row(
+                children: [
+                  const Text(
+                    'Connector',
+                    style: TextStyle(
+                      color: Color(0xFFFFFFFF),
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (widget.onOpenMore != null)
+                    IconButton(
+                      onPressed: widget.onOpenMore,
+                      icon: const Icon(
+                        Icons.more_horiz_rounded,
+                        color: Color(0xFF6E7490),
+                      ),
+                      tooltip: 'More',
+                    ),
+                ],
               ),
             ),
-          ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 4, 14, 0),
+                child: SingleChildScrollView(
+                  controller: _mainScrollController,
+                  physics: const ClampingScrollPhysics(),
+                  child: ValueListenableBuilder<List<UserServer>>(
+                    valueListenable: _userServersNotifier,
+                    builder: (context, userServers, _) => ConnectionPanel(
+                      ipController: widget.ipController,
+                      portController: widget.portController,
+                      broadcastingNotifier: _broadcastingNotifier,
+                      onStartBroadcast: _startBroadcast,
+                      onStopBroadcast: _stopBroadcast,
+                      savedServers: userServers,
+                      onServerSelected: _onUserServerSelected,
+                      onManageServers: widget.onOpenManageServers,
+                      selectedRelayIp: widget.selectedRelay.ip,
+                      onRelayChanged: widget.onRelayChanged,
+                      nintendoDnsMode: _nintendoDnsMode,
+                      onNintendoDnsModeChanged: (value) =>
+                          setState(() => _nintendoDnsMode = value),
+                      navigationController: widget.navigationController,
+                      partnerServersFuture: widget.partnerServersFuture,
+                      onOpenPartnerServers: widget.onOpenPartnerServers,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
         if (_currentNotice != null)
           Positioned(

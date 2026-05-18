@@ -16,7 +16,10 @@ import '../util/partners_servers.dart';
 import '../services/partners_servers_service.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
+import 'landing_screen.dart';
 import 'home_screen.dart';
+import 'skins_screen.dart';
+import 'wiki_screen.dart';
 import 'partner_servers_screen.dart';
 import 'manage_servers_screen.dart';
 import 'profile_screen.dart';
@@ -24,10 +27,13 @@ import 'profile_screen.dart';
 enum _ActiveSheet { none, help, howTo, more }
 
 const int _pageHome = 0;
-const int _pagePartners = 1;
-const int _pageManageServers = 2;
-const int _pageAddEditServer = 3;
-const int _pageProfile = 4;
+const int _pageConnector = 1;
+const int _pagePartners = 2;
+const int _pageManageServers = 3;
+const int _pageAddEditServer = 4;
+const int _pageSkins = 5;
+const int _pageWiki = 6;
+const int _pageProfile = 7;
 
 class AppShell extends StatefulWidget {
   final RelayPingResult? initialRelay;
@@ -52,7 +58,7 @@ class _AppShellState extends State<AppShell>
   final TextEditingController _portController = TextEditingController();
 
   final GlobalKey<ManageServersScreenState> _manageServersKey = GlobalKey();
-  final GlobalKey<HomeScreenState> _homeKey = GlobalKey();
+  final GlobalKey<HomeScreenState> _connectorKey = GlobalKey();
 
   late RelayPingResult _selectedRelay;
   int _pageIndex = _pageHome;
@@ -136,8 +142,8 @@ class _AppShellState extends State<AppShell>
 
   void _goTo(int page) {
     _closeSheetInstant();
-    if (page == _pageHome) {
-      _homeKey.currentState?.loadUserServers();
+    if (page == _pageConnector) {
+      _connectorKey.currentState?.loadUserServers();
     }
     setState(() => _pageIndex = page);
   }
@@ -181,18 +187,18 @@ class _AppShellState extends State<AppShell>
   };
 
   String? get _activeNavItem {
-    if (_pageIndex == _pageHome && _activeSheet == _ActiveSheet.none) {
-      return 'home';
-    }
-    if (_pageIndex == _pagePartners) return 'partners';
-    if (_pageIndex == _pageProfile) return 'profile';
-    switch (_activeSheet) {
-      case _ActiveSheet.help:
-        return 'support';
-      case _ActiveSheet.more:
-        return 'more';
-      case _ActiveSheet.howTo:
-      case _ActiveSheet.none:
+    switch (_pageIndex) {
+      case _pageHome:
+        return _activeSheet == _ActiveSheet.none ? 'home' : null;
+      case _pageConnector:
+        return 'connector';
+      case _pageSkins:
+        return 'skins';
+      case _pageWiki:
+        return 'wiki';
+      case _pageProfile:
+        return 'profile';
+      default:
         return null;
     }
   }
@@ -205,6 +211,9 @@ class _AppShellState extends State<AppShell>
       _closeSheet();
     } else if (_pageIndex == _pageAddEditServer) {
       setState(() => _pageIndex = _pageManageServers);
+    } else if (_pageIndex == _pageManageServers ||
+        _pageIndex == _pagePartners) {
+      _goTo(_pageConnector);
     } else if (_pageIndex != _pageHome) {
       _goTo(_pageHome);
     }
@@ -242,25 +251,10 @@ class _AppShellState extends State<AppShell>
           onRelayChanged: _onRelayChanged,
           activeItem: _activeNavItem,
           onHomeTap: () => _goTo(_pageHome),
-          onPartnerServersTap: () => _goTo(_pagePartners),
+          onConnectorTap: () => _goTo(_pageConnector),
+          onSkinsTap: () => _goTo(_pageSkins),
+          onWikiTap: () => _goTo(_pageWiki),
           onProfileTap: () => _goTo(_pageProfile),
-          onAnyTap: null,
-          onHelpTapOverride: () {
-            if (_activeSheet == _ActiveSheet.help) {
-              _closeSheet();
-            } else {
-              _closeSheetInstant();
-              _openSheet(_ActiveSheet.help);
-            }
-          },
-          onMoreTapOverride: () {
-            if (_activeSheet == _ActiveSheet.more) {
-              _closeSheet();
-            } else {
-              _closeSheetInstant();
-              _openSheet(_ActiveSheet.more);
-            }
-          },
         ),
         body: SafeArea(
           top: true,
@@ -270,14 +264,20 @@ class _AppShellState extends State<AppShell>
               IndexedStack(
                 index: _pageIndex,
                 children: [
+                  LandingScreen(
+                    onGoToConnector: () => _goTo(_pageConnector),
+                    onGoToSkins: () => _goTo(_pageSkins),
+                    onGoToWiki: () => _goTo(_pageWiki),
+                  ),
                   HomeScreen(
-                    key: _homeKey,
+                    key: _connectorKey,
                     selectedRelay: _selectedRelay,
                     onRelayChanged: _onRelayChanged,
                     navigationController: navigationController,
                     partnerServersFuture: _partnerServersFuture,
                     onOpenPartnerServers: () => _goTo(_pagePartners),
                     onOpenManageServers: _openManageServers,
+                    onOpenMore: () => _openSheet(_ActiveSheet.more),
                     ipController: _ipController,
                     portController: _portController,
                   ),
@@ -285,11 +285,11 @@ class _AppShellState extends State<AppShell>
                     partnerServersFuture: _partnerServersFuture,
                     ipController: _ipController,
                     portController: _portController,
-                    onBack: () => _goTo(_pageHome),
+                    onBack: () => _goTo(_pageConnector),
                   ),
                   ManageServersScreen(
                     key: _manageServersKey,
-                    onBack: () => _goTo(_pageHome),
+                    onBack: () => _goTo(_pageConnector),
                     onAddServer: _openAddServer,
                     onEditServer: _openEditServer,
                   ),
@@ -302,6 +302,8 @@ class _AppShellState extends State<AppShell>
                     onCancel: () =>
                         setState(() => _pageIndex = _pageManageServers),
                   ),
+                  const SkinsScreen(),
+                  const WikiScreen(),
                   const ProfileScreen(),
                 ],
               ),
@@ -403,6 +405,13 @@ class _AppShellState extends State<AppShell>
             Future.delayed(
               const Duration(milliseconds: 50),
               () => _openSheet(_ActiveSheet.howTo),
+            );
+          },
+          onHelp: () {
+            _closeSheetInstant();
+            Future.delayed(
+              const Duration(milliseconds: 50),
+              () => _openSheet(_ActiveSheet.help),
             );
           },
           onDiscord: () {
