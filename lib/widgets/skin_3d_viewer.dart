@@ -423,7 +423,7 @@ List<SkinFaceData> buildProjectedFaces({
   final list = <SkinFaceData>[];
   for (final (bx, by, bz, faces) in parts) {
     for (final face in faces) {
-      if (_screenNormalZ(face, rotY) <= 0) continue;
+      if (_screenNormalZ(face, rotY) >= 0) continue;
       final screenPts = <Offset>[];
       double sumDepth = 0;
       for (final c in face.corners) {

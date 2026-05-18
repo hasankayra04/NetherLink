@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../theme/app_theme.dart';
 import '../models/saved_skin.dart';
 import '../util/saved_skins_storage.dart';
@@ -39,6 +40,7 @@ class _SkinEditorScreenState extends State<SkinEditorScreen> {
   Color _activeColor = const Color(0xFF3F51B5);
   bool _rotateMode = false;
   bool _uvMode = false;
+  bool _panModeUV = false;
 
   double _rotY = -0.5;
   Size _canvasSize = Size.zero;
@@ -445,19 +447,30 @@ class _SkinEditorScreenState extends State<SkinEditorScreen> {
       return;
     }
     try {
-      final dir = await getApplicationDocumentsDirectory();
+      final dir = await getTemporaryDirectory();
       final file = File(
         '${dir.path}/skin_${DateTime.now().millisecondsSinceEpoch}.png',
       );
       await file.writeAsBytes(bytes);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Exported: ${file.path}'),
-            backgroundColor: AppTheme.success,
-            duration: const Duration(seconds: 4),
-          ),
+
+      if (Platform.isIOS || Platform.isAndroid) {
+        await Share.shareXFiles(
+          [XFile(file.path, mimeType: 'image/png')],
+          subject: 'Minecraft Skin',
         );
+      } else {
+        final saveDir = await getApplicationDocumentsDirectory();
+        final dest = File('${saveDir.path}/skin_${DateTime.now().millisecondsSinceEpoch}.png');
+        await file.copy(dest.path);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Exported: ${dest.path}'),
+              backgroundColor: AppTheme.success,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
       }
     } catch (_) {
       if (mounted)
@@ -534,30 +547,33 @@ class _SkinEditorScreenState extends State<SkinEditorScreen> {
           _ToolButton(
             icon: FontAwesomeIcons.pencil,
             label: 'Draw',
-            active: _activeTool == _Tool.draw && !_rotateMode,
+            active: _activeTool == _Tool.draw && !_rotateMode && !_panModeUV,
             onTap: () => setState(() {
               _activeTool = _Tool.draw;
               _rotateMode = false;
+              _panModeUV = false;
             }),
           ),
           const SizedBox(width: 6),
           _ToolButton(
             icon: FontAwesomeIcons.fillDrip,
             label: 'Fill',
-            active: _activeTool == _Tool.fill && !_rotateMode,
+            active: _activeTool == _Tool.fill && !_rotateMode && !_panModeUV,
             onTap: () => setState(() {
               _activeTool = _Tool.fill;
               _rotateMode = false;
+              _panModeUV = false;
             }),
           ),
           const SizedBox(width: 6),
           _ToolButton(
             icon: FontAwesomeIcons.eraser,
             label: 'Erase',
-            active: _activeTool == _Tool.erase && !_rotateMode,
+            active: _activeTool == _Tool.erase && !_rotateMode && !_panModeUV,
             onTap: () => setState(() {
               _activeTool = _Tool.erase;
               _rotateMode = false;
+              _panModeUV = false;
             }),
           ),
           if (!_uvMode) ...[
@@ -569,11 +585,21 @@ class _SkinEditorScreenState extends State<SkinEditorScreen> {
               onTap: () => setState(() => _rotateMode = !_rotateMode),
             ),
           ],
+          if (_uvMode) ...[
+            const SizedBox(width: 6),
+            _ToolButton(
+              icon: FontAwesomeIcons.hand,
+              label: 'Pan',
+              active: _panModeUV,
+              onTap: () => setState(() => _panModeUV = !_panModeUV),
+            ),
+          ],
           const Spacer(),
           GestureDetector(
             onTap: () => setState(() {
               _uvMode = !_uvMode;
               _rotateMode = false;
+              _panModeUV = false;
             }),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -656,26 +682,29 @@ class _SkinEditorScreenState extends State<SkinEditorScreen> {
                 transformationController: _transformCtrl,
                 minScale: 0.8,
                 maxScale: 20.0,
-                child: GestureDetector(
-                  onPanStart: (d) {
-                    _activeStroke2D = true;
-                    if (_activeTool != _Tool.fill) _pushUndo();
-                    _pixelFromGlobal(d.globalPosition);
-                  },
-                  onPanUpdate: (d) {
-                    if (!_activeStroke2D) return;
-                    _pixelFromGlobal(d.globalPosition);
-                  },
-                  onPanEnd: (_) => _activeStroke2D = false,
-                  onTapDown: (d) {
-                    if (_activeTool != _Tool.fill) _pushUndo();
-                    _pixelFromGlobal(d.globalPosition);
-                  },
-                  child: SizedBox(
-                    key: _uvCanvasKey,
-                    width: _canvasPx,
-                    height: _canvasPx,
-                    child: CustomPaint(painter: _PixelGridPainter(_pixels)),
+                child: IgnorePointer(
+                  ignoring: _panModeUV,
+                  child: GestureDetector(
+                    onPanStart: (d) {
+                      _activeStroke2D = true;
+                      if (_activeTool != _Tool.fill) _pushUndo();
+                      _pixelFromGlobal(d.globalPosition);
+                    },
+                    onPanUpdate: (d) {
+                      if (!_activeStroke2D) return;
+                      _pixelFromGlobal(d.globalPosition);
+                    },
+                    onPanEnd: (_) => _activeStroke2D = false,
+                    onTapDown: (d) {
+                      if (_activeTool != _Tool.fill) _pushUndo();
+                      _pixelFromGlobal(d.globalPosition);
+                    },
+                    child: SizedBox(
+                      key: _uvCanvasKey,
+                      width: _canvasPx,
+                      height: _canvasPx,
+                      child: CustomPaint(painter: _PixelGridPainter(_pixels)),
+                    ),
                   ),
                 ),
               ),
