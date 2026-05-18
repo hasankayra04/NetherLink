@@ -155,6 +155,84 @@ class UserService {
     }
   }
 
+  static Future<
+    ({String? userCode, String? verificationUri, int? expiresIn, String? error})
+  >
+  startJavaLink() async {
+    try {
+      final res = await http
+          .post(
+            Uri.parse('$_base/api/users/me/java/start'),
+            headers: await _headers(),
+          )
+          .timeout(const Duration(seconds: 35));
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      if (res.statusCode == 200) {
+        return (
+          userCode: body['userCode'] as String?,
+          verificationUri: body['verificationUri'] as String?,
+          expiresIn: body['expiresIn'] as int?,
+          error: null,
+        );
+      }
+      return (
+        userCode: null,
+        verificationUri: null,
+        expiresIn: null,
+        error: body['error'] as String?,
+      );
+    } catch (_) {
+      return (
+        userCode: null,
+        verificationUri: null,
+        expiresIn: null,
+        error: 'network_error',
+      );
+    }
+  }
+
+  static Future<
+    ({String status, String? javaUsername, String? javaUuid, String? error})
+  >
+  getJavaStatus() async {
+    try {
+      final res = await http
+          .get(
+            Uri.parse('$_base/api/users/me/java/status'),
+            headers: await _headers(),
+          )
+          .timeout(_timeout);
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      return (
+        status: body['status'] as String? ?? 'none',
+        javaUsername: body['javaUsername'] as String?,
+        javaUuid: body['javaUuid'] as String?,
+        error: body['error'] as String?,
+      );
+    } catch (_) {
+      return (
+        status: 'error',
+        javaUsername: null,
+        javaUuid: null,
+        error: 'network_error',
+      );
+    }
+  }
+
+  static Future<bool> unlinkJava() async {
+    try {
+      final res = await http
+          .delete(
+            Uri.parse('$_base/api/users/me/java'),
+            headers: await _headers(),
+          )
+          .timeout(_timeout);
+      return res.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
   static Future<List<FriendModel>> getFriends() async {
     try {
       final res = await http
@@ -254,5 +332,42 @@ class UserService {
       }
     } catch (_) {}
     return null;
+  }
+
+  static Future<String> getFriendshipStatus(String username) async {
+    try {
+      final res = await http
+          .get(
+            Uri.parse('$_base/api/users/me/friendship/$username'),
+            headers: await _headers(),
+          )
+          .timeout(_timeout);
+      if (res.statusCode == 200) {
+        return (jsonDecode(res.body) as Map<String, dynamic>)['status']
+                as String? ??
+            'none';
+      }
+    } catch (_) {}
+    return 'none';
+  }
+
+  static Future<List<UserModel>> searchUsers(String query) async {
+    try {
+      final uri = Uri.parse(
+        '$_base/api/users/search',
+      ).replace(queryParameters: {'q': query});
+      final res = await http
+          .get(uri, headers: await _headers())
+          .timeout(_timeout);
+      if (res.statusCode == 200) {
+        final list =
+            (jsonDecode(res.body) as Map<String, dynamic>)['users']
+                as List<dynamic>;
+        return list
+            .map((e) => UserModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+    } catch (_) {}
+    return [];
   }
 }

@@ -23,11 +23,11 @@ import 'profile_screen.dart';
 
 enum _ActiveSheet { none, help, howTo, more }
 
-const int _pageHome      = 0;
-const int _pagePartners  = 1;
-const int _pageManageServers  = 2;
-const int _pageAddEditServer  = 3;
-const int _pageProfile   = 4;
+const int _pageHome = 0;
+const int _pagePartners = 1;
+const int _pageManageServers = 2;
+const int _pageAddEditServer = 3;
+const int _pageProfile = 4;
 
 class AppShell extends StatefulWidget {
   final RelayPingResult? initialRelay;
@@ -48,10 +48,11 @@ class _AppShellState extends State<AppShell>
   final ValueNotifier<List<String>> _logsNotifier = ValueNotifier([]);
   final ScrollController _logScrollController = ScrollController();
 
-  final TextEditingController _ipController   = TextEditingController();
+  final TextEditingController _ipController = TextEditingController();
   final TextEditingController _portController = TextEditingController();
 
   final GlobalKey<ManageServersScreenState> _manageServersKey = GlobalKey();
+  final GlobalKey<HomeScreenState> _homeKey = GlobalKey();
 
   late RelayPingResult _selectedRelay;
   int _pageIndex = _pageHome;
@@ -135,6 +136,9 @@ class _AppShellState extends State<AppShell>
 
   void _goTo(int page) {
     _closeSheetInstant();
+    if (page == _pageHome) {
+      _homeKey.currentState?.loadUserServers();
+    }
     setState(() => _pageIndex = page);
   }
 
@@ -171,17 +175,17 @@ class _AppShellState extends State<AppShell>
   }
 
   static String _friendNameForRelay(String relayName) => switch (relayName) {
-        'EU Server' => 'NetherLinkEU',
-        'US Server' => 'NetherLinkUS',
-        _ => '-',
-      };
+    'EU Server' => 'NetherLinkEU',
+    'US Server' => 'NetherLinkUS',
+    _ => '-',
+  };
 
   String? get _activeNavItem {
     if (_pageIndex == _pageHome && _activeSheet == _ActiveSheet.none) {
       return 'home';
     }
     if (_pageIndex == _pagePartners) return 'partners';
-    if (_pageIndex == _pageProfile)  return 'profile';
+    if (_pageIndex == _pageProfile) return 'profile';
     switch (_activeSheet) {
       case _ActiveSheet.help:
         return 'support';
@@ -267,6 +271,7 @@ class _AppShellState extends State<AppShell>
                 index: _pageIndex,
                 children: [
                   HomeScreen(
+                    key: _homeKey,
                     selectedRelay: _selectedRelay,
                     onRelayChanged: _onRelayChanged,
                     navigationController: navigationController,

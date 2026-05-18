@@ -7,6 +7,8 @@ class UserModel {
   final String? lastSeenAt;
   final String? xboxGamertag;
   final String? xboxXuid;
+  final String? javaUsername;
+  final String? javaUuid;
 
   const UserModel({
     required this.username,
@@ -17,6 +19,8 @@ class UserModel {
     this.lastSeenAt,
     this.xboxGamertag,
     this.xboxXuid,
+    this.javaUsername,
+    this.javaUuid,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
@@ -28,6 +32,8 @@ class UserModel {
     lastSeenAt: json['lastSeenAt'] as String?,
     xboxGamertag: json['xboxGamertag'] as String?,
     xboxXuid: json['xboxXuid'] as String?,
+    javaUsername: json['javaUsername'] as String?,
+    javaUuid: json['javaUuid'] as String?,
   );
 
   String get displayLabel =>

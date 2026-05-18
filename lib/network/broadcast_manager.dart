@@ -104,6 +104,7 @@ class BroadcastManager {
     required String relayIp,
     required String relayBase,
     required BroadcastMode mode,
+    String? bedrockGamertag,
   }) async {
     final usedRelayName = _relayNameForIp(relayIp);
 
@@ -117,14 +118,22 @@ class BroadcastManager {
         remoteServerIp: remoteHost,
         remoteServerPort: remotePort,
         mode: mode,
+        bedrockGamertag: bedrockGamertag,
       );
 
       if (result.success) {
-        logger.info('✅ Config sent successfully (DNS mode) to "$usedRelayName".');
+        logger.info(
+          '✅ Config sent successfully (DNS mode) to "$usedRelayName".',
+        );
         return true;
       } else {
-        final userMessage = _formatRelayErrorMessage(result.statusCode, result.body);
-        logger.error('Relay rejected request (status ${result.statusCode}): ${result.body}');
+        final userMessage = _formatRelayErrorMessage(
+          result.statusCode,
+          result.body,
+        );
+        logger.error(
+          'Relay rejected request (status ${result.statusCode}): ${result.body}',
+        );
         onRelayError?.call(userMessage);
         return false;
       }
@@ -146,6 +155,7 @@ class BroadcastManager {
     required String relayBase,
     bool isJava = false,
     required BroadcastMode mode,
+    String? bedrockGamertag,
   }) async {
     const relayPort = 19132;
     final usedRelayName = _relayNameForIp(relayIp);
@@ -160,11 +170,17 @@ class BroadcastManager {
         remoteServerIp: remoteHost,
         remoteServerPort: remotePort,
         mode: mode,
+        bedrockGamertag: bedrockGamertag,
       );
 
       if (!result.success) {
-        final userMessage = _formatRelayErrorMessage(result.statusCode, result.body);
-        logger.error('Relay rejected request (status ${result.statusCode}): ${result.body}');
+        final userMessage = _formatRelayErrorMessage(
+          result.statusCode,
+          result.body,
+        );
+        logger.error(
+          'Relay rejected request (status ${result.statusCode}): ${result.body}',
+        );
         onRelayError?.call(userMessage);
         return false;
       }
@@ -172,7 +188,9 @@ class BroadcastManager {
       await Future.delayed(const Duration(milliseconds: 200));
 
       final relayAddress = InternetAddress(relayIp);
-      logger.info('Connecting to NetherLink servers (UDP target: ${relayAddress.address})');
+      logger.info(
+        'Connecting to NetherLink servers (UDP target: ${relayAddress.address})',
+      );
       logger.info('NetherLink will forward to $remoteHost:$remotePort');
 
       socketHandler.setRemoteIp(relayAddress);
@@ -185,7 +203,9 @@ class BroadcastManager {
         SocketHandler.proxyPort,
       );
       _socketIPv4!.broadcastEnabled = true;
-      logger.info('UDP broadcast socket started on 0.0.0.0 (${SocketHandler.proxyPort})');
+      logger.info(
+        'UDP broadcast socket started on 0.0.0.0 (${SocketHandler.proxyPort})',
+      );
 
       socketHandler.setBroadcasting(true);
 

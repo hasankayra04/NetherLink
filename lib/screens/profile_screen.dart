@@ -9,6 +9,8 @@ import '../models/user_model.dart';
 import '../widgets/components/app_toast.dart';
 import 'register_screen.dart';
 import 'xbox_link_screen.dart';
+import 'java_link_screen.dart';
+import 'public_profile_screen.dart';
 import 'chat_screen.dart';
 import 'conversations_screen.dart';
 
@@ -403,8 +405,6 @@ class _ProfileScreenState extends State<ProfileScreen>
 
 enum _AuthState { loading, notLoggedIn, notRegistered, loggedIn }
 
-// ─── Not logged in ────────────────────────────────────────────────────────────
-
 class _NotLoggedInView extends StatefulWidget {
   const _NotLoggedInView();
 
@@ -619,8 +619,6 @@ class _NotLoggedInViewState extends State<_NotLoggedInView> {
   }
 }
 
-// ─── Not registered ───────────────────────────────────────────────────────────
-
 class _NotRegisteredView extends StatelessWidget {
   final VoidCallback onRegister;
   const _NotRegisteredView({required this.onRegister});
@@ -688,12 +686,16 @@ class _NotRegisteredView extends StatelessWidget {
   }
 }
 
-// ─── Header ───────────────────────────────────────────────────────────────────
-
 class _Header extends StatelessWidget {
   final UserModel? me;
   final VoidCallback onAddFriend;
   const _Header({required this.me, required this.onAddFriend});
+
+  void _openSearch(BuildContext context) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const UserSearchScreen()));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -728,6 +730,12 @@ class _Header extends StatelessWidget {
             ),
           ),
           _IconBtn(
+            icon: Icons.search_rounded,
+            tooltip: 'Find user',
+            onTap: () => _openSearch(context),
+          ),
+          const SizedBox(width: 8),
+          _IconBtn(
             icon: Icons.person_add_rounded,
             tooltip: 'Add friend',
             onTap: onAddFriend,
@@ -737,8 +745,6 @@ class _Header extends StatelessWidget {
     );
   }
 }
-
-// ─── Profile tab ──────────────────────────────────────────────────────────────
 
 class _ProfileTab extends StatelessWidget {
   final UserModel? me;
@@ -771,6 +777,8 @@ class _ProfileTab extends StatelessWidget {
           ],
           const SizedBox(height: 12),
           _XboxCard(me: me!, onRefresh: onRefresh),
+          const SizedBox(height: 12),
+          _JavaCard(me: me!, onRefresh: onRefresh),
           const SizedBox(height: 24),
           OutlinedButton.icon(
             onPressed: onSignOut,
@@ -1007,6 +1015,224 @@ class _XboxCardState extends State<_XboxCard> {
   }
 }
 
+class _JavaCard extends StatefulWidget {
+  final UserModel me;
+  final Future<void> Function() onRefresh;
+  const _JavaCard({required this.me, required this.onRefresh});
+
+  @override
+  State<_JavaCard> createState() => _JavaCardState();
+}
+
+class _JavaCardState extends State<_JavaCard> {
+  bool _unlinking = false;
+  static const _javaBlue = Color(0xFF1565C0);
+
+  Future<void> _openLinkScreen() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => JavaLinkScreen(
+          onLinked: () {
+            Navigator.of(context).pop();
+            widget.onRefresh();
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _unlink() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surfaceRaised,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: AppTheme.borderGray),
+        ),
+        title: const Text('Unlink Java Edition'),
+        content: const Text(
+          'Are you sure you want to unlink your Minecraft Java Edition account?',
+          style: TextStyle(color: AppTheme.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error),
+            child: const Text('Unlink'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _unlinking = true);
+    await UserService.unlinkJava();
+    if (!mounted) return;
+    setState(() => _unlinking = false);
+    widget.onRefresh();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final linked = widget.me.javaUsername != null;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceRaised,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: linked ? _javaBlue.withOpacity(0.35) : AppTheme.borderGray,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: _javaBlue.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.videogame_asset_rounded,
+                  color: _javaBlue,
+                  size: 17,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'Java Edition',
+                style: TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+              const Spacer(),
+              if (linked)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _javaBlue.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    'Linked',
+                    style: TextStyle(
+                      color: _javaBlue,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (linked) ...[
+            Row(
+              children: [
+                const Icon(
+                  Icons.person_rounded,
+                  size: 14,
+                  color: AppTheme.textMuted,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  widget.me.javaUsername!,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            if (widget.me.javaUuid != null) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.tag_rounded,
+                    size: 14,
+                    color: AppTheme.textMuted,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    widget.me.javaUuid!,
+                    style: const TextStyle(
+                      color: AppTheme.textMuted,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: _unlinking ? null : _unlink,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.error,
+                side: BorderSide(color: AppTheme.error.withOpacity(0.40)),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+              child: _unlinking
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        color: AppTheme.error,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      'Unlink',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ] else ...[
+            const Text(
+              'Link your Minecraft Java Edition account to show your username on your profile.',
+              style: TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 12,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: _openLinkScreen,
+              icon: const Icon(Icons.link_rounded, size: 16),
+              label: const Text(
+                'Link Java Edition',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _javaBlue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _EditProfileCard extends StatefulWidget {
   final UserModel me;
   final Future<void> Function() onUpdated;
@@ -1165,8 +1391,6 @@ class _EditProfileCardState extends State<_EditProfileCard> {
   }
 }
 
-// ─── Friends tab ──────────────────────────────────────────────────────────────
-
 class _FriendsTab extends StatelessWidget {
   final List<FriendModel> friends;
   final bool loading;
@@ -1247,113 +1471,125 @@ class _FriendTile extends StatelessWidget {
     required this.onChat,
   });
 
+  void _openProfile(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PublicProfileScreen(username: friend.username),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceRaised,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: friend.online
-              ? AppTheme.success.withOpacity(0.25)
-              : AppTheme.borderGray,
-        ),
-      ),
-      child: Row(
-        children: [
-          Stack(
-            children: [
-              _Avatar(initials: friend.initials, size: 42),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  width: 11,
-                  height: 11,
-                  decoration: BoxDecoration(
-                    color: friend.online
-                        ? AppTheme.success
-                        : AppTheme.textDisabled,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppTheme.surfaceRaised, width: 2),
-                  ),
-                ),
-              ),
-            ],
+    return GestureDetector(
+      onTap: () => _openProfile(context),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceRaised,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: friend.online
+                ? AppTheme.success.withOpacity(0.25)
+                : AppTheme.borderGray,
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        ),
+        child: Row(
+          children: [
+            Stack(
               children: [
-                Text(
-                  friend.displayLabel,
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
+                _Avatar(initials: friend.initials, size: 42),
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 11,
+                    height: 11,
+                    decoration: BoxDecoration(
+                      color: friend.online
+                          ? AppTheme.success
+                          : AppTheme.textDisabled,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppTheme.surfaceRaised,
+                        width: 2,
+                      ),
+                    ),
                   ),
                 ),
-                Text(
-                  '@${friend.username}',
-                  style: const TextStyle(
-                    color: AppTheme.textMuted,
-                    fontSize: 11,
-                  ),
-                ),
-                if (friend.online && friend.session != null) ...[
-                  const SizedBox(height: 3),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.sports_esports_rounded,
-                        size: 11,
-                        color: AppTheme.success,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        friend.session!.serverIp,
-                        style: const TextStyle(
-                          color: AppTheme.success,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
               ],
             ),
-          ),
-          GestureDetector(
-            onTap: onChat,
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Icon(
-                Icons.chat_bubble_rounded,
-                color: AppTheme.accent.withOpacity(0.70),
-                size: 18,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    friend.displayLabel,
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                  Text(
+                    '@${friend.username}',
+                    style: const TextStyle(
+                      color: AppTheme.textMuted,
+                      fontSize: 11,
+                    ),
+                  ),
+                  if (friend.online && friend.session != null) ...[
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.sports_esports_rounded,
+                          size: 11,
+                          color: AppTheme.success,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          friend.session!.serverIp,
+                          style: const TextStyle(
+                            color: AppTheme.success,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
               ),
             ),
-          ),
-          GestureDetector(
-            onTap: onRemove,
-            child: const Padding(
-              padding: EdgeInsets.all(8),
-              child: Icon(
-                Icons.person_remove_rounded,
-                color: AppTheme.textMuted,
-                size: 18,
+            GestureDetector(
+              onTap: onChat,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Icon(
+                  Icons.chat_bubble_rounded,
+                  color: AppTheme.accent.withOpacity(0.70),
+                  size: 18,
+                ),
               ),
             ),
-          ),
-        ],
+            GestureDetector(
+              onTap: onRemove,
+              child: const Padding(
+                padding: EdgeInsets.all(8),
+                child: Icon(
+                  Icons.person_remove_rounded,
+                  color: AppTheme.textMuted,
+                  size: 18,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
-
-// ─── Requests tab ─────────────────────────────────────────────────────────────
 
 class _RequestsTab extends StatelessWidget {
   final List<FriendRequest> requests;
@@ -1462,8 +1698,6 @@ class _RequestTile extends StatelessWidget {
     );
   }
 }
-
-// ─── Shared small widgets ─────────────────────────────────────────────────────
 
 class _Avatar extends StatelessWidget {
   final String initials;

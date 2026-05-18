@@ -19,6 +19,7 @@ import '../services/notification_service.dart';
 import '../services/region_detector.dart';
 import '../network/broadcast_mode.dart';
 import '../services/navigation_controller.dart';
+import '../services/user_service.dart';
 import '../widgets/dialogs/howto_dialogs.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -44,10 +45,10 @@ class HomeScreen extends StatefulWidget {
   });
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> {
   late final SocketHandler socketHandler;
   late final BroadcastManager _broadcastManager;
   late final Logger logger;
@@ -191,18 +192,29 @@ class _HomeScreenState extends State<HomeScreen> {
     await _handleBroadcastMode(mode, remoteHost, remotePortParsed, loc);
   }
 
+  Future<String?> _getBedrockGamertag() async {
+    try {
+      final me = await UserService.getMe();
+      return me?.xboxGamertag;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> _handleDnsMode(
     PanelMode mode,
     String host,
     int port,
     AppLocalizations loc,
   ) async {
+    final gamertag = await _getBedrockGamertag();
     final ok = await _broadcastManager.sendRelayConfigOnly(
       host,
       port,
       relayIp: widget.selectedRelay.ip,
       relayBase: widget.selectedRelay.base,
       mode: BroadcastMode.values[mode.index],
+      bedrockGamertag: gamertag,
     );
     if (!ok) return;
     if (mode == PanelMode.nintendo) {
@@ -231,6 +243,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       logger.error('Failed to enable wakelock: $e');
     }
+    final gamertag = await _getBedrockGamertag();
     final success = await _broadcastManager.startBroadcast(
       host,
       port,
@@ -238,6 +251,7 @@ class _HomeScreenState extends State<HomeScreen> {
       relayBase: widget.selectedRelay.base,
       isJava: mode == PanelMode.java,
       mode: BroadcastMode.values[mode.index],
+      bedrockGamertag: gamertag,
     );
     _broadcastingNotifier.value = success;
   }
