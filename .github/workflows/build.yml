@@ -75,7 +75,11 @@ jobs:
         run: flutter pub get
 
       - name: Build macOS
-        run: flutter build macos --release -- CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+        run: flutter build macos --release
+        env:
+          FLUTTER_XCODE_CODE_SIGNING_ALLOWED: "NO"
+          FLUTTER_XCODE_CODE_SIGN_IDENTITY: ""
+          FLUTTER_XCODE_CODE_SIGNING_REQUIRED: "NO"
 
       - name: Zip macOS build
         run: |
