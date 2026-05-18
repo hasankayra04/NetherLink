@@ -6,7 +6,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../l10n/app_localizations.dart';
 import '../network/socket_handler.dart';
 import '../network/broadcast_manager.dart';
-import '../util/Logger.dart';
+import '../util/logger.dart';
 import '../util/user_servers.dart';
 import '../util/user_servers_storage.dart';
 import '../util/partners_servers.dart';

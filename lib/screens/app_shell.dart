@@ -11,7 +11,7 @@ import '../widgets/navigation/howto_menu.dart';
 import '../widgets/navigation/help_menu.dart';
 import '../widgets/dialogs/howto_dialogs.dart';
 import '../widgets/dialogs/help_dialogs.dart';
-import '../util/Logger.dart';
+import '../util/logger.dart';
 import '../util/partners_servers.dart';
 import '../services/partners_servers_service.dart';
 import '../l10n/app_localizations.dart';
