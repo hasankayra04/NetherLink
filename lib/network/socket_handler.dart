@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'dart:async';
-import '../util/Logger.dart';
+import '../util/logger.dart';
 
 class _ClientState {
   final RawDatagramSocket socket;
