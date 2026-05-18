@@ -155,11 +155,7 @@ class MoreSheetContent extends StatelessWidget {
   final void Function(String?) onRelayChanged;
   final VoidCallback onHowTo;
   final VoidCallback? onHelp;
-  final VoidCallback? onDiscord;
   final VoidCallback? onConsole;
-  final VoidCallback? onWebsite;
-  final VoidCallback? onLanguage;
-  final VoidCallback? onAternos;
 
   const MoreSheetContent({
     super.key,
@@ -170,11 +166,7 @@ class MoreSheetContent extends StatelessWidget {
     required this.onHowTo,
     this.selectedRelayIp,
     this.onHelp,
-    this.onDiscord,
     this.onConsole,
-    this.onWebsite,
-    this.onLanguage,
-    this.onAternos,
   });
 
   @override
@@ -274,30 +266,6 @@ class MoreSheetContent extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     _SheetTile(
-                      icon: FontAwesomeIcons.discord,
-                      color: const Color(0xFF5865F2),
-                      label: loc.discord,
-                      onTap:
-                          onDiscord ??
-                          () {
-                            onClose();
-                            navigationController.openDiscord(context);
-                          },
-                    ),
-                    const SizedBox(height: 8),
-                    _SheetTile(
-                      icon: FontAwesomeIcons.globe,
-                      color: AppTheme.success,
-                      label: loc.website,
-                      onTap:
-                          onWebsite ??
-                          () {
-                            onClose();
-                            navigationController.openWebsite(context);
-                          },
-                    ),
-                    const SizedBox(height: 8),
-                    _SheetTile(
                       icon: FontAwesomeIcons.terminal,
                       color: AppTheme.info,
                       label: loc.console,
@@ -306,31 +274,6 @@ class MoreSheetContent extends StatelessWidget {
                           () {
                             onClose();
                             navigationController.showConsole(context);
-                          },
-                    ),
-                    const SizedBox(height: 8),
-                    _SheetTile(
-                      icon: FontAwesomeIcons.language,
-                      color: const Color(0xFF9C27B0),
-                      label: loc.changeLanguage,
-                      onTap:
-                          onLanguage ??
-                          () {
-                            onClose();
-                            navigationController.showLanguageDialog(context);
-                          },
-                    ),
-                    const SizedBox(height: 8),
-                    _AternosTile(
-                      subtitle: loc.aternosSubtext,
-                      onTap:
-                          onAternos ??
-                          () {
-                            onClose();
-                            navigationController.openWebsiteWithCustomUrl(
-                              context,
-                              'https://aternos.org/',
-                            );
                           },
                     ),
                   ],

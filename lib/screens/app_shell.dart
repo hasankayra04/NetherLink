@@ -268,6 +268,17 @@ class _AppShellState extends State<AppShell>
                     onGoToConnector: () => _goTo(_pageConnector),
                     onGoToSkins: () => _goTo(_pageSkins),
                     onGoToWiki: () => _goTo(_pageWiki),
+                    onGoToPartners: () => _goTo(_pagePartners),
+                    partnerServersFuture: _partnerServersFuture,
+                    ipController: _ipController,
+                    portController: _portController,
+                    onWebsite: () => navigationController.openWebsite(context),
+                    onDiscord: () => navigationController.openDiscord(context),
+                    onAternos: () => navigationController.openWebsiteWithCustomUrl(
+                      context,
+                      'https://aternos.org/',
+                    ),
+                    onLanguage: () => navigationController.showLanguageDialog(context),
                   ),
                   HomeScreen(
                     key: _connectorKey,
@@ -414,28 +425,9 @@ class _AppShellState extends State<AppShell>
               () => _openSheet(_ActiveSheet.help),
             );
           },
-          onDiscord: () {
-            _closeSheetInstant();
-            navigationController.openDiscord(context);
-          },
           onConsole: () {
             _closeSheetInstant();
             navigationController.showConsole(context);
-          },
-          onWebsite: () {
-            _closeSheetInstant();
-            navigationController.openWebsite(context);
-          },
-          onLanguage: () {
-            _closeSheetInstant();
-            navigationController.showLanguageDialog(context);
-          },
-          onAternos: () {
-            _closeSheetInstant();
-            navigationController.openWebsiteWithCustomUrl(
-              context,
-              'https://aternos.org/',
-            );
           },
         );
       case _ActiveSheet.none:

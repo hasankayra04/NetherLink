@@ -11,6 +11,7 @@ import '../../services/navigation_controller.dart';
 import '../../widgets/components/app_painters.dart';
 import '../../widgets/components/app_toast.dart';
 import '../../widgets/dialogs/howto_dialogs.dart';
+import '../../widgets/featured_server_hero.dart';
 import 'server_tabs_section.dart';
 
 enum PanelMode { lan, nintendo, friends, java }
@@ -238,7 +239,12 @@ widget.partnerServersFuture?.then((list) {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildHero(broadcasting, loc),
+            FeaturedServerHero(
+              partnerServersFuture: widget.partnerServersFuture,
+              ipController: widget.ipController,
+              portController: widget.portController,
+              broadcasting: broadcasting,
+            ),
             const SizedBox(height: 22),
             _sectionLabel('SELECT MODE'),
             const SizedBox(height: 10),
