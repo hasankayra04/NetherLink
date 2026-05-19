@@ -278,10 +278,11 @@ class SkinsScreen extends StatefulWidget {
   const SkinsScreen({super.key});
 
   @override
-  State<SkinsScreen> createState() => _SkinsScreenState();
+  State<SkinsScreen> createState() => SkinsScreenState();
 }
 
-class _SkinsScreenState extends State<SkinsScreen> {
+class SkinsScreenState extends State<SkinsScreen> {
+  void refresh() => _loadMe();
   StreamSubscription<User?>? _authSub;
 
   UserModel? _me;

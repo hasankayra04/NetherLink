@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../theme/app_theme.dart';
 import '../util/partners_servers.dart';
 import '../widgets/featured_server_hero.dart';
@@ -12,10 +11,6 @@ class LandingScreen extends StatelessWidget {
   final Future<List<FeaturedServer>>? partnerServersFuture;
   final TextEditingController ipController;
   final TextEditingController portController;
-  final VoidCallback onWebsite;
-  final VoidCallback onDiscord;
-  final VoidCallback onAternos;
-  final VoidCallback onLanguage;
 
   const LandingScreen({
     super.key,
@@ -26,32 +21,30 @@ class LandingScreen extends StatelessWidget {
     required this.partnerServersFuture,
     required this.ipController,
     required this.portController,
-    required this.onWebsite,
-    required this.onDiscord,
-    required this.onAternos,
-    required this.onLanguage,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildFeaturedServers(context),
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: _buildGrid(context),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildFeaturedServers(context),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _buildGrid(context),
+                ),
+                const SizedBox(),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: _buildLinks(),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -67,6 +60,7 @@ class LandingScreen extends StatelessWidget {
                 color: AppTheme.accent,
                 imagePath: 'assets/images/tunnel.png',
                 onTap: onGoToConnector,
+                shineDelay: Duration.zero,
               ),
             ),
             const SizedBox(width: 12),
@@ -77,6 +71,7 @@ class LandingScreen extends StatelessWidget {
                 color: const Color(0xFF42A5F5),
                 imagePath: 'assets/images/skin.png',
                 onTap: onGoToSkins,
+                shineDelay: const Duration(milliseconds: 700),
               ),
             ),
           ],
@@ -91,6 +86,7 @@ class LandingScreen extends StatelessWidget {
                 color: AppTheme.success,
                 imagePath: 'assets/images/wiki.png',
                 onTap: onGoToWiki,
+                shineDelay: const Duration(milliseconds: 1400),
               ),
             ),
             const SizedBox(width: 12),
@@ -101,6 +97,7 @@ class LandingScreen extends StatelessWidget {
                 color: const Color(0xFFFFB300),
                 imagePath: 'assets/images/feature.png',
                 onTap: onGoToPartners,
+                shineDelay: const Duration(milliseconds: 2100),
               ),
             ),
           ],
@@ -118,119 +115,15 @@ class LandingScreen extends StatelessWidget {
       borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
     );
   }
-
-  Widget _buildLinks() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Links',
-          style: TextStyle(
-            color: AppTheme.textMuted,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.8,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: _LinkButton(
-                icon: FontAwesomeIcons.globe,
-                label: 'Website',
-                color: const Color(0xFF42A5F5),
-                onTap: onWebsite,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _LinkButton(
-                icon: FontAwesomeIcons.discord,
-                label: 'Discord',
-                color: const Color(0xFF7289DA),
-                onTap: onDiscord,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _LinkButton(
-                icon: FontAwesomeIcons.server,
-                label: 'Aternos',
-                color: const Color(0xFF7AC74F),
-                onTap: onAternos,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _LinkButton(
-                icon: FontAwesomeIcons.language,
-                label: 'Language',
-                color: AppTheme.textSecondary,
-                onTap: onLanguage,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
 }
 
-class _LinkButton extends StatelessWidget {
-  final FaIconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _LinkButton({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withOpacity(0.20)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FaIcon(icon, size: 16, color: color),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _QuickCard extends StatelessWidget {
+class _QuickCard extends StatefulWidget {
   final String title;
   final String subtitle;
   final Color color;
   final String imagePath;
   final VoidCallback onTap;
+  final Duration shineDelay;
 
   const _QuickCard({
     required this.title,
@@ -238,78 +131,124 @@ class _QuickCard extends StatelessWidget {
     required this.color,
     required this.imagePath,
     required this.onTap,
+    this.shineDelay = Duration.zero,
   });
 
   @override
+  State<_QuickCard> createState() => _QuickCardState();
+}
+
+class _QuickCardState extends State<_QuickCard>
+    with SingleTickerProviderStateMixin {
+  bool _pressed = false;
+
+  late final AnimationController _floatController;
+  late final Animation<double> _floatAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _floatController = AnimationController(
+      duration: const Duration(milliseconds: 2200),
+      vsync: this,
+    );
+    _floatAnim = Tween<double>(begin: 0, end: -5).animate(
+      CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
+    );
+    Future.delayed(widget.shineDelay, () {
+      if (mounted) _floatController.repeat(reverse: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _floatController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          child: SizedBox(
-            height: 130,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Image.asset(imagePath, fit: BoxFit.cover),
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: const [0.0, 0.4, 1.0],
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withOpacity(0.25),
-                        Colors.black.withOpacity(0.72),
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: AnimatedBuilder(
+        animation: _floatAnim,
+        builder: (context, child) => Transform.translate(
+          offset: Offset(0, _floatAnim.value),
+          child: child,
+        ),
+        child: AnimatedScale(
+          scale: _pressed ? 0.94 : 1.0,
+          duration: const Duration(milliseconds: 100),
+          curve: Curves.easeOut,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: SizedBox(
+              height: 130,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(widget.imagePath, fit: BoxFit.cover),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 100),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: const [0.0, 0.4, 1.0],
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(_pressed ? 0.35 : 0.25),
+                          Colors.black.withOpacity(_pressed ? 0.85 : 0.72),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          widget.title,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withOpacity(0.9),
+                                blurRadius: 12,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          widget.subtitle,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.75),
+                            fontSize: 10,
+                            height: 1.4,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withOpacity(0.95),
+                                blurRadius: 10,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          maxLines: 2,
+                        ),
                       ],
                     ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black.withOpacity(0.9),
-                              blurRadius: 12,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        subtitle,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.75),
-                          fontSize: 10,
-                          height: 1.4,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black.withOpacity(0.95),
-                              blurRadius: 10,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        maxLines: 2,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

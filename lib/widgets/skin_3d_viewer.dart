@@ -183,10 +183,10 @@ List<_Face> _boxFaces({
     _Face(
       [_V3(hw, hh, hd), _V3(hw, hh, -hd), _V3(hw, -hh, -hd), _V3(hw, -hh, hd)],
       [
-        Offset(x, y + d),
-        Offset(x + d, y + d),
-        Offset(x + d, y + d + h),
-        Offset(x, y + d + h),
+        Offset(x + d + w, y + d),
+        Offset(x + d + w + d, y + d),
+        Offset(x + d + w + d, y + d + h),
+        Offset(x + d + w, y + d + h),
       ],
     ),
     _Face(
@@ -197,10 +197,10 @@ List<_Face> _boxFaces({
         _V3(-hw, -hh, -hd),
       ],
       [
-        Offset(x + d + w, y + d),
-        Offset(x + d + w + d, y + d),
-        Offset(x + d + w + d, y + d + h),
-        Offset(x + d + w, y + d + h),
+        Offset(x, y + d),
+        Offset(x + d, y + d),
+        Offset(x + d, y + d + h),
+        Offset(x, y + d + h),
       ],
     ),
     _Face(

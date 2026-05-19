@@ -38,7 +38,7 @@ class _SkinEditorScreenState extends State<SkinEditorScreen> {
 
   _Tool _activeTool = _Tool.draw;
   Color _activeColor = const Color(0xFF3F51B5);
-  bool _rotateMode = false;
+  bool _rotateMode = true;
   bool _uvMode = false;
   bool _panModeUV = false;
 
@@ -472,12 +472,13 @@ class _SkinEditorScreenState extends State<SkinEditorScreen> {
           );
         }
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Export failed'),
+          SnackBar(
+            content: Text('Export failed: $e'),
             backgroundColor: AppTheme.error,
+            duration: const Duration(seconds: 6),
           ),
         );
     }

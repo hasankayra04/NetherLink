@@ -59,6 +59,7 @@ class _AppShellState extends State<AppShell>
 
   final GlobalKey<ManageServersScreenState> _manageServersKey = GlobalKey();
   final GlobalKey<HomeScreenState> _connectorKey = GlobalKey();
+  final GlobalKey<SkinsScreenState> _skinsKey = GlobalKey();
 
   late RelayPingResult _selectedRelay;
   int _pageIndex = _pageHome;
@@ -144,6 +145,9 @@ class _AppShellState extends State<AppShell>
     _closeSheetInstant();
     if (page == _pageConnector) {
       _connectorKey.currentState?.loadUserServers();
+    }
+    if (page == _pageSkins) {
+      _skinsKey.currentState?.refresh();
     }
     setState(() => _pageIndex = page);
   }
@@ -255,6 +259,14 @@ class _AppShellState extends State<AppShell>
           onSkinsTap: () => _goTo(_pageSkins),
           onWikiTap: () => _goTo(_pageWiki),
           onProfileTap: () => _goTo(_pageProfile),
+          isLandingPage: _pageIndex == _pageHome,
+          onWebsiteTap: () => navigationController.openWebsite(context),
+          onDiscordTap: () => navigationController.openDiscord(context),
+          onaternosTap: () => navigationController.openWebsiteWithCustomUrl(
+            context,
+            'https://aternos.org/',
+          ),
+          onLanguageTap: () => navigationController.showLanguageDialog(context),
         ),
         body: SafeArea(
           top: true,
@@ -272,13 +284,6 @@ class _AppShellState extends State<AppShell>
                     partnerServersFuture: _partnerServersFuture,
                     ipController: _ipController,
                     portController: _portController,
-                    onWebsite: () => navigationController.openWebsite(context),
-                    onDiscord: () => navigationController.openDiscord(context),
-                    onAternos: () => navigationController.openWebsiteWithCustomUrl(
-                      context,
-                      'https://aternos.org/',
-                    ),
-                    onLanguage: () => navigationController.showLanguageDialog(context),
                   ),
                   HomeScreen(
                     key: _connectorKey,
@@ -313,7 +318,7 @@ class _AppShellState extends State<AppShell>
                     onCancel: () =>
                         setState(() => _pageIndex = _pageManageServers),
                   ),
-                  const SkinsScreen(),
+                  SkinsScreen(key: _skinsKey),
                   const WikiScreen(),
                   const ProfileScreen(),
                 ],

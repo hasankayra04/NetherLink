@@ -17,6 +17,12 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
   final String? selectedRelayIp;
   final void Function(String?)? onRelayChanged;
 
+  final bool isLandingPage;
+  final VoidCallback? onWebsiteTap;
+  final VoidCallback? onDiscordTap;
+  final VoidCallback? onaternosTap;
+  final VoidCallback? onLanguageTap;
+
   const BottomGlassSimpleNavBar({
     super.key,
     required this.navigationController,
@@ -29,6 +35,11 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
     this.dark = true,
     this.selectedRelayIp,
     this.onRelayChanged,
+    this.isLandingPage = false,
+    this.onWebsiteTap,
+    this.onDiscordTap,
+    this.onaternosTap,
+    this.onLanguageTap,
   });
 
   @override
@@ -43,38 +54,71 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
-            children: [
-              _NavItem(
-                icon: FontAwesomeIcons.house,
-                label: 'Home',
-                isActive: activeItem == 'home',
-                onTap: onHomeTap,
-              ),
-              _NavItem(
-                icon: FontAwesomeIcons.plug,
-                label: 'Connector',
-                isActive: activeItem == 'connector',
-                onTap: onConnectorTap,
-              ),
-              _NavItem(
-                icon: FontAwesomeIcons.shirt,
-                label: 'Skins',
-                isActive: activeItem == 'skins',
-                onTap: onSkinsTap,
-              ),
-              _NavItem(
-                icon: FontAwesomeIcons.bookOpen,
-                label: 'Wiki',
-                isActive: activeItem == 'wiki',
-                onTap: onWikiTap,
-              ),
-              _NavItem(
-                icon: FontAwesomeIcons.user,
-                label: 'Profile',
-                isActive: activeItem == 'profile',
-                onTap: onProfileTap,
-              ),
-            ],
+            children: isLandingPage
+                ? [
+                    _NavItem(
+                      icon: FontAwesomeIcons.earthEurope,
+                      label: 'Website',
+                      isActive: false,
+                      onTap: onWebsiteTap,
+                    ),
+                    _NavItem(
+                      icon: FontAwesomeIcons.discord,
+                      label: 'Discord',
+                      isActive: false,
+                      onTap: onDiscordTap,
+                    ),
+                    _NavItem(
+                      icon: FontAwesomeIcons.server,
+                      label: 'Aternos',
+                      isActive: false,
+                      onTap: onaternosTap,
+                    ),
+                    _NavItem(
+                      icon: FontAwesomeIcons.language,
+                      label: 'Language',
+                      isActive: false,
+                      onTap: onLanguageTap,
+                    ),
+                    _NavItem(
+                      icon: FontAwesomeIcons.user,
+                      label: 'Profile',
+                      isActive: activeItem == 'profile',
+                      onTap: onProfileTap,
+                    ),
+                  ]
+                : [
+                    _NavItem(
+                      icon: FontAwesomeIcons.house,
+                      label: 'Home',
+                      isActive: activeItem == 'home',
+                      onTap: onHomeTap,
+                    ),
+                    _NavItem(
+                      icon: FontAwesomeIcons.plug,
+                      label: 'Connector',
+                      isActive: activeItem == 'connector',
+                      onTap: onConnectorTap,
+                    ),
+                    _NavItem(
+                      icon: FontAwesomeIcons.shirt,
+                      label: 'Skins',
+                      isActive: activeItem == 'skins',
+                      onTap: onSkinsTap,
+                    ),
+                    _NavItem(
+                      icon: FontAwesomeIcons.bookOpen,
+                      label: 'Wiki',
+                      isActive: activeItem == 'wiki',
+                      onTap: onWikiTap,
+                    ),
+                    _NavItem(
+                      icon: FontAwesomeIcons.user,
+                      label: 'Profile',
+                      isActive: activeItem == 'profile',
+                      onTap: onProfileTap,
+                    ),
+                  ],
           ),
         ),
       ),
