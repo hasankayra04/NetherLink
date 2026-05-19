@@ -1,3 +1,27 @@
+class JavaAccount {
+  final String javaUsername;
+  final String javaUuid;
+
+  const JavaAccount({required this.javaUsername, required this.javaUuid});
+
+  factory JavaAccount.fromJson(Map<String, dynamic> json) => JavaAccount(
+    javaUsername: json['javaUsername'] as String,
+    javaUuid: json['javaUuid'] as String,
+  );
+}
+
+class BedrockAccount {
+  final String? xboxGamertag;
+  final String xboxXuid;
+
+  const BedrockAccount({this.xboxGamertag, required this.xboxXuid});
+
+  factory BedrockAccount.fromJson(Map<String, dynamic> json) => BedrockAccount(
+    xboxGamertag: json['xboxGamertag'] as String?,
+    xboxXuid: json['xboxXuid'] as String,
+  );
+}
+
 class UserModel {
   final String username;
   final String? displayName;
@@ -9,6 +33,8 @@ class UserModel {
   final String? xboxXuid;
   final String? javaUsername;
   final String? javaUuid;
+  final List<JavaAccount> javaAccounts;
+  final List<BedrockAccount> bedrockAccounts;
 
   const UserModel({
     required this.username,
@@ -21,20 +47,32 @@ class UserModel {
     this.xboxXuid,
     this.javaUsername,
     this.javaUuid,
+    this.javaAccounts = const [],
+    this.bedrockAccounts = const [],
   });
 
-  factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
-    username: json['username'] as String,
-    displayName: json['displayName'] as String?,
-    avatarUrl: json['avatarUrl'] as String?,
-    bio: json['bio'] as String?,
-    createdAt: json['createdAt'] as String?,
-    lastSeenAt: json['lastSeenAt'] as String?,
-    xboxGamertag: json['xboxGamertag'] as String?,
-    xboxXuid: json['xboxXuid'] as String?,
-    javaUsername: json['javaUsername'] as String?,
-    javaUuid: json['javaUuid'] as String?,
-  );
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    final javaList = (json['javaAccounts'] as List<dynamic>? ?? [])
+        .map((e) => JavaAccount.fromJson(e as Map<String, dynamic>))
+        .toList();
+    final bedrockList = (json['bedrockAccounts'] as List<dynamic>? ?? [])
+        .map((e) => BedrockAccount.fromJson(e as Map<String, dynamic>))
+        .toList();
+    return UserModel(
+      username: json['username'] as String,
+      displayName: json['displayName'] as String?,
+      avatarUrl: json['avatarUrl'] as String?,
+      bio: json['bio'] as String?,
+      createdAt: json['createdAt'] as String?,
+      lastSeenAt: json['lastSeenAt'] as String?,
+      xboxGamertag: json['xboxGamertag'] as String?,
+      xboxXuid: json['xboxXuid'] as String?,
+      javaUsername: json['javaUsername'] as String?,
+      javaUuid: json['javaUuid'] as String?,
+      javaAccounts: javaList,
+      bedrockAccounts: bedrockList,
+    );
+  }
 
   String get displayLabel =>
       displayName?.isNotEmpty == true ? displayName! : username;

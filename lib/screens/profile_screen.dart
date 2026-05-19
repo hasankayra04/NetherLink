@@ -807,7 +807,9 @@ class _XboxCard extends StatefulWidget {
 }
 
 class _XboxCardState extends State<_XboxCard> {
-  bool _unlinking = false;
+  final Set<String> _unlinking = {};
+
+  static const _xboxGreen = Color(0xFF107C10);
 
   Future<void> _openLinkScreen() async {
     await Navigator.of(context).push(
@@ -822,7 +824,8 @@ class _XboxCardState extends State<_XboxCard> {
     );
   }
 
-  Future<void> _unlink() async {
+  Future<void> _unlink(BedrockAccount account) async {
+    final label = account.xboxGamertag ?? account.xboxXuid;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -832,9 +835,9 @@ class _XboxCardState extends State<_XboxCard> {
           side: const BorderSide(color: AppTheme.borderGray),
         ),
         title: const Text('Unlink Xbox account'),
-        content: const Text(
-          'Are you sure you want to unlink your Xbox account?',
-          style: TextStyle(color: AppTheme.textSecondary),
+        content: Text(
+          'Remove $label from your linked accounts?',
+          style: const TextStyle(color: AppTheme.textSecondary),
         ),
         actions: [
           TextButton(
@@ -850,17 +853,17 @@ class _XboxCardState extends State<_XboxCard> {
       ),
     );
     if (confirmed != true || !mounted) return;
-    setState(() => _unlinking = true);
-    await UserService.unlinkXbox();
+    setState(() => _unlinking.add(account.xboxXuid));
+    await UserService.unlinkBedrockAccount(account.xboxXuid);
     if (!mounted) return;
-    setState(() => _unlinking = false);
+    setState(() => _unlinking.remove(account.xboxXuid));
     widget.onRefresh();
   }
 
   @override
   Widget build(BuildContext context) {
-    const xboxGreen = Color(0xFF107C10);
-    final linked = widget.me.xboxGamertag != null;
+    final accounts = widget.me.bedrockAccounts;
+    final hasAccounts = accounts.isNotEmpty;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -868,7 +871,7 @@ class _XboxCardState extends State<_XboxCard> {
         color: AppTheme.surfaceRaised,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: linked ? xboxGreen.withOpacity(0.35) : AppTheme.borderGray,
+          color: hasAccounts ? _xboxGreen.withOpacity(0.35) : AppTheme.borderGray,
         ),
       ),
       child: Column(
@@ -880,18 +883,18 @@ class _XboxCardState extends State<_XboxCard> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: xboxGreen.withOpacity(0.12),
+                  color: _xboxGreen.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.sports_esports_rounded,
-                  color: xboxGreen,
+                  color: _xboxGreen,
                   size: 17,
                 ),
               ),
               const SizedBox(width: 10),
               const Text(
-                'Xbox Account',
+                'Xbox Accounts',
                 style: TextStyle(
                   color: AppTheme.textPrimary,
                   fontWeight: FontWeight.w700,
@@ -899,20 +902,17 @@ class _XboxCardState extends State<_XboxCard> {
                 ),
               ),
               const Spacer(),
-              if (linked)
+              if (hasAccounts)
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: xboxGreen.withOpacity(0.12),
+                    color: _xboxGreen.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text(
-                    'Linked',
-                    style: TextStyle(
-                      color: xboxGreen,
+                  child: Text(
+                    '${accounts.length}',
+                    style: const TextStyle(
+                      color: _xboxGreen,
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                     ),
@@ -921,71 +921,7 @@ class _XboxCardState extends State<_XboxCard> {
             ],
           ),
           const SizedBox(height: 12),
-          if (linked) ...[
-            Row(
-              children: [
-                const Icon(
-                  Icons.person_rounded,
-                  size: 14,
-                  color: AppTheme.textMuted,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  widget.me.xboxGamertag!,
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            if (widget.me.xboxXuid != null) ...[
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.tag_rounded,
-                    size: 14,
-                    color: AppTheme.textMuted,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    widget.me.xboxXuid!,
-                    style: const TextStyle(
-                      color: AppTheme.textMuted,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: _unlinking ? null : _unlink,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.error,
-                side: BorderSide(color: AppTheme.error.withOpacity(0.40)),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-              ),
-              child: _unlinking
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        color: AppTheme.error,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Text(
-                      'Unlink',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-            ),
-          ] else ...[
+          if (!hasAccounts) ...[
             const Text(
               'Link your Xbox account to show your gamertag on your profile.',
               style: TextStyle(
@@ -995,20 +931,35 @@ class _XboxCardState extends State<_XboxCard> {
               ),
             ),
             const SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: _openLinkScreen,
-              icon: const Icon(Icons.link_rounded, size: 16),
-              label: const Text(
-                'Link Xbox Account',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: xboxGreen,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
+          ],
+          if (hasAccounts) ...[
+            ...accounts.map(
+              (account) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _AccountTile(
+                  primaryText: account.xboxGamertag ?? account.xboxXuid,
+                  secondaryText: account.xboxXuid,
+                  unlinking: _unlinking.contains(account.xboxXuid),
+                  onUnlink: () => _unlink(account),
+                  accentColor: _xboxGreen,
+                ),
               ),
             ),
+            const SizedBox(height: 4),
           ],
+          ElevatedButton.icon(
+            onPressed: _openLinkScreen,
+            icon: const Icon(Icons.link_rounded, size: 16),
+            label: Text(
+              hasAccounts ? 'Link Another Xbox Account' : 'Link Xbox Account',
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _xboxGreen,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
         ],
       ),
     );
@@ -1025,7 +976,7 @@ class _JavaCard extends StatefulWidget {
 }
 
 class _JavaCardState extends State<_JavaCard> {
-  bool _unlinking = false;
+  final Set<String> _unlinking = {};
   static const _javaBlue = Color(0xFF1565C0);
 
   Future<void> _openLinkScreen() async {
@@ -1041,7 +992,7 @@ class _JavaCardState extends State<_JavaCard> {
     );
   }
 
-  Future<void> _unlink() async {
+  Future<void> _unlink(JavaAccount account) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -1051,9 +1002,9 @@ class _JavaCardState extends State<_JavaCard> {
           side: const BorderSide(color: AppTheme.borderGray),
         ),
         title: const Text('Unlink Java Edition'),
-        content: const Text(
-          'Are you sure you want to unlink your Minecraft Java Edition account?',
-          style: TextStyle(color: AppTheme.textSecondary),
+        content: Text(
+          'Remove ${account.javaUsername} from your linked accounts?',
+          style: const TextStyle(color: AppTheme.textSecondary),
         ),
         actions: [
           TextButton(
@@ -1069,16 +1020,17 @@ class _JavaCardState extends State<_JavaCard> {
       ),
     );
     if (confirmed != true || !mounted) return;
-    setState(() => _unlinking = true);
-    await UserService.unlinkJava();
+    setState(() => _unlinking.add(account.javaUuid));
+    await UserService.unlinkJavaAccount(account.javaUuid);
     if (!mounted) return;
-    setState(() => _unlinking = false);
+    setState(() => _unlinking.remove(account.javaUuid));
     widget.onRefresh();
   }
 
   @override
   Widget build(BuildContext context) {
-    final linked = widget.me.javaUsername != null;
+    final accounts = widget.me.javaAccounts;
+    final hasAccounts = accounts.isNotEmpty;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1086,7 +1038,7 @@ class _JavaCardState extends State<_JavaCard> {
         color: AppTheme.surfaceRaised,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: linked ? _javaBlue.withOpacity(0.35) : AppTheme.borderGray,
+          color: hasAccounts ? _javaBlue.withOpacity(0.35) : AppTheme.borderGray,
         ),
       ),
       child: Column(
@@ -1109,7 +1061,7 @@ class _JavaCardState extends State<_JavaCard> {
               ),
               const SizedBox(width: 10),
               const Text(
-                'Java Edition',
+                'Java Edition Accounts',
                 style: TextStyle(
                   color: AppTheme.textPrimary,
                   fontWeight: FontWeight.w700,
@@ -1117,19 +1069,16 @@ class _JavaCardState extends State<_JavaCard> {
                 ),
               ),
               const Spacer(),
-              if (linked)
+              if (hasAccounts)
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: _javaBlue.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text(
-                    'Linked',
-                    style: TextStyle(
+                  child: Text(
+                    '${accounts.length}',
+                    style: const TextStyle(
                       color: _javaBlue,
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
@@ -1139,71 +1088,7 @@ class _JavaCardState extends State<_JavaCard> {
             ],
           ),
           const SizedBox(height: 12),
-          if (linked) ...[
-            Row(
-              children: [
-                const Icon(
-                  Icons.person_rounded,
-                  size: 14,
-                  color: AppTheme.textMuted,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  widget.me.javaUsername!,
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            if (widget.me.javaUuid != null) ...[
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.tag_rounded,
-                    size: 14,
-                    color: AppTheme.textMuted,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    widget.me.javaUuid!,
-                    style: const TextStyle(
-                      color: AppTheme.textMuted,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: _unlinking ? null : _unlink,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.error,
-                side: BorderSide(color: AppTheme.error.withOpacity(0.40)),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-              ),
-              child: _unlinking
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        color: AppTheme.error,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Text(
-                      'Unlink',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-            ),
-          ] else ...[
+          if (!hasAccounts) ...[
             const Text(
               'Link your Minecraft Java Edition account to show your username on your profile.',
               style: TextStyle(
@@ -1213,20 +1098,120 @@ class _JavaCardState extends State<_JavaCard> {
               ),
             ),
             const SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: _openLinkScreen,
-              icon: const Icon(Icons.link_rounded, size: 16),
-              label: const Text(
-                'Link Java Edition',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _javaBlue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
+          ],
+          if (hasAccounts) ...[
+            ...accounts.map(
+              (account) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _AccountTile(
+                  primaryText: account.javaUsername,
+                  secondaryText: account.javaUuid,
+                  unlinking: _unlinking.contains(account.javaUuid),
+                  onUnlink: () => _unlink(account),
+                  accentColor: _javaBlue,
+                ),
               ),
             ),
+            const SizedBox(height: 4),
           ],
+          ElevatedButton.icon(
+            onPressed: _openLinkScreen,
+            icon: const Icon(Icons.link_rounded, size: 16),
+            label: Text(
+              hasAccounts ? 'Link Another Java Account' : 'Link Java Edition',
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _javaBlue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccountTile extends StatelessWidget {
+  final String primaryText;
+  final String secondaryText;
+  final bool unlinking;
+  final VoidCallback onUnlink;
+  final Color accentColor;
+
+  const _AccountTile({
+    required this.primaryText,
+    required this.secondaryText,
+    required this.unlinking,
+    required this.onUnlink,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: accentColor.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: accentColor.withOpacity(0.18)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  primaryText,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  secondaryText,
+                  style: const TextStyle(
+                    color: AppTheme.textMuted,
+                    fontSize: 10,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: unlinking ? null : onUnlink,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.error.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(7),
+                border: Border.all(color: AppTheme.error.withOpacity(0.25)),
+              ),
+              child: unlinking
+                  ? const SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(
+                        color: AppTheme.error,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      'Unlink',
+                      style: TextStyle(
+                        color: AppTheme.error,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ),
         ],
       ),
     );
@@ -1247,26 +1232,31 @@ class _EditProfileCardState extends State<_EditProfileCard> {
   bool _saving = false;
   late final TextEditingController _displayNameCtrl;
   late final TextEditingController _bioCtrl;
+  late final TextEditingController _avatarUrlCtrl;
 
   @override
   void initState() {
     super.initState();
     _displayNameCtrl = TextEditingController(text: widget.me.displayName ?? '');
     _bioCtrl = TextEditingController(text: widget.me.bio ?? '');
+    _avatarUrlCtrl = TextEditingController(text: widget.me.avatarUrl ?? '');
   }
 
   @override
   void dispose() {
     _displayNameCtrl.dispose();
     _bioCtrl.dispose();
+    _avatarUrlCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
     setState(() => _saving = true);
+    final avatarVal = _avatarUrlCtrl.text.trim();
     final updated = await UserService.updateMe(
       displayName: _displayNameCtrl.text.trim(),
       bio: _bioCtrl.text.trim(),
+      avatarUrl: avatarVal.isNotEmpty ? avatarVal : null,
     );
     if (!mounted) return;
     setState(() {
@@ -1346,6 +1336,23 @@ class _EditProfileCardState extends State<_EditProfileCard> {
                 hintText: 'Tell something about yourself',
               ),
             ),
+            const SizedBox(height: 14),
+            _FieldLabel('Avatar URL'),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _avatarUrlCtrl,
+              style: const TextStyle(color: AppTheme.textPrimary),
+              keyboardType: TextInputType.url,
+              autocorrect: false,
+              decoration: const InputDecoration(
+                hintText: 'https://example.com/avatar.png',
+                prefixIcon: Icon(
+                  Icons.image_rounded,
+                  size: 18,
+                  color: AppTheme.textMuted,
+                ),
+              ),
+            ),
             const SizedBox(height: 16),
             Row(
               children: [
@@ -1384,6 +1391,10 @@ class _EditProfileCardState extends State<_EditProfileCard> {
             ),
             const SizedBox(height: 8),
             _ProfileRow(label: 'Username', value: '@${widget.me.username}'),
+            if (widget.me.avatarUrl?.isNotEmpty == true) ...[
+              const SizedBox(height: 8),
+              _ProfileRow(label: 'Avatar URL', value: widget.me.avatarUrl!),
+            ],
           ],
         ],
       ),

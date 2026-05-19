@@ -1,8 +1,12 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 import '../models/user_model.dart';
 import '../services/user_service.dart';
+import '../widgets/skin_3d_viewer.dart';
 
 class PublicProfileScreen extends StatefulWidget {
   final String username;
@@ -332,10 +336,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
             ),
           ],
 
-          // Skin preview
-          if (u.javaUuid != null) ...[
+          if (u.javaAccounts.isNotEmpty || u.bedrockAccounts.isNotEmpty) ...[
             const SizedBox(height: 12),
-            _PublicSkinCard(javaUuid: u.javaUuid!),
+            _PublicSkinsSection(user: u),
           ],
         ],
       ),
@@ -417,16 +420,33 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
   List<UserModel> _results = [];
   bool _loading = false;
   bool _searched = false;
+  Timer? _debounce;
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _ctrl.dispose();
     super.dispose();
   }
 
-  Future<void> _search() async {
-    final q = _ctrl.text.trim();
+  void _onChanged(String value) {
+    _debounce?.cancel();
+    final q = value.trim();
+    if (q.isEmpty) {
+      setState(() {
+        _results = [];
+        _searched = false;
+        _loading = false;
+      });
+      return;
+    }
+    _debounce = Timer(const Duration(milliseconds: 400), () => _search(q));
+  }
+
+  Future<void> _search([String? query]) async {
+    final q = query ?? _ctrl.text.trim();
     if (q.isEmpty) return;
+    if (!mounted) return;
     setState(() {
       _loading = true;
       _searched = true;
@@ -469,40 +489,34 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
           Container(
             color: AppTheme.surface,
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _ctrl,
-                    autofocus: true,
-                    autocorrect: false,
-                    style: const TextStyle(color: AppTheme.textPrimary),
-                    decoration: const InputDecoration(
-                      hintText: 'Username, gamertag or Java name…',
-                      prefixIcon: Icon(
-                        Icons.search_rounded,
-                        size: 18,
-                        color: AppTheme.textMuted,
-                      ),
-                    ),
-                    onSubmitted: (_) => _search(),
-                  ),
+            child: TextField(
+              controller: _ctrl,
+              autofocus: true,
+              autocorrect: false,
+              style: const TextStyle(color: AppTheme.textPrimary),
+              decoration: InputDecoration(
+                hintText: 'Username, gamertag or Java name…',
+                prefixIcon: const Icon(
+                  Icons.search_rounded,
+                  size: 18,
+                  color: AppTheme.textMuted,
                 ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: _loading ? null : _search,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                  ),
-                  child: const Text(
-                    'Search',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ],
+                suffixIcon: _loading
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            color: AppTheme.accent,
+                            strokeWidth: 2,
+                          ),
+                        ),
+                      )
+                    : null,
+              ),
+              onChanged: _onChanged,
+              onSubmitted: (_) => _search(),
             ),
           ),
           Expanded(child: _buildResults()),
@@ -659,46 +673,41 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
   }
 }
 
-class _PublicSkinCard extends StatelessWidget {
-  final String javaUuid;
-  const _PublicSkinCard({required this.javaUuid});
-
-  String get _renderUrl =>
-      'https://crafatar.com/renders/body/$javaUuid?overlay&scale=10';
-  String get _skinUrl => 'https://crafatar.com/skins/$javaUuid';
-
-  Future<void> _download() async {
-    final uri = Uri.parse(_skinUrl);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
+class _PublicSkinsSection extends StatelessWidget {
+  final UserModel user;
+  const _PublicSkinsSection({required this.user});
 
   @override
   Widget build(BuildContext context) {
+    final javaCards = user.javaAccounts
+        .map((a) => _JavaPublicSkin(username: a.javaUsername, javaUuid: a.javaUuid))
+        .toList();
+    final bedrockCards = user.bedrockAccounts
+        .map((a) => _BedrockPublicSkin(
+              gamertag: a.xboxGamertag ?? a.xboxXuid,
+              xuid: a.xboxXuid,
+            ))
+        .toList();
+    final all = [...javaCards, ...bedrockCards];
+    if (all.isEmpty) return const SizedBox.shrink();
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppTheme.surfaceRaised,
         borderRadius: BorderRadius.circular(12),
-        border: const Border.fromBorderSide(
-          BorderSide(color: AppTheme.borderGray),
-        ),
+        border: const Border.fromBorderSide(BorderSide(color: AppTheme.borderGray)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.checkroom_rounded,
-                size: 14,
-                color: AppTheme.textMuted,
-              ),
+              const Icon(Icons.checkroom_rounded, size: 14, color: AppTheme.textMuted),
               const SizedBox(width: 6),
-              const Text(
-                'SKIN',
-                style: TextStyle(
+              Text(
+                all.length == 1 ? 'SKIN' : 'SKINS',
+                style: const TextStyle(
                   color: AppTheme.textMuted,
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -708,48 +717,260 @@ class _PublicSkinCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Center(
-            child: SizedBox(
-              height: 180,
-              child: Image.network(
-                _renderUrl,
-                fit: BoxFit.contain,
-                filterQuality: FilterQuality.none,
-                loadingBuilder: (_, child, progress) {
-                  if (progress == null) return child;
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      color: AppTheme.accent,
-                      strokeWidth: 2,
-                    ),
-                  );
-                },
-                errorBuilder: (_, __, ___) => const Center(
-                  child: Icon(
-                    Icons.broken_image_rounded,
-                    color: AppTheme.textMuted,
-                    size: 48,
-                  ),
-                ),
+          if (all.length == 1)
+            Center(child: SizedBox(width: 160, child: all[0]))
+          else
+            LayoutBuilder(
+              builder: (_, constraints) {
+                final w = (constraints.maxWidth - 12) / 2;
+                return Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: all.map((c) => SizedBox(width: w, child: c)).toList(),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _JavaPublicSkin extends StatefulWidget {
+  final String username;
+  final String javaUuid;
+  const _JavaPublicSkin({required this.username, required this.javaUuid});
+
+  @override
+  State<_JavaPublicSkin> createState() => _JavaPublicSkinState();
+}
+
+class _JavaPublicSkinState extends State<_JavaPublicSkin> {
+  String? _textureUrl;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetch();
+  }
+
+  Future<void> _fetch() async {
+    try {
+      final resp = await http
+          .get(
+            Uri.parse(
+              'https://sessionserver.mojang.com/session/minecraft/profile/${widget.javaUuid}',
+            ),
+            headers: {'User-Agent': 'NetherLinkApp/1.0'},
+          )
+          .timeout(const Duration(seconds: 8));
+      if (!mounted || resp.statusCode != 200) {
+        if (mounted) setState(() => _loading = false);
+        return;
+      }
+      final url = _extractTextureUrl(resp.body);
+      if (mounted) setState(() { _textureUrl = url; _loading = false; });
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  String? _extractTextureUrl(String body) {
+    try {
+      final props = (jsonDecode(body)['properties'] as List?) ?? [];
+      for (final p in props) {
+        if (p['name'] == 'textures') {
+          final decoded = jsonDecode(
+            utf8.decode(base64.decode(p['value'] as String)),
+          );
+          return decoded['textures']?['SKIN']?['url'] as String?;
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<void> _download() async {
+    final url = _textureUrl ?? 'https://visage.surgeplay.com/skin/${widget.javaUuid}';
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) await launchUrl(uri);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1565C0).withOpacity(0.15),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Text(
+              'Java',
+              style: TextStyle(
+                color: Color(0xFF1565C0),
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          OutlinedButton.icon(
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 140,
+          child: Center(
+            child: _loading
+                ? const CircularProgressIndicator(color: AppTheme.accent, strokeWidth: 2)
+                : _textureUrl != null
+                    ? Skin3DFromUrl(textureUrl: _textureUrl!, height: 136)
+                    : const Icon(Icons.person_rounded, color: AppTheme.textMuted, size: 36),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          widget.username,
+          style: const TextStyle(
+            color: AppTheme.textPrimary,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 6),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
             onPressed: _download,
-            icon: const Icon(Icons.download_rounded, size: 15),
-            label: const Text(
-              'Download skin (PNG)',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-            ),
+            icon: const Icon(Icons.download_rounded, size: 13),
+            label: const Text('Download'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppTheme.accent,
-              side: BorderSide(color: AppTheme.accent.withOpacity(0.40)),
-              padding: const EdgeInsets.symmetric(vertical: 9),
+              foregroundColor: const Color(0xFF1565C0),
+              side: const BorderSide(color: Color(0xFF1565C0), width: 0.8),
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BedrockPublicSkin extends StatefulWidget {
+  final String gamertag;
+  final String xuid;
+  const _BedrockPublicSkin({required this.gamertag, required this.xuid});
+
+  @override
+  State<_BedrockPublicSkin> createState() => _BedrockPublicSkinState();
+}
+
+class _BedrockPublicSkinState extends State<_BedrockPublicSkin> {
+  String? _textureUrl;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetch();
+  }
+
+  Future<void> _fetch() async {
+    try {
+      final resp = await http
+          .get(
+            Uri.parse('https://api.geysermc.org/v2/skin/${widget.xuid}'),
+            headers: {'User-Agent': 'NetherLinkApp/1.0'},
+          )
+          .timeout(const Duration(seconds: 8));
+      if (!mounted) return;
+      if (resp.statusCode == 200) {
+        final id = jsonDecode(resp.body)['texture_id'] as String?;
+        if (id != null && mounted) {
+          setState(() {
+            _textureUrl = 'https://textures.minecraft.net/texture/$id';
+            _loading = false;
+          });
+          return;
+        }
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _loading = false);
+  }
+
+  Future<void> _download() async {
+    if (_textureUrl == null) return;
+    final uri = Uri.parse(_textureUrl!);
+    if (await canLaunchUrl(uri)) await launchUrl(uri);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0xFF4CAF50).withOpacity(0.15),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Text(
+              'Bedrock',
+              style: TextStyle(
+                color: Color(0xFF4CAF50),
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 140,
+          child: Center(
+            child: _loading
+                ? const CircularProgressIndicator(color: AppTheme.accent, strokeWidth: 2)
+                : _textureUrl != null
+                    ? Skin3DFromUrl(textureUrl: _textureUrl!, height: 136)
+                    : const Icon(Icons.person_rounded, color: AppTheme.textMuted, size: 36),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          widget.gamertag,
+          style: const TextStyle(
+            color: AppTheme.textPrimary,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 6),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _textureUrl != null ? _download : null,
+            icon: const Icon(Icons.download_rounded, size: 13),
+            label: const Text('Download'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF4CAF50),
+              side: const BorderSide(color: Color(0xFF4CAF50), width: 0.8),
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

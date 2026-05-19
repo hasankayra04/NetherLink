@@ -155,6 +155,20 @@ class UserService {
     }
   }
 
+  static Future<bool> unlinkBedrockAccount(String xuid) async {
+    try {
+      final res = await http
+          .delete(
+            Uri.parse('$_base/api/users/me/xbox/${Uri.encodeComponent(xuid)}'),
+            headers: await _headers(),
+          )
+          .timeout(_timeout);
+      return res.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
   static Future<
     ({String? userCode, String? verificationUri, int? expiresIn, String? error})
   >
@@ -224,6 +238,20 @@ class UserService {
       final res = await http
           .delete(
             Uri.parse('$_base/api/users/me/java'),
+            headers: await _headers(),
+          )
+          .timeout(_timeout);
+      return res.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<bool> unlinkJavaAccount(String javaUuid) async {
+    try {
+      final res = await http
+          .delete(
+            Uri.parse('$_base/api/users/me/java/${Uri.encodeComponent(javaUuid)}'),
             headers: await _headers(),
           )
           .timeout(_timeout);
