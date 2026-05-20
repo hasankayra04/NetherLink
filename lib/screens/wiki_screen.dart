@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
@@ -9,14 +10,15 @@ import '../theme/app_theme.dart';
 class _Sub {
   final String label;
   final String emoji;
-  final String category; 
-  final List<String>?
-  hardcoded; 
+  final String category;
+  final List<String>? hardcoded;
+  final String? jsonKey;
   const _Sub({
     required this.label,
     required this.emoji,
     required this.category,
     this.hardcoded,
+    this.jsonKey,
   });
 }
 
@@ -39,11 +41,11 @@ const _sections = [
     emoji: '🧟',
     color: Color(0xFF4CAF50),
     subs: [
-      _Sub(label: 'Passive', emoji: '🐄', category: 'Category:Passive mobs'),
-      _Sub(label: 'Neutral', emoji: '🐺', category: 'Category:Neutral mobs'),
-      _Sub(label: 'Hostile', emoji: '💀', category: 'Category:Hostile mobs'),
-      _Sub(label: 'Boss', emoji: '👑', category: 'Category:Boss mobs'),
-      _Sub(label: 'Utility', emoji: '🤖', category: 'Category:Utility mobs'),
+      _Sub(label: 'Passive',  emoji: '🐄', category: 'Category:Passive mobs',  jsonKey: 'mobs_passive'),
+      _Sub(label: 'Neutral',  emoji: '🐺', category: 'Category:Neutral mobs',  jsonKey: 'mobs_neutral'),
+      _Sub(label: 'Hostile',  emoji: '💀', category: 'Category:Hostile mobs',  jsonKey: 'mobs_hostile'),
+      _Sub(label: 'Boss',     emoji: '👑', category: 'Category:Boss mobs',     jsonKey: 'mobs_boss'),
+      _Sub(label: 'Utility',  emoji: '🤖', category: 'Category:Utility mobs',  jsonKey: 'mobs_utility'),
     ],
   ),
   _Section(
@@ -51,21 +53,13 @@ const _sections = [
     emoji: '🧱',
     color: Color(0xFF795548),
     subs: [
-      _Sub(label: 'Natural', emoji: '🌿', category: 'Category:Natural blocks'),
-      _Sub(label: 'Ores', emoji: '💎', category: 'Category:Ores'),
-      _Sub(label: 'Wood', emoji: '🌲', category: 'Category:Wood'),
-      _Sub(label: 'Stone', emoji: '🪨', category: 'Category:Stone'),
-      _Sub(
-        label: 'Redstone',
-        emoji: '🔴',
-        category: 'Category:Redstone components',
-      ),
-      _Sub(label: 'Plants', emoji: '🌱', category: 'Category:Plants'),
-      _Sub(
-        label: 'Decoration',
-        emoji: '🪟',
-        category: 'Category:Decoration blocks',
-      ),
+      _Sub(label: 'Natural',    emoji: '🌿', category: 'Category:Natural blocks',       jsonKey: 'blocks_natural'),
+      _Sub(label: 'Ores',       emoji: '💎', category: 'Category:Ores',                 jsonKey: 'blocks_ores'),
+      _Sub(label: 'Wood',       emoji: '🌲', category: 'Category:Wood',                 jsonKey: 'blocks_wood'),
+      _Sub(label: 'Stone',      emoji: '🪨', category: 'Category:Stone',                jsonKey: 'blocks_stone'),
+      _Sub(label: 'Redstone',   emoji: '🔴', category: 'Category:Redstone components',  jsonKey: 'blocks_redstone'),
+      _Sub(label: 'Plants',     emoji: '🌱', category: 'Category:Plants',               jsonKey: 'blocks_plants'),
+      _Sub(label: 'Decoration', emoji: '🪟', category: 'Category:Decoration blocks',    jsonKey: 'blocks_decoration'),
     ],
   ),
   _Section(
@@ -73,18 +67,14 @@ const _sections = [
     emoji: '⚔️',
     color: Color(0xFF2196F3),
     subs: [
-      _Sub(label: 'Tools', emoji: '🪓', category: 'Category:Tools'),
+      _Sub(label: 'Tools',     emoji: '🪓', category: 'Category:Tools',          jsonKey: 'items_tools'),
       _Sub(
         label: 'Swords',
         emoji: '⚔️',
         category: 'Category:Swords',
         hardcoded: [
-          'Wooden Sword',
-          'Stone Sword',
-          'Iron Sword',
-          'Golden Sword',
-          'Diamond Sword',
-          'Netherite Sword',
+          'Wooden Sword', 'Stone Sword', 'Iron Sword',
+          'Golden Sword', 'Diamond Sword', 'Netherite Sword',
         ],
       ),
       _Sub(
@@ -93,10 +83,10 @@ const _sections = [
         category: 'Category:Ranged weapons',
         hardcoded: ['Bow', 'Crossbow', 'Trident', 'Wind Charge'],
       ),
-      _Sub(label: 'Armor', emoji: '🛡️', category: 'Category:Armor'),
-      _Sub(label: 'Food', emoji: '🍎', category: 'Category:Food'),
-      _Sub(label: 'Brewing', emoji: '🧪', category: 'Category:Brewing'),
-      _Sub(label: 'Materials', emoji: '🔩', category: 'Category:Materials'),
+      _Sub(label: 'Armor',     emoji: '🛡️', category: 'Category:Armor',          jsonKey: 'items_armor'),
+      _Sub(label: 'Food',      emoji: '🍎', category: 'Category:Food',            jsonKey: 'items_food'),
+      _Sub(label: 'Brewing',   emoji: '🧪', category: 'Category:Brewing',         jsonKey: 'items_brewing'),
+      _Sub(label: 'Materials', emoji: '🔩', category: 'Category:Materials',       jsonKey: 'items_materials'),
     ],
   ),
   _Section(
@@ -104,13 +94,9 @@ const _sections = [
     emoji: '🌿',
     color: Color(0xFF66BB6A),
     subs: [
-      _Sub(
-        label: 'Overworld',
-        emoji: '☀️',
-        category: 'Category:Overworld biomes',
-      ),
-      _Sub(label: 'Nether', emoji: '🔥', category: 'Category:Nether biomes'),
-      _Sub(label: 'The End', emoji: '🌑', category: 'Category:The End biomes'),
+      _Sub(label: 'Overworld', emoji: '☀️', category: 'Category:Overworld biomes',  jsonKey: 'biomes_overworld'),
+      _Sub(label: 'Nether',    emoji: '🔥', category: 'Category:Nether biomes',     jsonKey: 'biomes_nether'),
+      _Sub(label: 'The End',   emoji: '🌑', category: 'Category:The End biomes',    jsonKey: 'biomes_end'),
     ],
   ),
   _Section(
@@ -118,21 +104,9 @@ const _sections = [
     emoji: '🏰',
     color: Color(0xFF9C27B0),
     subs: [
-      _Sub(
-        label: 'Overworld',
-        emoji: '🗺️',
-        category: 'Category:Overworld structures',
-      ),
-      _Sub(
-        label: 'Nether',
-        emoji: '🔥',
-        category: 'Category:Nether structures',
-      ),
-      _Sub(
-        label: 'The End',
-        emoji: '🌑',
-        category: 'Category:The End structures',
-      ),
+      _Sub(label: 'Overworld', emoji: '🗺️', category: 'Category:Overworld structures', jsonKey: 'structures_overworld'),
+      _Sub(label: 'Nether',    emoji: '🔥', category: 'Category:Nether structures',     jsonKey: 'structures_nether'),
+      _Sub(label: 'The End',   emoji: '🌑', category: 'Category:The End structures',    jsonKey: 'structures_end'),
     ],
   ),
   _Section(
@@ -140,23 +114,11 @@ const _sections = [
     emoji: '✨',
     color: Color(0xFFFF9800),
     subs: [
-      _Sub(
-        label: 'Sword',
-        emoji: '⚔️',
-        category: 'Category:Sword enchantments',
-      ),
-      _Sub(
-        label: 'Armor',
-        emoji: '🛡️',
-        category: 'Category:Armor enchantments',
-      ),
-      _Sub(label: 'Tool', emoji: '🪓', category: 'Category:Tool enchantments'),
-      _Sub(label: 'Bow', emoji: '🏹', category: 'Category:Bow enchantments'),
-      _Sub(
-        label: 'Fishing',
-        emoji: '🎣',
-        category: 'Category:Fishing Rod enchantments',
-      ),
+      _Sub(label: 'Sword',   emoji: '⚔️', category: 'Category:Sword enchantments',      jsonKey: 'enchantments_sword'),
+      _Sub(label: 'Armor',   emoji: '🛡️', category: 'Category:Armor enchantments',      jsonKey: 'enchantments_armor'),
+      _Sub(label: 'Tool',    emoji: '🪓', category: 'Category:Tool enchantments',        jsonKey: 'enchantments_tool'),
+      _Sub(label: 'Bow',     emoji: '🏹', category: 'Category:Bow enchantments',         jsonKey: 'enchantments_bow'),
+      _Sub(label: 'Fishing', emoji: '🎣', category: 'Category:Fishing Rod enchantments', jsonKey: 'enchantments_fishing'),
     ],
   ),
   _Section(
@@ -164,12 +126,8 @@ const _sections = [
     emoji: '🧪',
     color: Color(0xFFE91E63),
     subs: [
-      _Sub(label: 'Potions', emoji: '🧪', category: 'Category:Potions'),
-      _Sub(
-        label: 'Status Effects',
-        emoji: '💫',
-        category: 'Category:Status effects',
-      ),
+      _Sub(label: 'Potions',        emoji: '🧪', category: 'Category:Potions',        jsonKey: 'potions_potions'),
+      _Sub(label: 'Status Effects', emoji: '💫', category: 'Category:Status effects', jsonKey: 'potions_effects'),
     ],
   ),
 ];
@@ -210,6 +168,24 @@ class _WikiScreenState extends State<WikiScreen> {
   bool _hasSearched = false;
   String? _error;
 
+  Map<String, List<String>>? _wikiData;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWikiData();
+  }
+
+  Future<void> _loadWikiData() async {
+    try {
+      final raw = await rootBundle.loadString('assets/data/wiki_data.json');
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      _wikiData = decoded.map(
+        (k, v) => MapEntry(k, List<String>.from(v as List)),
+      );
+    } catch (_) {}
+  }
+
   @override
   void dispose() {
     _debounce?.cancel();
@@ -235,6 +211,8 @@ class _WikiScreenState extends State<WikiScreen> {
     });
     if (sub.hardcoded != null) {
       _loadHardcoded(sub.hardcoded!);
+    } else if (sub.jsonKey != null) {
+      _loadFromJsonKey(sub.jsonKey!);
     } else {
       _loadPages(
         sub.category,
@@ -252,6 +230,22 @@ class _WikiScreenState extends State<WikiScreen> {
       _pages = results;
       _loading = false;
     });
+  }
+
+  Future<void> _loadFromJsonKey(String key) async {
+    if (_wikiData == null) {
+      await _loadWikiData();
+    }
+    if (!mounted) return;
+    final titles = _wikiData?[key] ?? [];
+    final results = titles
+        .map((t) => WikiResult(pageId: 0, title: t, snippet: ''))
+        .toList();
+    setState(() {
+      _pages = results;
+      _loading = false;
+    });
+    if (results.isNotEmpty) _fetchThumbnailsAll(results);
   }
 
   Future<void> _fetchThumbnailsHardcoded(List<WikiResult> results) async {
@@ -327,62 +321,175 @@ class _WikiScreenState extends State<WikiScreen> {
     });
   }
 
+  static const _gameTemplates = {
+    'Template:Block',
+    'Template:Item',
+    'Template:Mob',
+    'Template:Entity',
+    'Template:Biome',
+    'Template:Generated structure',
+    'Template:Structure',
+    'Template:Enchantment',
+    'Template:Status effect',
+    'Template:Brewing',
+    'Template:Potion',
+  };
+
+  Future<List<WikiResult>> _filterByGameTemplates(List<WikiResult> results) async {
+    final effectiveTemplates = _gameTemplates;
+    final filtered = <WikiResult>[];
+    const batchSize = 50;
+    for (var i = 0; i < results.length; i += batchSize) {
+      if (!mounted) break;
+      final batch = results.skip(i).take(batchSize).toList();
+      final titles = batch.map((r) => r.title).join('|');
+      try {
+        final uri = Uri.parse('https://minecraft.wiki/api.php').replace(
+          queryParameters: {
+            'action': 'query',
+            'titles': titles,
+            'prop': 'templates',
+            'tllimit': '500',
+            'format': 'json',
+            'origin': '*',
+          },
+        );
+        final resp = await http
+            .get(uri, headers: {'User-Agent': 'NetherLinkApp/1.0'})
+            .timeout(const Duration(seconds: 10));
+        final pages =
+            (jsonDecode(resp.body)['query']?['pages']
+                as Map<String, dynamic>?) ??
+            {};
+        final gameTitles = <String>{};
+        for (final p in pages.values) {
+          final templates = (p['templates'] as List?) ?? [];
+          final names = templates.map((t) => t['title'] as String).toSet();
+          if (names.intersection(effectiveTemplates).isNotEmpty) {
+            gameTitles.add(p['title'] as String);
+          }
+        }
+        filtered.addAll(batch.where((r) => gameTitles.contains(r.title)));
+      } catch (_) {
+        filtered.addAll(batch);
+      }
+    }
+    return filtered;
+  }
+
   static bool _isVanilla(String title) {
+    // Subpages (e.g. "End City/Structure/Base")
+    if (title.contains('/')) return false;
+    // Disambiguation pages
+    if (title.contains('(disambiguation)')) return false;
+    // Tag articles (e.g. "Biome tag (Java Edition)")
+    if (title.toLowerCase().contains(' tag ') || title.toLowerCase().endsWith(' tag')) return false;
+
+    // Spin-off games
     if (title.contains('(Dungeons)')) return false;
     if (title.contains('(Legends)')) return false;
     if (title.contains('(Earth)')) return false;
     if (title.contains('(Story Mode)')) return false;
+
+    // Edition-specific prefixes
     if (title.startsWith('Java Edition')) return false;
     if (title.startsWith('Bedrock Edition')) return false;
     if (title.startsWith('Education Edition')) return false;
     if (title.startsWith('Pocket Edition')) return false;
     if (title.startsWith('Console Edition')) return false;
+    if (title.startsWith('PlayStation')) return false;
+    if (title.startsWith('Xbox 360')) return false;
+    if (title.startsWith('Xbox One')) return false;
+    if (title.startsWith('Wii U')) return false;
+    if (title.startsWith('New Nintendo')) return false;
+
+    // Edition version strings inside title
+    if (title.contains('Edition 1.')) return false;
+    if (title.contains('Edition TU')) return false;
+    if (title.contains('Edition CU')) return false;
+
+    // Snapshot/pre-release version codes  e.g. 23w14a
     if (RegExp(r'^\d+w\d+[a-z]$').hasMatch(title)) return false;
+    // Version number articles  e.g. "1.20.4"
+    if (RegExp(r'^\d+\.\d+').hasMatch(title)) return false;
+
+    // Update history articles
+    if (title.endsWith(' Update')) return false;
+    if (RegExp(r'\bUpdate \d').hasMatch(title)) return false;
+
+    // Minecraft book/guide titles
+    if (title.startsWith('Minecraft:')) return false;
+
+    // Third-party / inspiration games
+    if (title == 'Infiniminer') return false;
+    if (title == 'Dwarf Fortress') return false;
+
+    // April Fools / joke content
+    if (title.contains('Poisonous Potato') && title != 'Poisonous Potato') return false;
+
+    // Concept/meta articles unlikely to be an actual item/block/mob
+    if (title.startsWith('Biome For Player')) return false;
+
     return true;
   }
 
   Future<void> _loadPages(String category, {String? fallback}) async {
     try {
-      final uri = Uri.parse('https://minecraft.wiki/api.php').replace(
-        queryParameters: {
+      final allResults = <WikiResult>[];
+      String? continueToken;
+
+      do {
+        final params = <String, String>{
           'action': 'query',
           'list': 'categorymembers',
           'cmtitle': category,
-          'cmlimit': '100',
+          'cmlimit': '500',
           'cmtype': 'page',
           'cmnamespace': '0',
           'format': 'json',
           'origin': '*',
-        },
-      );
-      final response = await http
-          .get(uri, headers: {'User-Agent': 'NetherLinkApp/1.0'})
-          .timeout(const Duration(seconds: 10));
+        };
+        if (continueToken != null) params['cmcontinue'] = continueToken;
+
+        final uri = Uri.parse('https://minecraft.wiki/api.php')
+            .replace(queryParameters: params);
+        final response = await http
+            .get(uri, headers: {'User-Agent': 'NetherLinkApp/1.0'})
+            .timeout(const Duration(seconds: 10));
+        if (!mounted) return;
+
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final members = (data['query']?['categorymembers'] as List?) ?? [];
+        allResults.addAll(
+          members
+              .map((m) => WikiResult(
+                    pageId: m['pageid'] as int,
+                    title: m['title'] as String,
+                    snippet: '',
+                  ))
+              .where((r) => _isVanilla(r.title)),
+        );
+
+        continueToken =
+            (data['continue'] as Map<String, dynamic>?)?['cmcontinue']
+                as String?;
+      } while (continueToken != null);
+
       if (!mounted) return;
 
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final members = (data['query']?['categorymembers'] as List?) ?? [];
-      final results = members
-          .map(
-            (m) => WikiResult(
-              pageId: m['pageid'] as int,
-              title: m['title'] as String,
-              snippet: '',
-            ),
-          )
-          .where((r) => _isVanilla(r.title))
-          .toList();
-
-      if (results.isEmpty && fallback != null) {
+      if (allResults.isEmpty && fallback != null) {
         await _searchIntoPages(fallback);
         return;
       }
 
-      if (results.isNotEmpty) _fetchThumbnails(results);
+      final filtered = await _filterByGameTemplates(allResults);
+      if (!mounted) return;
       setState(() {
-        _pages = results;
+        _pages = filtered;
         _loading = false;
       });
+
+      if (filtered.isNotEmpty) _fetchThumbnailsAll(filtered);
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -437,40 +544,48 @@ class _WikiScreenState extends State<WikiScreen> {
     }
   }
 
-  Future<void> _fetchThumbnails(List<WikiResult> results) async {
-    final titles = results.take(50).map((r) => r.title).join('|');
-    try {
-      final uri = Uri.parse('https://minecraft.wiki/api.php').replace(
-        queryParameters: {
-          'action': 'query',
-          'titles': titles,
-          'prop': 'pageimages',
-          'pithumbsize': '150',
-          'format': 'json',
-          'origin': '*',
-        },
-      );
-      final resp = await http
-          .get(uri, headers: {'User-Agent': 'NetherLinkApp/1.0'})
-          .timeout(const Duration(seconds: 8));
-      if (!mounted) return;
+  Future<void> _fetchThumbnails(List<WikiResult> results) =>
+      _fetchThumbnailsAll(results);
 
-      final pages =
-          (jsonDecode(resp.body)['query']?['pages'] as Map<String, dynamic>?) ??
-          {};
-      final map = <String, String>{};
-      for (final p in pages.values) {
-        final t = p['title'] as String?;
-        final s = p['thumbnail']?['source'] as String?;
-        if (t != null && s != null) map[t] = s;
-      }
+  Future<void> _fetchThumbnailsAll(List<WikiResult> results) async {
+    const batchSize = 50;
+    for (var i = 0; i < results.length; i += batchSize) {
       if (!mounted) return;
-      setState(() {
-        for (final r in results) {
-          if (map.containsKey(r.title)) r.thumbnailUrl = map[r.title];
+      final batch = results.skip(i).take(batchSize).toList();
+      final titles = batch.map((r) => r.title).join('|');
+      try {
+        final uri = Uri.parse('https://minecraft.wiki/api.php').replace(
+          queryParameters: {
+            'action': 'query',
+            'titles': titles,
+            'prop': 'pageimages',
+            'pithumbsize': '150',
+            'format': 'json',
+            'origin': '*',
+          },
+        );
+        final resp = await http
+            .get(uri, headers: {'User-Agent': 'NetherLinkApp/1.0'})
+            .timeout(const Duration(seconds: 8));
+        if (!mounted) return;
+
+        final pages =
+            (jsonDecode(resp.body)['query']?['pages']
+                as Map<String, dynamic>?) ??
+            {};
+        final map = <String, String>{};
+        for (final p in pages.values) {
+          final t = p['title'] as String?;
+          final s = p['thumbnail']?['source'] as String?;
+          if (t != null && s != null) map[t] = s;
         }
-      });
-    } catch (_) {}
+        setState(() {
+          for (final r in batch) {
+            if (map.containsKey(r.title)) r.thumbnailUrl = map[r.title];
+          }
+        });
+      } catch (_) {}
+    }
   }
 
   void _onSearchChanged(String q) {
