@@ -13,12 +13,14 @@ class PartnerServersScreen extends StatefulWidget {
     required this.ipController,
     required this.portController,
     required this.onBack,
+    this.onPlay,
   });
 
   final Future<List<FeaturedServer>>? partnerServersFuture;
   final TextEditingController ipController;
   final TextEditingController portController;
   final VoidCallback onBack;
+  final VoidCallback? onPlay;
 
   @override
   State<PartnerServersScreen> createState() => _PartnerServersScreenState();
@@ -141,7 +143,7 @@ class _PartnerServersScreenState extends State<PartnerServersScreen> {
                       color: AppTheme.success,
                       duration: const Duration(seconds: 2),
                     );
-                    widget.onBack();
+                    (widget.onPlay ?? widget.onBack)();
                   },
                 ),
               );

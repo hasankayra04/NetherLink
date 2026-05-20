@@ -174,6 +174,7 @@ widget.partnerServersFuture?.then((list) {
     _heroTimer?.cancel();
     _heroTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!mounted || _featuredServers.isEmpty) return;
+      if (!_heroBgController.hasClients) return;
       final next = (_heroBgPage + 1) % _featuredServers.length;
       _heroBgController.animateToPage(
         next,

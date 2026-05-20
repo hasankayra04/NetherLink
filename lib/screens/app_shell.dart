@@ -322,6 +322,7 @@ class _AppShellState extends State<AppShell>
                     ipController: _ipController,
                     portController: _portController,
                     onBack: () => _goTo(_pageHome),
+                    onPlay: () => _goTo(_pageConnector),
                   ),
                   ManageServersScreen(
                     key: _manageServersKey,
