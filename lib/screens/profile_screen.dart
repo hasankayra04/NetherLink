@@ -253,6 +253,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 onSignOut: () async {
                   await FirebaseAuth.instance.signOut();
                 },
+                onDeleteAccount: _deleteAccount,
               ),
               _FriendsTab(
                 friends: _friends,
@@ -380,6 +381,54 @@ class _ProfileScreenState extends State<ProfileScreen>
         color: AppTheme.textMuted,
       );
       await _fetchRequests();
+    }
+  }
+
+  Future<void> _deleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surfaceRaised,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: AppTheme.borderGray),
+        ),
+        title: const Text('Delete account'),
+        content: const Text(
+          'This will permanently delete your account, messages, friends and all associated data. This action cannot be undone.',
+          style: TextStyle(color: AppTheme.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error),
+            child: const Text('Delete permanently'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final ok = await UserService.deleteAccount();
+    if (!mounted) return;
+    if (!ok) {
+      AppToast.show(
+        context,
+        message: 'Could not delete account. Please try again.',
+        icon: Icons.error_outline_rounded,
+        color: AppTheme.error,
+      );
+      return;
+    }
+
+    try {
+      await FirebaseAuth.instance.currentUser?.delete();
+    } catch (_) {
+      await FirebaseAuth.instance.signOut();
     }
   }
 
@@ -791,10 +840,12 @@ class _ProfileTab extends StatelessWidget {
   final UserModel? me;
   final Future<void> Function() onRefresh;
   final Future<void> Function() onSignOut;
+  final Future<void> Function() onDeleteAccount;
   const _ProfileTab({
     required this.me,
     required this.onRefresh,
     required this.onSignOut,
+    required this.onDeleteAccount,
   });
 
   @override
@@ -832,6 +883,17 @@ class _ProfileTab extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: onDeleteAccount,
+            icon: const Icon(Icons.delete_forever_rounded, size: 16),
+            label: const Text('Delete account'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.error,
+              side: BorderSide(color: AppTheme.error.withOpacity(0.20)),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+          ),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -912,7 +974,9 @@ class _XboxCardState extends State<_XboxCard> {
         color: AppTheme.surfaceRaised,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: hasAccounts ? _xboxGreen.withOpacity(0.35) : AppTheme.borderGray,
+          color: hasAccounts
+              ? _xboxGreen.withOpacity(0.35)
+              : AppTheme.borderGray,
         ),
       ),
       child: Column(
@@ -945,7 +1009,10 @@ class _XboxCardState extends State<_XboxCard> {
               const Spacer(),
               if (hasAccounts)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: _xboxGreen.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(20),
@@ -1079,7 +1146,9 @@ class _JavaCardState extends State<_JavaCard> {
         color: AppTheme.surfaceRaised,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: hasAccounts ? _javaBlue.withOpacity(0.35) : AppTheme.borderGray,
+          color: hasAccounts
+              ? _javaBlue.withOpacity(0.35)
+              : AppTheme.borderGray,
         ),
       ),
       child: Column(
@@ -1112,7 +1181,10 @@ class _JavaCardState extends State<_JavaCard> {
               const Spacer(),
               if (hasAccounts)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: _javaBlue.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(20),

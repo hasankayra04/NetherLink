@@ -251,7 +251,9 @@ class UserService {
     try {
       final res = await http
           .delete(
-            Uri.parse('$_base/api/users/me/java/${Uri.encodeComponent(javaUuid)}'),
+            Uri.parse(
+              '$_base/api/users/me/java/${Uri.encodeComponent(javaUuid)}',
+            ),
             headers: await _headers(),
           )
           .timeout(_timeout);
@@ -397,5 +399,16 @@ class UserService {
       }
     } catch (_) {}
     return [];
+  }
+
+  static Future<bool> deleteAccount() async {
+    try {
+      final res = await http
+          .delete(Uri.parse('$_base/api/users/me'), headers: await _headers())
+          .timeout(_timeout);
+      return res.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
   }
 }
