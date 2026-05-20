@@ -9,14 +9,14 @@ class AppTheme {
   static const Color primaryAccentLight = accentLight;
   static const Color primaryAccentDark  = accentDark;
 
-  static const Color background    = Color(0xFF0E1117);
+  static const Color background    = Color(0xBF0E1117);
   static const Color backgroundDark = background;
-  static const Color surface       = Color(0xFF13161E); 
+  static const Color surface       = Color(0xCC13161E);
   static const Color surfaceDark   = surface;
-  static const Color surfaceRaised = Color(0xFF1A1D28);
+  static const Color surfaceRaised = Color(0xD91A1D28);
   static const Color surfaceCard   = surfaceRaised;
-  static const Color surfaceLight  = Color(0xFF222636);
-  static const Color overlay       = Color(0xFF2A2E40);
+  static const Color surfaceLight  = Color(0xE0222636);
+  static const Color overlay       = Color(0xE02A2E40);
 
   static const Color borderDim   = Color(0xFF1C1F2E);
   static const Color borderGray  = Color(0xFF272B3C);

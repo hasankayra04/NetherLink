@@ -314,13 +314,17 @@ class HomeScreenState extends State<HomeScreen> {
                   ),
                   const Spacer(),
                   if (widget.onOpenMore != null)
-                    IconButton(
+                    TextButton(
                       onPressed: widget.onOpenMore,
-                      icon: const Icon(
-                        Icons.more_horiz_rounded,
-                        color: Color(0xFF6E7490),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppTheme.textMuted,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        textStyle: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                      tooltip: 'More',
+                      child: Text(AppLocalizations.of(context)!.more),
                     ),
                 ],
               ),

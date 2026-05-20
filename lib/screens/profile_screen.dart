@@ -15,7 +15,18 @@ import 'chat_screen.dart';
 import 'conversations_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final VoidCallback? onGoToHome;
+  final VoidCallback? onGoToConnector;
+  final VoidCallback? onGoToSkins;
+  final VoidCallback? onGoToWiki;
+
+  const ProfileScreen({
+    super.key,
+    this.onGoToHome,
+    this.onGoToConnector,
+    this.onGoToSkins,
+    this.onGoToWiki,
+  });
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -168,7 +179,14 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     return Column(
       children: [
-        _Header(me: _me, onAddFriend: _showAddFriendDialog),
+        _Header(
+          me: _me,
+          onAddFriend: _showAddFriendDialog,
+          onGoToHome: widget.onGoToHome,
+          onGoToConnector: widget.onGoToConnector,
+          onGoToSkins: widget.onGoToSkins,
+          onGoToWiki: widget.onGoToWiki,
+        ),
         Container(
           color: AppTheme.surface,
           child: TabBar(
@@ -242,6 +260,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                 onRefresh: _fetchFriends,
                 onRemove: _removeFriend,
                 onChat: _openChat,
+                onGoToHome: widget.onGoToHome,
+                onGoToConnector: widget.onGoToConnector,
+                onGoToSkins: widget.onGoToSkins,
+                onGoToWiki: widget.onGoToWiki,
               ),
               _RequestsTab(
                 requests: _requests,
@@ -689,12 +711,31 @@ class _NotRegisteredView extends StatelessWidget {
 class _Header extends StatelessWidget {
   final UserModel? me;
   final VoidCallback onAddFriend;
-  const _Header({required this.me, required this.onAddFriend});
+  final VoidCallback? onGoToHome;
+  final VoidCallback? onGoToConnector;
+  final VoidCallback? onGoToSkins;
+  final VoidCallback? onGoToWiki;
+
+  const _Header({
+    required this.me,
+    required this.onAddFriend,
+    this.onGoToHome,
+    this.onGoToConnector,
+    this.onGoToSkins,
+    this.onGoToWiki,
+  });
 
   void _openSearch(BuildContext context) {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const UserSearchScreen()));
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => UserSearchScreen(
+          onGoToHome: onGoToHome,
+          onGoToConnector: onGoToConnector,
+          onGoToSkins: onGoToSkins,
+          onGoToWiki: onGoToWiki,
+        ),
+      ),
+    );
   }
 
   @override
@@ -1408,12 +1449,20 @@ class _FriendsTab extends StatelessWidget {
   final Future<void> Function() onRefresh;
   final Future<void> Function(FriendModel) onRemove;
   final void Function(FriendModel) onChat;
+  final VoidCallback? onGoToHome;
+  final VoidCallback? onGoToConnector;
+  final VoidCallback? onGoToSkins;
+  final VoidCallback? onGoToWiki;
   const _FriendsTab({
     required this.friends,
     required this.loading,
     required this.onRefresh,
     required this.onRemove,
     required this.onChat,
+    this.onGoToHome,
+    this.onGoToConnector,
+    this.onGoToSkins,
+    this.onGoToWiki,
   });
 
   @override
@@ -1447,6 +1496,10 @@ class _FriendsTab extends StatelessWidget {
                   friend: f,
                   onRemove: () => onRemove(f),
                   onChat: () => onChat(f),
+                  onGoToHome: onGoToHome,
+                  onGoToConnector: onGoToConnector,
+                  onGoToSkins: onGoToSkins,
+                  onGoToWiki: onGoToWiki,
                 ),
               ),
             ),
@@ -1462,6 +1515,10 @@ class _FriendsTab extends StatelessWidget {
                   friend: f,
                   onRemove: () => onRemove(f),
                   onChat: () => onChat(f),
+                  onGoToHome: onGoToHome,
+                  onGoToConnector: onGoToConnector,
+                  onGoToSkins: onGoToSkins,
+                  onGoToWiki: onGoToWiki,
                 ),
               ),
             ),
@@ -1476,16 +1533,30 @@ class _FriendTile extends StatelessWidget {
   final FriendModel friend;
   final VoidCallback onRemove;
   final VoidCallback onChat;
+  final VoidCallback? onGoToHome;
+  final VoidCallback? onGoToConnector;
+  final VoidCallback? onGoToSkins;
+  final VoidCallback? onGoToWiki;
   const _FriendTile({
     required this.friend,
     required this.onRemove,
     required this.onChat,
+    this.onGoToHome,
+    this.onGoToConnector,
+    this.onGoToSkins,
+    this.onGoToWiki,
   });
 
   void _openProfile(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => PublicProfileScreen(username: friend.username),
+        builder: (_) => PublicProfileScreen(
+          username: friend.username,
+          onGoToHome: onGoToHome,
+          onGoToConnector: onGoToConnector,
+          onGoToSkins: onGoToSkins,
+          onGoToWiki: onGoToWiki,
+        ),
       ),
     );
   }

@@ -7,10 +7,23 @@ import '../theme/app_theme.dart';
 import '../models/user_model.dart';
 import '../services/user_service.dart';
 import '../widgets/skin_3d_viewer.dart';
+import '../widgets/navigation/bottom_nav_bar.dart';
 
 class PublicProfileScreen extends StatefulWidget {
   final String username;
-  const PublicProfileScreen({super.key, required this.username});
+  final VoidCallback? onGoToHome;
+  final VoidCallback? onGoToConnector;
+  final VoidCallback? onGoToSkins;
+  final VoidCallback? onGoToWiki;
+
+  const PublicProfileScreen({
+    super.key,
+    required this.username,
+    this.onGoToHome,
+    this.onGoToConnector,
+    this.onGoToSkins,
+    this.onGoToWiki,
+  });
 
   @override
   State<PublicProfileScreen> createState() => _PublicProfileScreenState();
@@ -137,6 +150,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     );
   }
 
+  void _navTo(VoidCallback? callback) {
+    Navigator.of(context).popUntil((r) => r.isFirst);
+    callback?.call();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -153,6 +171,15 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         ),
         iconTheme: const IconThemeData(color: AppTheme.textPrimary),
         elevation: 0,
+      ),
+      bottomNavigationBar: BottomGlassSimpleNavBar(
+        navigationController: null,
+        activeItem: 'profile',
+        onHomeTap: () => _navTo(widget.onGoToHome),
+        onConnectorTap: () => _navTo(widget.onGoToConnector),
+        onSkinsTap: () => _navTo(widget.onGoToSkins),
+        onWikiTap: () => _navTo(widget.onGoToWiki),
+        onProfileTap: () => Navigator.of(context).popUntil((r) => r.isFirst),
       ),
       body: _loading
           ? const Center(
@@ -409,7 +436,18 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 }
 
 class UserSearchScreen extends StatefulWidget {
-  const UserSearchScreen({super.key});
+  final VoidCallback? onGoToHome;
+  final VoidCallback? onGoToConnector;
+  final VoidCallback? onGoToSkins;
+  final VoidCallback? onGoToWiki;
+
+  const UserSearchScreen({
+    super.key,
+    this.onGoToHome,
+    this.onGoToConnector,
+    this.onGoToSkins,
+    this.onGoToWiki,
+  });
 
   @override
   State<UserSearchScreen> createState() => _UserSearchScreenState();
@@ -462,9 +500,20 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
   void _openProfile(String username) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => PublicProfileScreen(username: username),
+        builder: (_) => PublicProfileScreen(
+          username: username,
+          onGoToHome: widget.onGoToHome,
+          onGoToConnector: widget.onGoToConnector,
+          onGoToSkins: widget.onGoToSkins,
+          onGoToWiki: widget.onGoToWiki,
+        ),
       ),
     );
+  }
+
+  void _navTo(VoidCallback? callback) {
+    Navigator.of(context).pop();
+    callback?.call();
   }
 
   @override
@@ -483,6 +532,15 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
         ),
         iconTheme: const IconThemeData(color: AppTheme.textPrimary),
         elevation: 0,
+      ),
+      bottomNavigationBar: BottomGlassSimpleNavBar(
+        navigationController: null,
+        activeItem: 'profile',
+        onHomeTap: () => _navTo(widget.onGoToHome),
+        onConnectorTap: () => _navTo(widget.onGoToConnector),
+        onSkinsTap: () => _navTo(widget.onGoToSkins),
+        onWikiTap: () => _navTo(widget.onGoToWiki),
+        onProfileTap: () => Navigator.of(context).pop(),
       ),
       body: Column(
         children: [

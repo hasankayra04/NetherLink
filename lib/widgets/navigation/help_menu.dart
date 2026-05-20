@@ -29,7 +29,7 @@ class HelpSheetContent extends StatelessWidget {
       constraints: BoxConstraints(maxHeight: maxHeight),
       child: Container(
         decoration: const BoxDecoration(
-          color: AppTheme.background,
+          color: Color(0xFF0E1117),
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           border: Border(top: BorderSide(color: AppTheme.borderGray)),
         ),

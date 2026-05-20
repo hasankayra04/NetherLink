@@ -34,7 +34,23 @@ class LandingScreen extends StatelessWidget {
               mainAxisSize: MainAxisSize.max,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildFeaturedServers(context),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                      child: const Text(
+                        'Home',
+                        style: TextStyle(
+                          color: Color(0xFFFFFFFF),
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    _buildFeaturedServers(context),
+                  ],
+                ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: _buildGrid(context),
@@ -107,12 +123,14 @@ class LandingScreen extends StatelessWidget {
   }
 
   Widget _buildFeaturedServers(BuildContext context) {
-    return FeaturedServerHero(
-      partnerServersFuture: partnerServersFuture,
-      ipController: ipController,
-      portController: portController,
-      onSelected: onGoToConnector,
-      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: FeaturedServerHero(
+        partnerServersFuture: partnerServersFuture,
+        ipController: ipController,
+        portController: portController,
+        onSelected: onGoToConnector,
+      ),
     );
   }
 }

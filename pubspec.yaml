@@ -43,6 +43,7 @@ flutter:
     - assets/icons/aternos.png
     - assets/images/splash.png
     - assets/images/logo.png
+    - assets/images/bg.png
     - assets/images/feature.png
     - assets/images/wiki.png
     - assets/images/skin.png

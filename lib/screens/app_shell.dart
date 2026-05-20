@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/navigation_controller.dart';
 import '../services/locale_provider.dart';
@@ -246,9 +247,24 @@ class _AppShellState extends State<AppShell>
       onPopInvoked: (didPop) {
         if (!didPop) _handlePop();
       },
-      child: Scaffold(
-        backgroundColor: AppTheme.background,
-        bottomNavigationBar: BottomGlassSimpleNavBar(
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+              child: Image.asset(
+                'assets/images/bg.png',
+                fit: BoxFit.none,
+                alignment: Alignment.center,
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: Container(color: const Color(0x730E1117)),
+          ),
+          Scaffold(
+            backgroundColor: Colors.transparent,
+            bottomNavigationBar: BottomGlassSimpleNavBar(
           navigationController: navigationController,
           dark: true,
           selectedRelayIp: _selectedRelay.ip,
@@ -267,6 +283,10 @@ class _AppShellState extends State<AppShell>
             'https://aternos.org/',
           ),
           onLanguageTap: () => navigationController.showLanguageDialog(context),
+          isConnectorPage: _pageIndex == _pageConnector || _pageIndex == _pageManageServers || _pageIndex == _pageAddEditServer,
+          onSupportTap: () => navigationController.showHelpMenu(context),
+          onHowToTap: () => navigationController.showHowToMenu(context),
+          onConsoleTap: () => navigationController.showConsole(context),
         ),
         body: SafeArea(
           top: true,
@@ -301,7 +321,7 @@ class _AppShellState extends State<AppShell>
                     partnerServersFuture: _partnerServersFuture,
                     ipController: _ipController,
                     portController: _portController,
-                    onBack: () => _goTo(_pageConnector),
+                    onBack: () => _goTo(_pageHome),
                   ),
                   ManageServersScreen(
                     key: _manageServersKey,
@@ -320,7 +340,12 @@ class _AppShellState extends State<AppShell>
                   ),
                   SkinsScreen(key: _skinsKey),
                   const WikiScreen(),
-                  const ProfileScreen(),
+                  ProfileScreen(
+                    onGoToHome: () => _goTo(_pageHome),
+                    onGoToConnector: () => _goTo(_pageConnector),
+                    onGoToSkins: () => _goTo(_pageSkins),
+                    onGoToWiki: () => _goTo(_pageWiki),
+                  ),
                 ],
               ),
 
@@ -352,6 +377,8 @@ class _AppShellState extends State<AppShell>
           ),
         ),
       ),
+          ],
+        ),
     );
   }
 
@@ -415,24 +442,6 @@ class _AppShellState extends State<AppShell>
           onRelayChanged: (ip) {
             _closeSheetInstant();
             _onRelayChanged(ip);
-          },
-          onHowTo: () {
-            _closeSheetInstant();
-            Future.delayed(
-              const Duration(milliseconds: 50),
-              () => _openSheet(_ActiveSheet.howTo),
-            );
-          },
-          onHelp: () {
-            _closeSheetInstant();
-            Future.delayed(
-              const Duration(milliseconds: 50),
-              () => _openSheet(_ActiveSheet.help),
-            );
-          },
-          onConsole: () {
-            _closeSheetInstant();
-            navigationController.showConsole(context);
           },
         );
       case _ActiveSheet.none:

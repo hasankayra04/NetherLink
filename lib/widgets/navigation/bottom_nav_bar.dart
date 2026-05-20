@@ -6,7 +6,7 @@ import '../../constants/app_constants.dart';
 import '../../theme/app_theme.dart';
 
 class BottomGlassSimpleNavBar extends StatelessWidget {
-  final NavigationController navigationController;
+  final NavigationController? navigationController;
   final VoidCallback? onHomeTap;
   final VoidCallback? onConnectorTap;
   final VoidCallback? onSkinsTap;
@@ -22,6 +22,11 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
   final VoidCallback? onDiscordTap;
   final VoidCallback? onaternosTap;
   final VoidCallback? onLanguageTap;
+
+  final bool isConnectorPage;
+  final VoidCallback? onSupportTap;
+  final VoidCallback? onHowToTap;
+  final VoidCallback? onConsoleTap;
 
   const BottomGlassSimpleNavBar({
     super.key,
@@ -40,6 +45,10 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
     this.onDiscordTap,
     this.onaternosTap,
     this.onLanguageTap,
+    this.isConnectorPage = false,
+    this.onSupportTap,
+    this.onHowToTap,
+    this.onConsoleTap,
   });
 
   @override
@@ -79,6 +88,39 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
                       label: 'Language',
                       isActive: false,
                       onTap: onLanguageTap,
+                    ),
+                    _NavItem(
+                      icon: FontAwesomeIcons.user,
+                      label: 'Profile',
+                      isActive: activeItem == 'profile',
+                      onTap: onProfileTap,
+                    ),
+                  ]
+                : isConnectorPage
+                ? [
+                    _NavItem(
+                      icon: FontAwesomeIcons.house,
+                      label: 'Home',
+                      isActive: false,
+                      onTap: onHomeTap,
+                    ),
+                    _NavItem(
+                      icon: FontAwesomeIcons.headset,
+                      label: 'Support',
+                      isActive: false,
+                      onTap: onSupportTap,
+                    ),
+                    _NavItem(
+                      icon: FontAwesomeIcons.bookOpen,
+                      label: 'How to use',
+                      isActive: false,
+                      onTap: onHowToTap,
+                    ),
+                    _NavItem(
+                      icon: FontAwesomeIcons.terminal,
+                      label: 'Console',
+                      isActive: false,
+                      onTap: onConsoleTap,
                     ),
                     _NavItem(
                       icon: FontAwesomeIcons.user,
@@ -197,9 +239,6 @@ class MoreSheetContent extends StatelessWidget {
   final String? selectedRelayIp;
   final VoidCallback onClose;
   final void Function(String?) onRelayChanged;
-  final VoidCallback onHowTo;
-  final VoidCallback? onHelp;
-  final VoidCallback? onConsole;
 
   const MoreSheetContent({
     super.key,
@@ -207,10 +246,7 @@ class MoreSheetContent extends StatelessWidget {
     required this.navigationController,
     required this.onClose,
     required this.onRelayChanged,
-    required this.onHowTo,
     this.selectedRelayIp,
-    this.onHelp,
-    this.onConsole,
   });
 
   @override
@@ -221,7 +257,7 @@ class MoreSheetContent extends StatelessWidget {
       constraints: BoxConstraints(maxHeight: maxHeight),
       child: Container(
         decoration: const BoxDecoration(
-          color: AppTheme.background,
+          color: Color(0xFF0E1117),
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           border: Border(top: BorderSide(color: AppTheme.borderGray)),
         ),
@@ -286,39 +322,6 @@ class MoreSheetContent extends StatelessWidget {
                     _RegionSelector(
                       selectedIp: selectedRelayIp,
                       onChanged: onRelayChanged,
-                    ),
-                    const SizedBox(height: 16),
-                    const Divider(color: AppTheme.borderDim, height: 1),
-                    const SizedBox(height: 12),
-                    _SheetTile(
-                      icon: FontAwesomeIcons.headset,
-                      color: AppTheme.warning,
-                      label: loc.support,
-                      onTap:
-                          onHelp ??
-                          () {
-                            onClose();
-                            navigationController.showHelpMenu(context);
-                          },
-                    ),
-                    const SizedBox(height: 8),
-                    _SheetTile(
-                      icon: FontAwesomeIcons.bookOpen,
-                      color: AppTheme.accent,
-                      label: loc.howToUseMenu,
-                      onTap: onHowTo,
-                    ),
-                    const SizedBox(height: 8),
-                    _SheetTile(
-                      icon: FontAwesomeIcons.terminal,
-                      color: AppTheme.info,
-                      label: loc.console,
-                      onTap:
-                          onConsole ??
-                          () {
-                            onClose();
-                            navigationController.showConsole(context);
-                          },
                     ),
                   ],
                 ),
