@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../theme/app_theme.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
@@ -487,14 +488,34 @@ class _NotLoggedInViewState extends State<_NotLoggedInView> {
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   bool _loading = false;
+  bool _googleLoading = false;
   String? _error;
   bool _isRegisterMode = false;
+
+  bool get _supportsGoogle => true;
 
   @override
   void dispose() {
     _emailCtrl.dispose();
     _passCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() {
+      _googleLoading = true;
+      _error = null;
+    });
+    try {
+      await AuthService.signInWithGoogle();
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      setState(() => _error = 'Firebase error: ${e.code} — ${e.message}');
+    } catch (e) {
+      if (mounted) setState(() => _error = 'Error: $e');
+    } finally {
+      if (mounted) setState(() => _googleLoading = false);
+    }
   }
 
   Future<void> _submit() async {
@@ -668,6 +689,62 @@ class _NotLoggedInViewState extends State<_NotLoggedInView> {
                         ),
                       ),
               ),
+              if (_supportsGoogle) ...[
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Expanded(child: Divider(color: AppTheme.borderGray)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        'or',
+                        style: TextStyle(
+                          color: AppTheme.textMuted,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    const Expanded(child: Divider(color: AppTheme.borderGray)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                OutlinedButton(
+                  onPressed: (_loading || _googleLoading) ? null : _signInWithGoogle,
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    side: const BorderSide(color: AppTheme.borderGray),
+                    backgroundColor: AppTheme.surfaceRaised,
+                  ),
+                  child: _googleLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: AppTheme.textMuted,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            FaIcon(
+                              FontAwesomeIcons.google,
+                              size: 16,
+                              color: AppTheme.textPrimary,
+                            ),
+                            const SizedBox(width: 10),
+                            const Text(
+                              'Continue with Google',
+                              style: TextStyle(
+                                color: AppTheme.textPrimary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ],
               const SizedBox(height: 14),
               TextButton(
                 onPressed: () =>
