@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "670852401318-4cnruot022p1tfubvevt1sm178goaetp.apps.googleusercontent.com",
+          "client_id": "670852401318-qu27usnb2m71ldfngll3ev46dafd5gd9.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "net.netherdev.netherLink",
-            "certificate_hash": "f1030f292f88bb449a8024a36f00dd07b1550034"
+            "certificate_hash": "0560e45d5287a8dd6b9d6ccb5a616a49da1de7e0"
           }
         },
         {

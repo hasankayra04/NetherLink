@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
 import '../theme/app_theme.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
@@ -283,7 +283,7 @@ class SkinsScreen extends StatefulWidget {
 
 class SkinsScreenState extends State<SkinsScreen> {
   void refresh() => _loadMe();
-  StreamSubscription<User?>? _authSub;
+  StreamSubscription<AuthUser?>? _authSub;
 
   UserModel? _me;
   bool _loading = true;
@@ -312,7 +312,7 @@ class SkinsScreenState extends State<SkinsScreen> {
   }
 
   Future<void> _loadMe() async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = AuthService.currentUser;
     if (user == null) {
       setState(() {
         _me = null;

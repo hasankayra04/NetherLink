@@ -75,7 +75,6 @@ class _PlayerLookupScreenState extends State<PlayerLookupScreen>
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // AppBar
         Container(
           color: AppTheme.surface,
           child: Column(
@@ -111,7 +110,6 @@ class _PlayerLookupScreenState extends State<PlayerLookupScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Hint text
                 const Text(
                   'Search by Java username, UUID, Bedrock gamertag or XUID.',
                   style: TextStyle(
@@ -121,7 +119,6 @@ class _PlayerLookupScreenState extends State<PlayerLookupScreen>
                 ),
                 const SizedBox(height: 10),
 
-                // Search row
                 Row(
                   children: [
                     Expanded(
@@ -180,7 +177,6 @@ class _PlayerLookupScreenState extends State<PlayerLookupScreen>
                   ],
                 ),
 
-                // Error
                 if (_error != null) ...[
                   const SizedBox(height: 14),
                   Container(
@@ -206,7 +202,6 @@ class _PlayerLookupScreenState extends State<PlayerLookupScreen>
                   ),
                 ],
 
-                // Results
                 if (_result != null) ...[
                   const SizedBox(height: 20),
                   FadeTransition(
@@ -226,8 +221,6 @@ class _PlayerLookupScreenState extends State<PlayerLookupScreen>
   }
 }
 
-// ── Combined result card ───────────────────────────────────────────────────────
-
 class _CombinedResultCard extends StatelessWidget {
   final CombinedProfile result;
   const _CombinedResultCard({required this.result});
@@ -237,7 +230,6 @@ class _CombinedResultCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Linked badge
         if (result.linked) ...[
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -277,8 +269,6 @@ class _CombinedResultCard extends StatelessWidget {
   }
 }
 
-// ── Java card ─────────────────────────────────────────────────────────────────
-
 class _JavaCard extends StatelessWidget {
   final JavaProfile profile;
   const _JavaCard({required this.profile});
@@ -297,7 +287,6 @@ class _JavaCard extends StatelessWidget {
         children: [
           _PlatformBadge(label: 'Java Edition', color: AppTheme.accent),
           const SizedBox(height: 14),
-          // 3D skin viewer centered
           _JavaSkinViewer(uuid: profile.uuid),
           const SizedBox(height: 14),
           const Divider(color: AppTheme.borderGray, height: 1),
@@ -379,8 +368,6 @@ class _JavaSkinViewerState extends State<_JavaSkinViewer> {
     );
   }
 }
-
-// ── Bedrock card ──────────────────────────────────────────────────────────────
 
 class _BedrockCard extends StatelessWidget {
   final BedrockProfile profile;
@@ -489,8 +476,6 @@ class _BedrockSkinViewerState extends State<_BedrockSkinViewer> {
     );
   }
 }
-
-// ── Shared widgets ────────────────────────────────────────────────────────────
 
 class _PlatformBadge extends StatelessWidget {
   final String label;

@@ -1,29 +1,58 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 
+class AuthUser {
+  final String uid;
+  final String? email;
+  final User? _sdkUser;
+
+  const AuthUser._({required this.uid, this.email, User? sdkUser})
+      : _sdkUser = sdkUser;
+
+  Future<void> delete() async {
+    if (_sdkUser != null) {
+      await _sdkUser.delete();
+    } else {
+      await AuthService._windowsDeleteAccount();
+    }
+  }
+}
+
 class AuthService {
+  static const _windowsApiKey = 'AIzaSyDagxbLCjjUSnEG-KpiPyrXVKSb9i6cxXQ';
+
   static final FirebaseAuth _auth = FirebaseAuth.instance;
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
-    serverClientId: '670852401318-1g70oikt58ouipfc09re6ik60odu5vhs.apps.googleusercontent.com',
+    serverClientId:
+        '670852401318-1g70oikt58ouipfc09re6ik60odu5vhs.apps.googleusercontent.com',
   );
 
-  static const _desktopGoogleClientId = String.fromEnvironment(
-    'GOOGLE_DESKTOP_CLIENT_ID',
-    defaultValue: '',
-  );
-  static const _desktopGoogleClientSecret = String.fromEnvironment(
-    'GOOGLE_DESKTOP_CLIENT_SECRET',
-    defaultValue: '',
-  );
+  static final _windowsUserCtrl = StreamController<AuthUser?>.broadcast();
+  static AuthUser? _windowsUser;
+  static String? _windowsIdToken;
 
-  static Stream<User?> get userStream => _auth.authStateChanges();
-  static User? get currentUser => _auth.currentUser;
+  static Stream<AuthUser?> get userStream {
+    if (Platform.isWindows) return _windowsUserCtrl.stream;
+    return _auth.authStateChanges().map(
+      (u) =>
+          u == null ? null : AuthUser._(uid: u.uid, email: u.email, sdkUser: u),
+    );
+  }
+
+  static AuthUser? get currentUser {
+    if (Platform.isWindows) return _windowsUser;
+    final u = _auth.currentUser;
+    return u == null
+        ? null
+        : AuthUser._(uid: u.uid, email: u.email, sdkUser: u);
+  }
 
   static Future<String?> getIdToken() async {
+    if (Platform.isWindows) return _windowsIdToken;
     try {
       return await _auth.currentUser?.getIdToken();
     } catch (_) {
@@ -31,75 +60,132 @@ class AuthService {
     }
   }
 
-  static Future<UserCredential?> signInWithEmail(
-      String email, String password) async {
-    return _auth.signInWithEmailAndPassword(email: email, password: password);
-  }
-
-  static Future<UserCredential?> createAccountWithEmail(
-      String email, String password) async {
-    return _auth.createUserWithEmailAndPassword(
-        email: email, password: password);
-  }
-
-  static Future<UserCredential?> signInWithGoogle() async {
-    if (Platform.isAndroid || Platform.isIOS) {
-      final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return null;
-      final googleAuth = await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-      return _auth.signInWithCredential(credential);
+  static Future<void> signInWithEmail(String email, String password) async {
+    if (Platform.isWindows) {
+      await _windowsEmailAuth(email, password, signUp: false);
+      return;
     }
-    return _signInWithGoogleDesktop();
+    await _auth.signInWithEmailAndPassword(email: email, password: password);
   }
 
-  static Future<UserCredential?> _signInWithGoogleDesktop() async {
-    const redirectUri = 'http://localhost';
+  static Future<void> createAccountWithEmail(
+    String email,
+    String password,
+  ) async {
+    if (Platform.isWindows) {
+      await _windowsEmailAuth(email, password, signUp: true);
+      return;
+    }
+    await _auth.createUserWithEmailAndPassword(email: email, password: password);
+  }
 
-    final authUrl = Uri.https('accounts.google.com', '/o/oauth2/v2/auth', {
-      'client_id': _desktopGoogleClientId,
-      'redirect_uri': redirectUri,
-      'response_type': 'code',
-      'scope': 'email profile openid',
-      'access_type': 'offline',
-      'prompt': 'select_account',
-    }).toString();
-
-    final result = await FlutterWebAuth2.authenticate(
-      url: authUrl,
-      callbackUrlScheme: 'http',
+  static Future<void> signInWithGoogle() async {
+    final googleUser = await _googleSignIn.signIn();
+    if (googleUser == null) return;
+    final googleAuth = await googleUser.authentication;
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
     );
-
-    final code = Uri.parse(result).queryParameters['code'];
-    if (code == null) return null;
-
-    final tokenRes = await http.post(
-      Uri.parse('https://oauth2.googleapis.com/token'),
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: {
-        'client_id': _desktopGoogleClientId,
-        'client_secret': _desktopGoogleClientSecret,
-        'code': code,
-        'redirect_uri': redirectUri,
-        'grant_type': 'authorization_code',
-      },
-    );
-
-    final tokenData = jsonDecode(tokenRes.body) as Map<String, dynamic>;
-    final idToken = tokenData['id_token'] as String?;
-    final accessToken = tokenData['access_token'] as String?;
-    if (idToken == null) throw Exception('No id_token in response: $tokenData');
-
-    return _auth.signInWithCredential(
-      GoogleAuthProvider.credential(idToken: idToken, accessToken: accessToken),
-    );
+    await _auth.signInWithCredential(credential);
   }
 
   static Future<void> signOut() async {
+    if (Platform.isWindows) {
+      _windowsUser = null;
+      _windowsIdToken = null;
+      _windowsUserCtrl.add(null);
+      return;
+    }
     await _googleSignIn.signOut();
     await _auth.signOut();
+  }
+
+  static Future<void> _windowsEmailAuth(
+    String email,
+    String password, {
+    required bool signUp,
+  }) async {
+    final endpoint =
+        signUp ? 'accounts:signUp' : 'accounts:signInWithPassword';
+
+    final res = await http
+        .post(
+          Uri.parse(
+            'https://identitytoolkit.googleapis.com/v1/$endpoint?key=$_windowsApiKey',
+          ),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'email': email,
+            'password': password,
+            'returnSecureToken': true,
+          }),
+        )
+        .timeout(const Duration(seconds: 15));
+
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+
+    if (res.statusCode != 200) {
+      final message =
+          ((body['error'] as Map<String, dynamic>?)?['message'] as String?) ??
+          '';
+      throw _mapRestError(message, signUp: signUp);
+    }
+
+    _windowsIdToken = body['idToken'] as String?;
+    _windowsUser = AuthUser._(
+      uid: body['localId'] as String,
+      email: (body['email'] as String?) ?? email,
+    );
+    _windowsUserCtrl.add(_windowsUser);
+  }
+
+  static Future<void> _windowsDeleteAccount() async {
+    final token = _windowsIdToken;
+    if (token == null) return;
+    try {
+      await http
+          .post(
+            Uri.parse(
+              'https://identitytoolkit.googleapis.com/v1/accounts:delete?key=$_windowsApiKey',
+            ),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'idToken': token}),
+          )
+          .timeout(const Duration(seconds: 15));
+    } catch (_) {}
+    _windowsUser = null;
+    _windowsIdToken = null;
+    _windowsUserCtrl.add(null);
+  }
+
+  static FirebaseAuthException _mapRestError(
+    String message, {
+    required bool signUp,
+  }) {
+    if (signUp) {
+      if (message == 'EMAIL_EXISTS') {
+        return FirebaseAuthException(code: 'email-already-in-use');
+      }
+      if (message.startsWith('WEAK_PASSWORD')) {
+        return FirebaseAuthException(code: 'weak-password');
+      }
+      if (message == 'INVALID_EMAIL') {
+        return FirebaseAuthException(code: 'invalid-email');
+      }
+      return FirebaseAuthException(code: 'unknown', message: message);
+    }
+    return switch (message) {
+      'EMAIL_NOT_FOUND' ||
+      'INVALID_PASSWORD' ||
+      'INVALID_LOGIN_CREDENTIALS' ||
+      'USER_NOT_FOUND' =>
+        FirebaseAuthException(code: 'invalid-credential'),
+      'USER_DISABLED' => FirebaseAuthException(code: 'user-disabled'),
+      'TOO_MANY_ATTEMPTS_TRY_LATER' =>
+        FirebaseAuthException(code: 'too-many-requests'),
+      'INVALID_EMAIL' => FirebaseAuthException(code: 'invalid-email'),
+      _ => FirebaseAuthException(code: 'unknown', message: message),
+    };
   }
 }

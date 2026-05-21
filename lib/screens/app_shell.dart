@@ -16,7 +16,6 @@ import '../util/logger.dart';
 import '../util/partners_servers.dart';
 import '../services/partners_servers_service.dart';
 import '../l10n/app_localizations.dart';
-import '../theme/app_theme.dart';
 import 'landing_screen.dart';
 import 'home_screen.dart';
 import 'skins_screen.dart';
@@ -279,14 +278,6 @@ class _AppShellState extends State<AppShell>
           onSkinsTap: () => _goTo(_pageSkins),
           onWikiTap: () => _goTo(_pageWiki),
           onProfileTap: () => _goTo(_pageProfile),
-          isLandingPage: _pageIndex == _pageHome,
-          onWebsiteTap: () => navigationController.openWebsite(context),
-          onDiscordTap: () => navigationController.openDiscord(context),
-          onaternosTap: () => navigationController.openWebsiteWithCustomUrl(
-            context,
-            'https://aternos.org/',
-          ),
-          onLanguageTap: () => navigationController.showLanguageDialog(context),
           isConnectorPage: _pageIndex == _pageConnector || _pageIndex == _pageManageServers || _pageIndex == _pageAddEditServer,
           onSupportTap: () => navigationController.showHelpMenu(context),
           onHowToTap: () => navigationController.showHowToMenu(context),
@@ -309,6 +300,9 @@ class _AppShellState extends State<AppShell>
                     partnerServersFuture: _partnerServersFuture,
                     ipController: _ipController,
                     portController: _portController,
+                    onWebsiteTap: () => navigationController.openWebsite(context),
+                    onDiscordTap: () => navigationController.openDiscord(context),
+                    onLanguageTap: () => navigationController.showLanguageDialog(context),
                   ),
                   HomeScreen(
                     key: _connectorKey,

@@ -17,12 +17,6 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
   final String? selectedRelayIp;
   final void Function(String?)? onRelayChanged;
 
-  final bool isLandingPage;
-  final VoidCallback? onWebsiteTap;
-  final VoidCallback? onDiscordTap;
-  final VoidCallback? onaternosTap;
-  final VoidCallback? onLanguageTap;
-
   final bool isConnectorPage;
   final VoidCallback? onSupportTap;
   final VoidCallback? onHowToTap;
@@ -40,11 +34,6 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
     this.dark = true,
     this.selectedRelayIp,
     this.onRelayChanged,
-    this.isLandingPage = false,
-    this.onWebsiteTap,
-    this.onDiscordTap,
-    this.onaternosTap,
-    this.onLanguageTap,
     this.isConnectorPage = false,
     this.onSupportTap,
     this.onHowToTap,
@@ -63,40 +52,7 @@ class BottomGlassSimpleNavBar extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
-            children: isLandingPage
-                ? [
-                    _NavItem(
-                      icon: FontAwesomeIcons.earthEurope,
-                      label: 'Website',
-                      isActive: false,
-                      onTap: onWebsiteTap,
-                    ),
-                    _NavItem(
-                      icon: FontAwesomeIcons.discord,
-                      label: 'Discord',
-                      isActive: false,
-                      onTap: onDiscordTap,
-                    ),
-                    _NavItem(
-                      icon: FontAwesomeIcons.server,
-                      label: 'Aternos',
-                      isActive: false,
-                      onTap: onaternosTap,
-                    ),
-                    _NavItem(
-                      icon: FontAwesomeIcons.language,
-                      label: 'Language',
-                      isActive: false,
-                      onTap: onLanguageTap,
-                    ),
-                    _NavItem(
-                      icon: FontAwesomeIcons.user,
-                      label: 'Profile',
-                      isActive: activeItem == 'profile',
-                      onTap: onProfileTap,
-                    ),
-                  ]
-                : isConnectorPage
+            children: isConnectorPage
                 ? [
                     _NavItem(
                       icon: FontAwesomeIcons.house,

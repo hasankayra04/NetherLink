@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../theme/app_theme.dart';
 import '../util/partners_servers.dart';
 import '../widgets/featured_server_hero.dart';
@@ -12,6 +13,9 @@ class LandingScreen extends StatelessWidget {
   final Future<List<FeaturedServer>>? partnerServersFuture;
   final TextEditingController ipController;
   final TextEditingController portController;
+  final VoidCallback? onWebsiteTap;
+  final VoidCallback? onDiscordTap;
+  final VoidCallback? onLanguageTap;
 
   const LandingScreen({
     super.key,
@@ -23,6 +27,9 @@ class LandingScreen extends StatelessWidget {
     required this.partnerServersFuture,
     required this.ipController,
     required this.portController,
+    this.onWebsiteTap,
+    this.onDiscordTap,
+    this.onLanguageTap,
   });
 
   @override
@@ -40,14 +47,34 @@ class LandingScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                      child: const Text(
-                        'Home',
-                        style: TextStyle(
-                          color: Color(0xFFFFFFFF),
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 4, 8),
+                      child: Row(
+                        children: [
+                          const Text(
+                            'Home',
+                            style: TextStyle(
+                              color: Color(0xFFFFFFFF),
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const Spacer(),
+                          _HeaderIconButton(
+                            icon: FontAwesomeIcons.earthEurope,
+                            tooltip: 'Website',
+                            onTap: onWebsiteTap,
+                          ),
+                          _HeaderIconButton(
+                            icon: FontAwesomeIcons.discord,
+                            tooltip: 'Discord',
+                            onTap: onDiscordTap,
+                          ),
+                          _HeaderIconButton(
+                            icon: FontAwesomeIcons.language,
+                            tooltip: 'Language',
+                            onTap: onLanguageTap,
+                          ),
+                        ],
                       ),
                     ),
                     _buildFeaturedServers(context),
@@ -136,6 +163,37 @@ class LandingScreen extends StatelessWidget {
         ipController: ipController,
         portController: portController,
         onSelected: onGoToConnector,
+      ),
+    );
+  }
+}
+
+class _HeaderIconButton extends StatelessWidget {
+  final FaIconData icon;
+  final String tooltip;
+  final VoidCallback? onTap;
+
+  const _HeaderIconButton({
+    required this.icon,
+    required this.tooltip,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: FaIcon(
+            icon,
+            size: 16,
+            color: AppTheme.textMuted,
+          ),
+        ),
       ),
     );
   }

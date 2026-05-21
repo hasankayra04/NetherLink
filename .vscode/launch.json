@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "NetherLink (debug)",
+      "request": "launch",
+      "type": "dart"
+    },
+    {
+      "name": "NetherLink (release)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release"
+    }
+  ]
+}

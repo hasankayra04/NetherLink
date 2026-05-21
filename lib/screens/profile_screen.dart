@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -36,7 +37,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
-  StreamSubscription<User?>? _authSubscription;
+  StreamSubscription<AuthUser?>? _authSubscription;
   StreamSubscription<({String uid, bool online})>? _presenceSub;
   bool _checking = false;
 
@@ -252,7 +253,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 me: _me,
                 onRefresh: () async => _fetchMe(),
                 onSignOut: () async {
-                  await FirebaseAuth.instance.signOut();
+                  await AuthService.signOut();
                 },
                 onDeleteAccount: _deleteAccount,
               ),
@@ -427,9 +428,9 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
 
     try {
-      await FirebaseAuth.instance.currentUser?.delete();
+      await AuthService.currentUser?.delete();
     } catch (_) {
-      await FirebaseAuth.instance.signOut();
+      await AuthService.signOut();
     }
   }
 
@@ -492,7 +493,7 @@ class _NotLoggedInViewState extends State<_NotLoggedInView> {
   String? _error;
   bool _isRegisterMode = false;
 
-  bool get _supportsGoogle => true;
+  bool get _supportsGoogle => !Platform.isWindows;
 
   @override
   void dispose() {
@@ -552,6 +553,9 @@ class _NotLoggedInViewState extends State<_NotLoggedInView> {
           _ => 'Something went wrong. Please try again.',
         };
       });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _error = 'Something went wrong. Please try again.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -713,41 +717,41 @@ class _NotLoggedInViewState extends State<_NotLoggedInView> {
                 ),
                 const SizedBox(height: 16),
                 OutlinedButton(
-                  onPressed: (_loading || _googleLoading) ? null : _signInWithGoogle,
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    side: const BorderSide(color: AppTheme.borderGray),
-                    backgroundColor: AppTheme.surfaceRaised,
-                  ),
-                  child: _googleLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: AppTheme.textMuted,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            FaIcon(
-                              FontAwesomeIcons.google,
-                              size: 16,
-                              color: AppTheme.textPrimary,
+                    onPressed: (_loading || _googleLoading) ? null : _signInWithGoogle,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: const BorderSide(color: AppTheme.borderGray),
+                      backgroundColor: AppTheme.surfaceRaised,
+                    ),
+                    child: _googleLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: AppTheme.textMuted,
+                              strokeWidth: 2,
                             ),
-                            const SizedBox(width: 10),
-                            const Text(
-                              'Continue with Google',
-                              style: TextStyle(
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              FaIcon(
+                                FontAwesomeIcons.google,
+                                size: 16,
                                 color: AppTheme.textPrimary,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
                               ),
-                            ),
-                          ],
-                        ),
-                ),
+                              const SizedBox(width: 10),
+                              const Text(
+                                'Continue with Google',
+                                style: TextStyle(
+                                  color: AppTheme.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
               ],
               const SizedBox(height: 14),
               TextButton(
