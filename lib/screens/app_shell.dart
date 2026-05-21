@@ -22,6 +22,7 @@ import 'home_screen.dart';
 import 'skins_screen.dart';
 import 'wiki_screen.dart';
 import 'partner_servers_screen.dart';
+import 'player_lookup_screen.dart';
 import 'manage_servers_screen.dart';
 import 'profile_screen.dart';
 
@@ -35,6 +36,7 @@ const int _pageAddEditServer = 4;
 const int _pageSkins = 5;
 const int _pageWiki = 6;
 const int _pageProfile = 7;
+const int _pagePlayerLookup = 8;
 
 class AppShell extends StatefulWidget {
   final RelayPingResult? initialRelay;
@@ -216,6 +218,8 @@ class _AppShellState extends State<AppShell>
       _closeSheet();
     } else if (_pageIndex == _pageAddEditServer) {
       setState(() => _pageIndex = _pageManageServers);
+    } else if (_pageIndex == _pagePlayerLookup) {
+      _goTo(_pageHome);
     } else if (_pageIndex == _pageManageServers ||
         _pageIndex == _pagePartners) {
       _goTo(_pageConnector);
@@ -301,6 +305,7 @@ class _AppShellState extends State<AppShell>
                     onGoToSkins: () => _goTo(_pageSkins),
                     onGoToWiki: () => _goTo(_pageWiki),
                     onGoToPartners: () => _goTo(_pagePartners),
+                    onGoToPlayerLookup: () => _goTo(_pagePlayerLookup),
                     partnerServersFuture: _partnerServersFuture,
                     ipController: _ipController,
                     portController: _portController,
@@ -346,6 +351,9 @@ class _AppShellState extends State<AppShell>
                     onGoToConnector: () => _goTo(_pageConnector),
                     onGoToSkins: () => _goTo(_pageSkins),
                     onGoToWiki: () => _goTo(_pageWiki),
+                  ),
+                  PlayerLookupScreen(
+                    onBack: () => _goTo(_pageHome),
                   ),
                 ],
               ),

@@ -27,11 +27,13 @@ class _Section {
   final String emoji;
   final Color color;
   final List<_Sub> subs;
+  final String imagePath;
   const _Section({
     required this.label,
     required this.emoji,
     required this.color,
     required this.subs,
+    required this.imagePath,
   });
 }
 
@@ -40,6 +42,7 @@ const _sections = [
     label: 'Mobs',
     emoji: '🧟',
     color: Color(0xFF4CAF50),
+    imagePath: 'assets/images/mobs.png',
     subs: [
       _Sub(label: 'Passive',  emoji: '🐄', category: 'Category:Passive mobs',  jsonKey: 'mobs_passive'),
       _Sub(label: 'Neutral',  emoji: '🐺', category: 'Category:Neutral mobs',  jsonKey: 'mobs_neutral'),
@@ -52,6 +55,7 @@ const _sections = [
     label: 'Blocks',
     emoji: '🧱',
     color: Color(0xFF795548),
+    imagePath: 'assets/images/blocks.png',
     subs: [
       _Sub(label: 'Natural',    emoji: '🌿', category: 'Category:Natural blocks',       jsonKey: 'blocks_natural'),
       _Sub(label: 'Ores',       emoji: '💎', category: 'Category:Ores',                 jsonKey: 'blocks_ores'),
@@ -66,6 +70,7 @@ const _sections = [
     label: 'Items',
     emoji: '⚔️',
     color: Color(0xFF2196F3),
+    imagePath: 'assets/images/items.png',
     subs: [
       _Sub(label: 'Tools',     emoji: '🪓', category: 'Category:Tools',          jsonKey: 'items_tools'),
       _Sub(
@@ -93,6 +98,7 @@ const _sections = [
     label: 'Biomes',
     emoji: '🌿',
     color: Color(0xFF66BB6A),
+    imagePath: 'assets/images/biomes.png',
     subs: [
       _Sub(label: 'Overworld', emoji: '☀️', category: 'Category:Overworld biomes',  jsonKey: 'biomes_overworld'),
       _Sub(label: 'Nether',    emoji: '🔥', category: 'Category:Nether biomes',     jsonKey: 'biomes_nether'),
@@ -103,6 +109,7 @@ const _sections = [
     label: 'Structures',
     emoji: '🏰',
     color: Color(0xFF9C27B0),
+    imagePath: 'assets/images/structures.png',
     subs: [
       _Sub(label: 'Overworld', emoji: '🗺️', category: 'Category:Overworld structures', jsonKey: 'structures_overworld'),
       _Sub(label: 'Nether',    emoji: '🔥', category: 'Category:Nether structures',     jsonKey: 'structures_nether'),
@@ -113,6 +120,7 @@ const _sections = [
     label: 'Enchantments',
     emoji: '✨',
     color: Color(0xFFFF9800),
+    imagePath: 'assets/images/enchantments.png',
     subs: [
       _Sub(label: 'Sword',   emoji: '⚔️', category: 'Category:Sword enchantments',      jsonKey: 'enchantments_sword'),
       _Sub(label: 'Armor',   emoji: '🛡️', category: 'Category:Armor enchantments',      jsonKey: 'enchantments_armor'),
@@ -125,6 +133,7 @@ const _sections = [
     label: 'Potions',
     emoji: '🧪',
     color: Color(0xFFE91E63),
+    imagePath: 'assets/images/potions.png',
     subs: [
       _Sub(label: 'Potions',        emoji: '🧪', category: 'Category:Potions',        jsonKey: 'potions_potions'),
       _Sub(label: 'Status Effects', emoji: '💫', category: 'Category:Status effects', jsonKey: 'potions_effects'),
@@ -864,19 +873,45 @@ class _WikiScreenState extends State<WikiScreen> {
   }
 
   Widget _buildRoot() {
-    return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 1.55,
+    // Build pairs of sections into rows, last one full-width if count is odd
+    final items = _sections;
+    final rows = <Widget>[];
+    for (int i = 0; i < items.length; i += 2) {
+      final isLast = i + 1 >= items.length;
+      rows.add(
+        Row(
+          children: [
+            Expanded(
+              child: _WikiCard(
+                section: items[i],
+                onTap: () => _openSection(items[i]),
+              ),
+            ),
+            if (!isLast) ...[
+              const SizedBox(width: 12),
+              Expanded(
+                child: _WikiCard(
+                  section: items[i + 1],
+                  onTap: () => _openSection(items[i + 1]),
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+      if (i + 2 < items.length) rows.add(const SizedBox(height: 12));
+    }
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight - 28),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: rows,
+          ),
+        ),
       ),
-      itemCount: _sections.length,
-      itemBuilder: (_, i) {
-        final s = _sections[i];
-        return _SectionCard(section: s, onTap: () => _openSection(s));
-      },
     );
   }
 
@@ -934,47 +969,101 @@ class _WikiScreenState extends State<WikiScreen> {
   }
 }
 
-class _SectionCard extends StatelessWidget {
+class _WikiCard extends StatefulWidget {
   final _Section section;
   final VoidCallback onTap;
-  const _SectionCard({required this.section, required this.onTap});
+
+  const _WikiCard({
+    required this.section,
+    required this.onTap,
+  });
+
+  @override
+  State<_WikiCard> createState() => _WikiCardState();
+}
+
+class _WikiCardState extends State<_WikiCard> {
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: section.color.withOpacity(0.07),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: section.color.withOpacity(0.22)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(section.emoji, style: const TextStyle(fontSize: 26)),
-              const SizedBox(height: 8),
-              Text(
-                section.label,
-                style: TextStyle(
-                  color: section.color,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                ),
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+          scale: _pressed ? 0.94 : 1.0,
+          duration: const Duration(milliseconds: 100),
+          curve: Curves.easeOut,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: SizedBox(
+              height: 130,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(widget.section.imagePath, fit: BoxFit.cover),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 100),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: const [0.0, 0.4, 1.0],
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(_pressed ? 0.35 : 0.25),
+                          Colors.black.withOpacity(_pressed ? 0.85 : 0.72),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          widget.section.label,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withOpacity(0.9),
+                                blurRadius: 12,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '${widget.section.subs.length} categories',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.75),
+                            fontSize: 10,
+                            height: 1.4,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withOpacity(0.95),
+                                blurRadius: 10,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                '${section.subs.length} categories',
-                style: const TextStyle(color: AppTheme.textMuted, fontSize: 11),
-              ),
-            ],
+            ),
           ),
         ),
-      ),
     );
   }
 }

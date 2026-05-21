@@ -884,7 +884,7 @@ class _JavaPublicSkinState extends State<_JavaPublicSkin> {
             child: _loading
                 ? const CircularProgressIndicator(color: AppTheme.accent, strokeWidth: 2)
                 : _textureUrl != null
-                    ? Skin3DFromUrl(textureUrl: _textureUrl!, height: 136)
+                    ? SkinBodyFromUrl(textureUrl: _textureUrl!, height: 136)
                     : const Icon(Icons.person_rounded, color: AppTheme.textMuted, size: 36),
           ),
         ),
@@ -997,7 +997,7 @@ class _BedrockPublicSkinState extends State<_BedrockPublicSkin> {
             child: _loading
                 ? const CircularProgressIndicator(color: AppTheme.accent, strokeWidth: 2)
                 : _textureUrl != null
-                    ? Skin3DFromUrl(textureUrl: _textureUrl!, height: 136)
+                    ? SkinBodyFromUrl(textureUrl: _textureUrl!, height: 136)
                     : const Icon(Icons.person_rounded, color: AppTheme.textMuted, size: 36),
           ),
         ),

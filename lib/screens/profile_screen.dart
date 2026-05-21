@@ -510,9 +510,13 @@ class _NotLoggedInViewState extends State<_NotLoggedInView> {
       await AuthService.signInWithGoogle();
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
-      setState(() => _error = 'Firebase error: ${e.code} — ${e.message}');
+      setState(() => _error = switch (e.code) {
+            'account-exists-with-different-credential' =>
+              'An account already exists with this email using a different sign-in method.',
+            _ => 'Google sign-in failed. Please try again.',
+          });
     } catch (e) {
-      if (mounted) setState(() => _error = 'Error: $e');
+      if (mounted) setState(() => _error = 'Google sign-in failed. Please try again.');
     } finally {
       if (mounted) setState(() => _googleLoading = false);
     }

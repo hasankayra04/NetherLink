@@ -8,6 +8,7 @@ class LandingScreen extends StatelessWidget {
   final VoidCallback onGoToSkins;
   final VoidCallback onGoToWiki;
   final VoidCallback onGoToPartners;
+  final VoidCallback onGoToPlayerLookup;
   final Future<List<FeaturedServer>>? partnerServersFuture;
   final TextEditingController ipController;
   final TextEditingController portController;
@@ -18,6 +19,7 @@ class LandingScreen extends StatelessWidget {
     required this.onGoToSkins,
     required this.onGoToWiki,
     required this.onGoToPartners,
+    required this.onGoToPlayerLookup,
     required this.partnerServersFuture,
     required this.ipController,
     required this.portController,
@@ -76,7 +78,6 @@ class LandingScreen extends StatelessWidget {
                 color: AppTheme.accent,
                 imagePath: 'assets/images/tunnel.png',
                 onTap: onGoToConnector,
-                shineDelay: Duration.zero,
               ),
             ),
             const SizedBox(width: 12),
@@ -87,7 +88,6 @@ class LandingScreen extends StatelessWidget {
                 color: const Color(0xFF42A5F5),
                 imagePath: 'assets/images/skin.png',
                 onTap: onGoToSkins,
-                shineDelay: const Duration(milliseconds: 700),
               ),
             ),
           ],
@@ -102,7 +102,6 @@ class LandingScreen extends StatelessWidget {
                 color: AppTheme.success,
                 imagePath: 'assets/images/wiki.png',
                 onTap: onGoToWiki,
-                shineDelay: const Duration(milliseconds: 1400),
               ),
             ),
             const SizedBox(width: 12),
@@ -113,10 +112,17 @@ class LandingScreen extends StatelessWidget {
                 color: const Color(0xFFFFB300),
                 imagePath: 'assets/images/feature.png',
                 onTap: onGoToPartners,
-                shineDelay: const Duration(milliseconds: 2100),
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 12),
+        _QuickCard(
+          title: 'Players',
+          subtitle: 'Look up Java & Bedrock profiles',
+          color: const Color(0xFF7B61FF),
+          imagePath: 'assets/images/players.png',
+          onTap: onGoToPlayerLookup,
         ),
       ],
     );
@@ -141,7 +147,6 @@ class _QuickCard extends StatefulWidget {
   final Color color;
   final String imagePath;
   final VoidCallback onTap;
-  final Duration shineDelay;
 
   const _QuickCard({
     required this.title,
@@ -149,40 +154,14 @@ class _QuickCard extends StatefulWidget {
     required this.color,
     required this.imagePath,
     required this.onTap,
-    this.shineDelay = Duration.zero,
   });
 
   @override
   State<_QuickCard> createState() => _QuickCardState();
 }
 
-class _QuickCardState extends State<_QuickCard>
-    with SingleTickerProviderStateMixin {
+class _QuickCardState extends State<_QuickCard> {
   bool _pressed = false;
-
-  late final AnimationController _floatController;
-  late final Animation<double> _floatAnim;
-
-  @override
-  void initState() {
-    super.initState();
-    _floatController = AnimationController(
-      duration: const Duration(milliseconds: 2200),
-      vsync: this,
-    );
-    _floatAnim = Tween<double>(begin: 0, end: -5).animate(
-      CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
-    );
-    Future.delayed(widget.shineDelay, () {
-      if (mounted) _floatController.repeat(reverse: true);
-    });
-  }
-
-  @override
-  void dispose() {
-    _floatController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -191,13 +170,7 @@ class _QuickCardState extends State<_QuickCard>
       onTapUp: (_) => setState(() => _pressed = false),
       onTapCancel: () => setState(() => _pressed = false),
       onTap: widget.onTap,
-      child: AnimatedBuilder(
-        animation: _floatAnim,
-        builder: (context, child) => Transform.translate(
-          offset: Offset(0, _floatAnim.value),
-          child: child,
-        ),
-        child: AnimatedScale(
+      child: AnimatedScale(
           scale: _pressed ? 0.94 : 1.0,
           duration: const Duration(milliseconds: 100),
           curve: Curves.easeOut,
@@ -270,7 +243,7 @@ class _QuickCardState extends State<_QuickCard>
             ),
           ),
         ),
-      ),
     );
   }
 }
+

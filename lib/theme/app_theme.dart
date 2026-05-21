@@ -23,9 +23,9 @@ class AppTheme {
   static const Color borderLight = Color(0xFF353A50);
 
   static const Color textPrimary   = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFFB8BDD4);
-  static const Color textMuted     = Color(0xFF6E7490);
-  static const Color textDisabled  = Color(0xFF3E4258);
+  static const Color textSecondary = Color(0xFFE2E5F5);
+  static const Color textMuted     = Color(0xFFB0B5CC);
+  static const Color textDisabled  = Color(0xFF4A5070);
 
   static const Color success = Color(0xFF34D399);
   static const Color warning = Color(0xFFFBBF24);

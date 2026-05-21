@@ -53,7 +53,15 @@ flutter:
     - assets/images/wiki.png
     - assets/images/skin.png
     - assets/images/tunnel.png
+    - assets/images/players.png
     - assets/data/wiki_data.json
+    - assets/images/mobs.png
+    - assets/images/blocks.png
+    - assets/images/items.png
+    - assets/images/biomes.png
+    - assets/images/enchantments.png
+    - assets/images/structures.png
+    - assets/images/potions.png
 
 msix_config:
   display_name: NetherLink

@@ -7,7 +7,9 @@ import 'package:http/http.dart' as http;
 
 class AuthService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
-  static final GoogleSignIn _googleSignIn = GoogleSignIn();
+  static final GoogleSignIn _googleSignIn = GoogleSignIn(
+    serverClientId: '670852401318-1g70oikt58ouipfc09re6ik60odu5vhs.apps.googleusercontent.com',
+  );
 
   static const _desktopGoogleClientId = String.fromEnvironment(
     'GOOGLE_DESKTOP_CLIENT_ID',
