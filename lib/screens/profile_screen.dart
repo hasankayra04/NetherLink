@@ -913,7 +913,7 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _ProfileTab extends StatelessWidget {
+class _ProfileTab extends StatefulWidget {
   final UserModel? me;
   final Future<void> Function() onRefresh;
   final Future<void> Function() onSignOut;
@@ -926,31 +926,63 @@ class _ProfileTab extends StatelessWidget {
   });
 
   @override
+  State<_ProfileTab> createState() => _ProfileTabState();
+}
+
+class _ProfileTabState extends State<_ProfileTab> {
+  bool? _appearOffline;
+
+  bool get _effectiveAppearOffline =>
+      _appearOffline ?? widget.me?.appearOffline ?? false;
+
+  Future<void> _toggleAppearOffline(bool value) async {
+    setState(() => _appearOffline = value);
+    final updated = await UserService.updateMe(appearOffline: value);
+    if (!mounted) return;
+    if (updated == null) {
+      // Revert on failure
+      setState(() => _appearOffline = !value);
+      AppToast.show(
+        context,
+        message: 'Could not update visibility. Try again.',
+        icon: Icons.error_outline_rounded,
+        color: AppTheme.error,
+        duration: const Duration(seconds: 2),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (me == null) return const _LoadingBody();
+    if (widget.me == null) return const _LoadingBody();
     return RefreshIndicator(
       color: AppTheme.accent,
       backgroundColor: AppTheme.surfaceRaised,
-      onRefresh: onRefresh,
+      onRefresh: widget.onRefresh,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _EditProfileCard(me: me!, onUpdated: onRefresh),
-          if (me!.bio?.isNotEmpty == true) ...[
+          _EditProfileCard(me: widget.me!, onUpdated: widget.onRefresh),
+          if (widget.me!.bio?.isNotEmpty == true) ...[
             const SizedBox(height: 12),
             _InfoCard(
               icon: Icons.info_outline_rounded,
               label: 'About me',
-              value: me!.bio!,
+              value: widget.me!.bio!,
             ),
           ],
           const SizedBox(height: 12),
-          _XboxCard(me: me!, onRefresh: onRefresh),
+          _XboxCard(me: widget.me!, onRefresh: widget.onRefresh),
           const SizedBox(height: 12),
-          _JavaCard(me: me!, onRefresh: onRefresh),
+          _JavaCard(me: widget.me!, onRefresh: widget.onRefresh),
+          const SizedBox(height: 12),
+          _SettingsCard(
+            appearOffline: _effectiveAppearOffline,
+            onToggleAppearOffline: _toggleAppearOffline,
+          ),
           const SizedBox(height: 24),
           OutlinedButton.icon(
-            onPressed: onSignOut,
+            onPressed: widget.onSignOut,
             icon: const Icon(Icons.logout_rounded, size: 16),
             label: const Text('Sign out'),
             style: OutlinedButton.styleFrom(
@@ -961,7 +993,7 @@ class _ProfileTab extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           OutlinedButton.icon(
-            onPressed: onDeleteAccount,
+            onPressed: widget.onDeleteAccount,
             icon: const Icon(Icons.delete_forever_rounded, size: 16),
             label: const Text('Delete account'),
             style: OutlinedButton.styleFrom(
@@ -972,6 +1004,81 @@ class _ProfileTab extends StatelessWidget {
           ),
           const SizedBox(height: 16),
         ],
+      ),
+    );
+  }
+}
+
+class _SettingsCard extends StatelessWidget {
+  final bool appearOffline;
+  final Future<void> Function(bool) onToggleAppearOffline;
+
+  const _SettingsCard({
+    required this.appearOffline,
+    required this.onToggleAppearOffline,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceRaised,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.borderGray),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: appearOffline
+                    ? AppTheme.textMuted.withOpacity(0.15)
+                    : AppTheme.success.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                appearOffline
+                    ? Icons.visibility_off_rounded
+                    : Icons.visibility_rounded,
+                size: 16,
+                color: appearOffline ? AppTheme.textMuted : AppTheme.success,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Appear offline',
+                    style: TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    appearOffline
+                        ? 'Friends see you as offline'
+                        : 'Friends can see when you\'re online',
+                    style: const TextStyle(
+                      color: AppTheme.textMuted,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Switch(
+              value: appearOffline,
+              onChanged: onToggleAppearOffline,
+              activeColor: AppTheme.accent,
+            ),
+          ],
+        ),
       ),
     );
   }

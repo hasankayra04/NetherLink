@@ -29,6 +29,7 @@ class UserModel {
   final String? bio;
   final String? createdAt;
   final String? lastSeenAt;
+  final bool appearOffline;
   final String? xboxGamertag;
   final String? xboxXuid;
   final String? javaUsername;
@@ -43,6 +44,7 @@ class UserModel {
     this.bio,
     this.createdAt,
     this.lastSeenAt,
+    this.appearOffline = false,
     this.xboxGamertag,
     this.xboxXuid,
     this.javaUsername,
@@ -65,6 +67,7 @@ class UserModel {
       bio: json['bio'] as String?,
       createdAt: json['createdAt'] as String?,
       lastSeenAt: json['lastSeenAt'] as String?,
+      appearOffline: json['appearOffline'] as bool? ?? false,
       xboxGamertag: json['xboxGamertag'] as String?,
       xboxXuid: json['xboxXuid'] as String?,
       javaUsername: json['javaUsername'] as String?,
