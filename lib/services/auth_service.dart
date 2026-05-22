@@ -34,6 +34,8 @@ class AuthService {
   static final _windowsUserCtrl = StreamController<AuthUser?>.broadcast();
   static AuthUser? _windowsUser;
   static String? _windowsIdToken;
+  static String? _windowsRefreshToken;
+  static DateTime? _windowsTokenExpiry;
 
   static Stream<AuthUser?> get userStream {
     if (Platform.isWindows) return _windowsUserCtrl.stream;
@@ -51,8 +53,20 @@ class AuthService {
         : AuthUser._(uid: u.uid, email: u.email, sdkUser: u);
   }
 
+  /// Returns a fresh Firebase ID token for use in API calls.
+  /// On Windows, automatically refreshes the token when within 5 minutes
+  /// of expiry (Firebase ID tokens last 1 hour).
   static Future<String?> getIdToken() async {
-    if (Platform.isWindows) return _windowsIdToken;
+    if (Platform.isWindows) {
+      if (_windowsIdToken != null &&
+          _windowsTokenExpiry != null &&
+          DateTime.now().isAfter(
+            _windowsTokenExpiry!.subtract(const Duration(minutes: 5)),
+          )) {
+        await _windowsRefreshIdToken();
+      }
+      return _windowsIdToken;
+    }
     try {
       return await _auth.currentUser?.getIdToken();
     } catch (_) {
@@ -94,6 +108,8 @@ class AuthService {
     if (Platform.isWindows) {
       _windowsUser = null;
       _windowsIdToken = null;
+      _windowsRefreshToken = null;
+      _windowsTokenExpiry = null;
       _windowsUserCtrl.add(null);
       return;
     }
@@ -133,11 +149,40 @@ class AuthService {
     }
 
     _windowsIdToken = body['idToken'] as String?;
+    _windowsRefreshToken = body['refreshToken'] as String?;
+    final expiresIn = int.tryParse(body['expiresIn']?.toString() ?? '') ?? 3600;
+    _windowsTokenExpiry = DateTime.now().add(Duration(seconds: expiresIn));
     _windowsUser = AuthUser._(
       uid: body['localId'] as String,
       email: (body['email'] as String?) ?? email,
     );
     _windowsUserCtrl.add(_windowsUser);
+  }
+
+  static Future<void> _windowsRefreshIdToken() async {
+    final refreshToken = _windowsRefreshToken;
+    if (refreshToken == null) return;
+    try {
+      final res = await http
+          .post(
+            Uri.parse(
+              'https://securetoken.googleapis.com/v1/token?key=$_windowsApiKey',
+            ),
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'grant_type=refresh_token&refresh_token=${Uri.encodeComponent(refreshToken)}',
+          )
+          .timeout(const Duration(seconds: 15));
+      if (res.statusCode == 200) {
+        final body = jsonDecode(res.body) as Map<String, dynamic>;
+        _windowsIdToken = body['id_token'] as String?;
+        _windowsRefreshToken = body['refresh_token'] as String?;
+        final expiresIn =
+            int.tryParse(body['expires_in']?.toString() ?? '') ?? 3600;
+        _windowsTokenExpiry = DateTime.now().add(Duration(seconds: expiresIn));
+      }
+    } catch (_) {
+      // Silently fail — caller will use the (possibly stale) token
+    }
   }
 
   static Future<void> _windowsDeleteAccount() async {
@@ -156,6 +201,8 @@ class AuthService {
     } catch (_) {}
     _windowsUser = null;
     _windowsIdToken = null;
+    _windowsRefreshToken = null;
+    _windowsTokenExpiry = null;
     _windowsUserCtrl.add(null);
   }
 

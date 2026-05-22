@@ -39,7 +39,18 @@
 	</dict>
 	<key>com.apple.security.network.server</key>
 	<true/>
-
-
+	<key>GIDClientID</key>
+	<string>670852401318-ijnjdpd3cpucr2qg9ei582iig1ao57vq.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.670852401318-ijnjdpd3cpucr2qg9ei582iig1ao57vq</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
