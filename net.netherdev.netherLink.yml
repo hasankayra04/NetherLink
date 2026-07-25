@@ -139,8 +139,7 @@ Builds:
     # Steps:
     #   1. Disable Flutter's anonymous analytics (required by F-Droid policy).
     #   2. Fetch Dart/Flutter package dependencies.
-    #   3. Build the release APK without code-shrinking (minification can be
-    #      re-enabled once reproducibility is confirmed).
+    #   3. Build the standard Flutter release APK.
     build:
       - $$flutter$$/bin/flutter config --no-analytics
       - $$flutter$$/bin/flutter pub get
