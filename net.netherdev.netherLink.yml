@@ -157,7 +157,7 @@ AutoUpdateMode: Version %v
 #   - versionCode is the integer after '+' (e.g. 42 from "4.1.5+42").
 #   - versionName is the dotted string before '+' (e.g. "4.1.5").
 UpdateCheckMode: HTTP
-UpdateCheckData: https://raw.githubusercontent.com/MCCORG/MCCompanion/main/pubspec.yaml|version: \d+\.\d+\.\d+\+(\d+)||version: (\d+\.\d+\.\d+)\+\d+
+UpdateCheckData: 'https://raw.githubusercontent.com/MCCORG/MCCompanion/main/pubspec.yaml|version: \d+\.\d+\.\d+\+(\d+)||version: (\d+\.\d+\.\d+)\+\d+'
 
 # CurrentVersion: Latest versionName known when this file was written.
 # The F-Droid update bot keeps this in sync automatically via AutoUpdateMode.
