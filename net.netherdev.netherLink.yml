@@ -119,8 +119,9 @@ Builds:
     # commit: The exact git commit SHA or tag at which this version was released.
     # This project publishes a rolling prerelease from GitHub Actions using the
     # static `dev` tag, but F-Droid requires an immutable source reference.
-    # Replace this SHA with the exact commit currently published by the `dev`
-    # release each time you prepare an fdroiddata update.
+    # This SHA is intentionally pinned for reproducibility; before every
+    # fdroiddata submission, verify that the GitHub `dev` release still points
+    # to this exact commit and replace it if the workflow has published a newer one.
     commit: 012e607d6976d81e07ec54df0d5f583029af2066
 
     # output: Path (relative to repo root) of the APK produced by the build.
@@ -157,9 +158,9 @@ AutoUpdateMode: None
 UpdateCheckMode: None
 
 # CurrentVersion: The latest version string known at the time this file was written.
-# Must be kept in sync with the latest Builds entry's versionName.
+# Must be updated together with the latest Builds entry's versionName.
 CurrentVersion: '4.1.5'
 
 # CurrentVersionCode: The latest version code known at the time this file was written.
-# Must be kept in sync with the latest Builds entry's versionCode.
+# Must be updated together with the latest Builds entry's versionCode.
 CurrentVersionCode: 42
