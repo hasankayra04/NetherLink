@@ -122,7 +122,7 @@ Builds:
     # This SHA is intentionally pinned for reproducibility; before every
     # fdroiddata submission, verify that the GitHub `dev` release still points
     # to this exact commit and replace it if the workflow has published a newer one.
-    commit: 012e607d6976d81e07ec54df0d5f583029af2066
+    commit: 77d151403944bb017a23b39a5f606b6fed6e49eb
 
     # output: Path (relative to repo root) of the APK produced by the build.
     # Flutter's default release APK location for a single-ABI build.
