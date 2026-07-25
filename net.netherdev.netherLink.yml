@@ -118,7 +118,7 @@ Builds:
     # commit: The exact (immutable) git commit SHA that produced this release.
     # Using a specific SHA guarantees reproducibility — F-Droid can always
     # rebuild this exact version regardless of future changes to the branch.
-    commit: 10b97f8e274a5d47502796f20b0e35c6dbaae08d
+    commit: 77d151403944bb017a23b39a5f606b6fed6e49eb
 
     # output: Path (relative to repo root) of the APK produced by the build.
     # Flutter's default release APK location (universal APK unless --split-per-abi is used).
