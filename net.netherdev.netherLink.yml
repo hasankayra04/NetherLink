@@ -125,10 +125,10 @@ Builds:
     output: build/app/outputs/flutter-apk/app-release.apk
 
     # srclibs: External source libraries that F-Droid's build server must
-# download and make available during the build. Pin Flutter to an explicit version for reproducibility (matches CI).
-# The `$$flutter$$` placeholder expands to the Flutter SDK path.
-srclibs:
-  - flutter@3.44.0
+    # download and make available during the build. Pin Flutter to an explicit version for reproducibility (matches CI).
+    # The `$$flutter$$` placeholder expands to the Flutter SDK path.
+    srclibs:
+      - flutter@3.44.0
 
     # build: Shell commands run (inside the repo root) to produce the APK.
     # Steps:
