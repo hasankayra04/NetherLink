@@ -121,7 +121,7 @@ Builds:
     commit: 10b97f8e274a5d47502796f20b0e35c6dbaae08d
 
     # output: Path (relative to repo root) of the APK produced by the build.
-    # Flutter's default release APK location for a single-ABI build.
+    # Flutter's default release APK location (universal APK unless --split-per-abi is used).
     output: build/app/outputs/flutter-apk/app-release.apk
 
     # srclibs: External source libraries that F-Droid's build server must
