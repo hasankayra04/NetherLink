@@ -1,0 +1,167 @@
+# ============================================================
+# F-Droid Metadata File for MCCompanion (NetherLink)
+# ============================================================
+# This file belongs in the fdroiddata repository:
+#   https://gitlab.com/fdroid/fdroiddata  (path: metadata/)
+#
+# File name MUST match the Android applicationId exactly:
+#   net.netherdev.netherLink.yml
+#
+# Official documentation:
+#   https://f-droid.org/en/docs/Build_Metadata_Reference/
+# ============================================================
+
+# Categories: Tells F-Droid which section(s) to list the app under.
+# Valid values: Connectivity, Development, Games, Graphics, Internet,
+#   Money, Multimedia, Navigation, Phone & SMS, Reading, Science & Education,
+#   Security, Sports & Health, System, Theming, Time, Writing
+# "Games" is used here because the app is Minecraft-specific.
+Categories:
+  - Games
+
+# License: SPDX license identifier of the app's source code license.
+# The LICENSE file in the repo is GPL-3.0, so we use GPL-3.0-only.
+# F-Droid only lists apps with approved open-source licenses.
+License: GPL-3.0-only
+
+# AuthorName: The name of the developer or organization.
+AuthorName: MCCORG
+
+# AutoName: The human-readable name of the app as it appears in the UI.
+# Taken from the app's own display name (pubspec.yaml / Play Store listing).
+AutoName: MCCompanion
+
+# WebSite: The official website of the app.
+WebSite: https://mccompanion.net
+
+# SourceCode: Direct URL to the app's source code repository.
+SourceCode: https://github.com/MCCORG/MCCompanion
+
+# IssueTracker: Where users can report bugs.
+IssueTracker: https://github.com/MCCORG/MCCompanion/issues
+
+# Changelog: Where users can read what changed between versions.
+# This project's workflow keeps a rolling prerelease at the `dev` tag.
+Changelog: https://github.com/MCCORG/MCCompanion/releases/tag/dev
+
+# Summary: Short one-line description shown in search results (max ~80 chars).
+Summary: Minecraft companion app for console players and server managers
+
+# Description: Full description shown on the app's F-Droid page.
+# Uses a limited Markdown-like format. Paragraphs are separated by blank lines.
+# No HTML; use `` for inline code, '''...''' for code blocks.
+Description: |-
+  MCCompanion lets you bridge external Minecraft (Bedrock Edition) servers to
+  your local network so that PlayStation, Xbox, Nintendo Switch, and other
+  consoles can join as if it were a LAN game.
+
+  Features include:
+
+  * **Connector** – Bridge any external server via EU/US relay for low latency.
+  * **Skins** – Browse, preview, and manage Minecraft skins via Geyser.
+  * **Player Lookup** – Search players by gamertag, username, or UUID.
+  * **Server Tracker** – Monitor server status and player count in real time.
+  * **Partner Servers** – Browse and connect to featured community servers.
+  * **Wiki** – Offline reference for mobs, blocks, items, biomes, potions, and more.
+  * **Profile & Social** – Sign in with Xbox, Apple, or Google and chat with other users.
+
+# AntiFeatures: MUST be declared if the app uses proprietary services or has
+# other drawbacks. Undisclosed anti-features cause F-Droid to reject the app.
+#
+# NonFreeNet  – App communicates with a non-free (proprietary) network service.
+#               This app uses:
+#               • Firebase (firebase_core, firebase_auth, firebase_messaging) –
+#                 Google's proprietary backend platform.
+#               • Google Sign-In (google_sign_in) – proprietary OAuth flow.
+#               • RevenueCat (purchases_flutter) – proprietary subscription platform.
+#
+# NonFreeDep  – App depends on a non-free library/SDK bundled into the APK.
+#               This app bundles the RevenueCat Android SDK via purchases_flutter.
+#
+# ⚠️  IMPORTANT NOTE TO MAINTAINER:
+#   F-Droid reviewers may ask you to provide a build variant that removes or
+#   stubs out Firebase, Google Sign-In, and RevenueCat, because these are
+#   incompatible with F-Droid's free-software principles. In-app purchases
+#   (purchases_flutter / RevenueCat) are especially likely to be questioned.
+#   Consider creating a free-only flavor or feature flag for F-Droid builds.
+AntiFeatures:
+  NonFreeNet:
+    - Uses Firebase (Google proprietary backend) for authentication and push notifications
+    - Uses Google Sign-In (proprietary OAuth)
+    - Uses RevenueCat (proprietary subscription and IAP service)
+  NonFreeDep:
+    - Bundles RevenueCat Android SDK via purchases_flutter
+
+# RepoType: The version control system used for the source code.
+# "git" is correct for GitHub repositories.
+RepoType: git
+
+# Repo: The URL F-Droid's build server will clone to build the app.
+# Must be the HTTPS clone URL (not SSH).
+Repo: https://github.com/MCCORG/MCCompanion
+
+# Builds: A list of build entries, one per released version.
+# Each entry tells F-Droid exactly how to reproduce the APK from source.
+# Each entry MUST use an immutable commit SHA (not a branch name) so that
+# older versions can always be rebuilt from the exact source that produced
+# the original APK. Using a branch like `main` is a moving target and will
+# be rejected by F-Droid reviewers.
+Builds:
+  - # versionName: The human-readable version string shown to users.
+    # Taken from pubspec.yaml: the part before '+'.
+    versionName: '4.1.5'
+
+    # versionCode: The integer build number used by Android to detect upgrades.
+    # Taken from pubspec.yaml: the part after '+'.
+    versionCode: 42
+
+    # commit: The exact (immutable) git commit SHA that produced this release.
+    # Using a specific SHA guarantees reproducibility — F-Droid can always
+    # rebuild this exact version regardless of future changes to the branch.
+    commit: 10b97f8e274a5d47502796f20b0e35c6dbaae08d
+
+    # output: Path (relative to repo root) of the APK produced by the build.
+    # Flutter's default release APK location (universal APK unless --split-per-abi is used).
+    output: build/app/outputs/flutter-apk/app-release.apk
+
+    # srclibs: External source libraries that F-Droid's build server must
+    # download and make available during the build. Pin Flutter to an explicit version for reproducibility (matches CI).
+    # The `$$flutter$$` placeholder expands to the Flutter SDK path.
+    srclibs:
+      - flutter@3.44.0
+
+    # build: Shell commands run (inside the repo root) to produce the APK.
+    # Steps:
+    #   1. Disable Flutter's anonymous analytics (required by F-Droid policy).
+    #   2. Fetch Dart/Flutter package dependencies.
+    #   3. Build the standard Flutter release APK.
+    build:
+      - $$flutter$$/bin/flutter config --no-analytics
+      - $$flutter$$/bin/flutter pub get
+      - $$flutter$$/bin/flutter build apk --release
+
+# AutoUpdateMode: Controls how the F-Droid update bot generates new build entries.
+# `Version %v` means: when a new versionName is detected, add a new Builds entry
+# with the new versionName, versionCode, and commit (resolved from the detection URL).
+AutoUpdateMode: Version %v
+
+# UpdateCheckMode: How F-Droid detects new releases.
+# `HTTP` fetches a URL and applies a regex to extract versionCode and versionName.
+# Here it reads pubspec.yaml directly from the main branch, so any time the
+# developer bumps `version: X.Y.Z+N` in pubspec.yaml and pushes to main (which
+# triggers the dev release workflow), F-Droid will detect the new version.
+#
+# UpdateCheckData format: <url>|<vercode_regex>|<url2>|<vername_regex>
+#   - Both version parts live in the same pubspec.yaml file so url2 is empty.
+#   - versionCode is the integer after '+' (e.g. 42 from "4.1.5+42").
+#   - versionName is the dotted string before '+' (e.g. "4.1.5").
+UpdateCheckMode: HTTP
+UpdateCheckData: 'https://raw.githubusercontent.com/MCCORG/MCCompanion/main/pubspec.yaml|version: \d+\.\d+\.\d+\+(\d+)||version: (\d+\.\d+\.\d+)\+\d+'
+
+# CurrentVersion: Latest versionName known when this file was written.
+# The F-Droid update bot keeps this in sync automatically via AutoUpdateMode.
+CurrentVersion: '4.1.5'
+
+# CurrentVersionCode: Latest versionCode known when this file was written.
+# The F-Droid update bot keeps this in sync automatically via AutoUpdateMode.
+CurrentVersionCode: 42
