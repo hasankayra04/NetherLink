@@ -12,12 +12,10 @@
 # ============================================================
 
 # Categories: Tells F-Droid which section(s) to list the app under.
-# Valid values: Connectivity, Development, Games, Graphics, Internet,
-#   Money, Multimedia, Navigation, Phone & SMS, Reading, Science & Education,
-#   Security, Sports & Health, System, Theming, Time, Writing
-# "Games" is used here because the app is Minecraft-specific.
+# Valid values are controlled by F-Droid's current schema.
+# "Game Helper" best matches this app's Minecraft companion feature set.
 Categories:
-  - Games
+  - Game Helper
 
 # License: SPDX license identifier of the app's source code license.
 # The LICENSE file in the repo is GPL-3.0, so we use GPL-3.0-only.
@@ -85,12 +83,8 @@ Description: |-
 #   (purchases_flutter / RevenueCat) are especially likely to be questioned.
 #   Consider creating a free-only flavor or feature flag for F-Droid builds.
 AntiFeatures:
-  NonFreeNet:
-    - Uses Firebase (Google proprietary backend) for authentication and push notifications
-    - Uses Google Sign-In (proprietary OAuth)
-    - Uses RevenueCat (proprietary subscription and IAP service)
-  NonFreeDep:
-    - Bundles RevenueCat Android SDK via purchases_flutter
+  - NonFreeNet
+  - NonFreeDep
 
 # RepoType: The version control system used for the source code.
 # "git" is correct for GitHub repositories.
