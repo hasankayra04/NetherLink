@@ -12,12 +12,10 @@
 # ============================================================
 
 # Categories: Tells F-Droid which section(s) to list the app under.
-# Valid values: Connectivity, Development, Games, Graphics, Internet,
-#   Money, Multimedia, Navigation, Phone & SMS, Reading, Science & Education,
-#   Security, Sports & Health, System, Theming, Time, Writing
-# "Games" is used here because the app is Minecraft-specific.
+# Valid values are controlled by F-Droid's current schema.
+# "Game Helper" best matches this app's Minecraft companion feature set.
 Categories:
-  - Games
+  - Game Helper
 
 # License: SPDX license identifier of the app's source code license.
 # The LICENSE file in the repo is GPL-3.0, so we use GPL-3.0-only.
@@ -84,13 +82,11 @@ Description: |-
 #   incompatible with F-Droid's free-software principles. In-app purchases
 #   (purchases_flutter / RevenueCat) are especially likely to be questioned.
 #   Consider creating a free-only flavor or feature flag for F-Droid builds.
+#   Top-level F-Droid metadata only accepts anti-feature identifiers here, so
+#   the detailed rationale is kept in the comments above.
 AntiFeatures:
-  NonFreeNet:
-    - Uses Firebase (Google proprietary backend) for authentication and push notifications
-    - Uses Google Sign-In (proprietary OAuth)
-    - Uses RevenueCat (proprietary subscription and IAP service)
-  NonFreeDep:
-    - Bundles RevenueCat Android SDK via purchases_flutter
+  - NonFreeNet
+  - NonFreeDep
 
 # RepoType: The version control system used for the source code.
 # "git" is correct for GitHub repositories.
@@ -151,12 +147,13 @@ AutoUpdateMode: Version %v
 # developer bumps `version: X.Y.Z+N` in pubspec.yaml and pushes to main (which
 # triggers the dev release workflow), F-Droid will detect the new version.
 #
-# UpdateCheckData format: <url>|<vercode_regex>|<url2>|<vername_regex>
-#   - Both version parts live in the same pubspec.yaml file so url2 is empty.
+# UpdateCheckData format: <urlcode>|<vercode_regex>|<urlver>|<vername_regex>
+#   - Both version parts live in the same pubspec.yaml file.
+#   - Use '.' for urlver so fdroidserver reuses the content fetched from urlcode.
 #   - versionCode is the integer after '+' (e.g. 42 from "4.1.5+42").
 #   - versionName is the dotted string before '+' (e.g. "4.1.5").
 UpdateCheckMode: HTTP
-UpdateCheckData: 'https://raw.githubusercontent.com/MCCORG/MCCompanion/main/pubspec.yaml|version: \d+\.\d+\.\d+\+(\d+)||version: (\d+\.\d+\.\d+)\+\d+'
+UpdateCheckData: 'https://raw.githubusercontent.com/MCCORG/MCCompanion/main/pubspec.yaml|version: \d+\.\d+\.\d+\+(\d+)|.|version: (\d+\.\d+\.\d+)\+\d+'
 
 # CurrentVersion: Latest versionName known when this file was written.
 # The F-Droid update bot keeps this in sync automatically via AutoUpdateMode.
