@@ -82,6 +82,8 @@ Description: |-
 #   incompatible with F-Droid's free-software principles. In-app purchases
 #   (purchases_flutter / RevenueCat) are especially likely to be questioned.
 #   Consider creating a free-only flavor or feature flag for F-Droid builds.
+#   Top-level F-Droid metadata only accepts anti-feature identifiers here, so
+#   the detailed rationale is kept in the comments above.
 AntiFeatures:
   - NonFreeNet
   - NonFreeDep
