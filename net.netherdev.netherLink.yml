@@ -117,23 +117,48 @@ Builds:
     commit: 77d151403944bb017a23b39a5f606b6fed6e49eb
 
     # output: Path (relative to repo root) of the APK produced by the build.
-    # Flutter's default release APK location (universal APK unless --split-per-abi is used).
+    # Flutter's default release APK location (universal APK).
     output: build/app/outputs/flutter-apk/app-release.apk
 
-    # srclibs: External source libraries that F-Droid's build server must
-    # download and make available during the build. Pin Flutter to an explicit version for reproducibility (matches CI).
-    # The `$$flutter$$` placeholder expands to the Flutter SDK path.
+    # srclibs: Use flutter@stable so F-Droid's srclib infrastructure clones
+    # the Flutter SDK. The prebuild block then checks out the exact version
+    # pinned in the CI workflow for reproducibility.
     srclibs:
-      - flutter@3.44.0
+      - flutter@stable
 
-    # build: Shell commands run (inside the repo root) to produce the APK.
-    # Steps:
-    #   1. Disable Flutter's anonymous analytics (required by F-Droid policy).
-    #   2. Fetch Dart/Flutter package dependencies.
-    #   3. Build the standard Flutter release APK.
-    build:
+    # rm: Remove non-Android platform directories that are not needed for the
+    # build and would otherwise be scanned unnecessarily.
+    rm:
+      - ios
+      - macos
+      - windows
+      - linux
+
+    # prebuild: Steps run before the main build command.
+    # 1. Extract the pinned Flutter version from the CI workflow (single source of truth).
+    # 2. Assert the version was found.
+    # 3. Check out that exact Flutter revision in the srclib clone.
+    # 4. Set a local pub cache to allow scandelete to clean it afterwards.
+    # 5. Disable anonymous analytics (required by F-Droid policy).
+    # 6. Fetch Dart/Flutter package dependencies.
+    prebuild:
+      - flutterVersion=$(sed -n -E "s/.*flutter-version: '(.*)'/\1/p" .github/workflows/build.yml | head -1)
+      - '[[ $flutterVersion ]]'
+      - git -C $$flutter$$ checkout -f $flutterVersion
+      - export PUB_CACHE=$(pwd)/.pub-cache
       - $$flutter$$/bin/flutter config --no-analytics
       - $$flutter$$/bin/flutter pub get
+
+    # scandelete: Directories that fdroid scanner should delete after the
+    # prebuild and before the build step. The pub cache contains pre-built
+    # artefacts that must not be included in the reproducible APK.
+    scandelete:
+      - .pub-cache
+
+    # build: Shell commands to produce the release APK.
+    # Reuse the same local pub cache populated in prebuild.
+    build:
+      - export PUB_CACHE=$(pwd)/.pub-cache
       - $$flutter$$/bin/flutter build apk --release
 
 # AutoUpdateMode: Controls how the F-Droid update bot generates new build entries.
