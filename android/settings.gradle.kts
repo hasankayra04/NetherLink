@@ -1,4 +1,14 @@
 pluginManagement {
+    resolutionStrategy {
+        eachPlugin {
+            when (requested.id.id) {
+                "com.android.application", "com.android.library" -> useVersion("8.11.1")
+                "org.jetbrains.kotlin.android", "org.jetbrains.kotlin.jvm", "org.jetbrains.kotlin.kapt", "org.jetbrains.kotlin.plugin.serialization" -> useVersion("2.2.20")
+                "com.google.gms.google-services" -> useVersion("4.4.2")
+            }
+        }
+    }
+
     val flutterSdkPath = run {
         val properties = java.util.Properties()
         file("local.properties").inputStream().use { properties.load(it) }
