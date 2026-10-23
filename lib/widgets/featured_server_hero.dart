@@ -79,6 +79,8 @@ class _FeaturedServerHeroState extends State<FeaturedServerHero> {
       : AppLocalizations.of(context)!.featuredServerTagline;
 
   static const double _toggleHeight = 20;
+  static const double _designWidth = 460;
+  static const double _maxScale = 1.6;
 
   double _extraHeight(BuildContext context, double boxWidth) {
     final width = _descWidthFor(boxWidth);
@@ -168,14 +170,23 @@ class _FeaturedServerHeroState extends State<FeaturedServerHero> {
         final boxWidth = constraints.maxWidth.isFinite
             ? constraints.maxWidth
             : MediaQuery.sizeOf(context).width;
+        final scale = (boxWidth / _designWidth).clamp(1.0, _maxScale);
+        final innerWidth = boxWidth / scale;
+        final innerHeight =
+            widget.height +
+            widget.topInset +
+            widget.bottomInset +
+            _extraHeight(context, innerWidth);
         return ClipRRect(
           borderRadius: widget.borderRadius,
           child: SizedBox(
-            height:
-                widget.height +
-                widget.topInset +
-                widget.bottomInset +
-                _extraHeight(context, boxWidth),
+            height: innerHeight * scale,
+            width: boxWidth,
+            child: FittedBox(
+              fit: BoxFit.fill,
+              child: SizedBox(
+                width: innerWidth,
+                height: innerHeight,
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -234,6 +245,8 @@ class _FeaturedServerHeroState extends State<FeaturedServerHero> {
                   ),
                 ),
               ],
+            ),
+              ),
             ),
           ),
         );
