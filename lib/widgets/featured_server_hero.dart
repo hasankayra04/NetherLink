@@ -170,7 +170,16 @@ class _FeaturedServerHeroState extends State<FeaturedServerHero> {
         final boxWidth = constraints.maxWidth.isFinite
             ? constraints.maxWidth
             : MediaQuery.sizeOf(context).width;
-        final scale = (boxWidth / _designWidth).clamp(1.0, _maxScale);
+        final widthScale = (boxWidth / _designWidth).clamp(1.0, _maxScale);
+        final widthInnerHeight =
+            widget.height +
+            widget.topInset +
+            widget.bottomInset +
+            _extraHeight(context, boxWidth / widthScale);
+        final heightScale = constraints.maxHeight.isFinite
+            ? constraints.maxHeight / widthInnerHeight
+            : _maxScale;
+        final scale = min(widthScale, heightScale).clamp(0.1, _maxScale);
         final innerWidth = boxWidth / scale;
         final innerHeight =
             widget.height +

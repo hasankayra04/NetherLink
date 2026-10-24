@@ -643,18 +643,28 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Widget _withHero(Widget child) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        FeaturedServerBanner(
-          partnerServersFuture: _partnerServersFuture,
-          ipController: _ipController,
-          portController: _portController,
-          onSelected: () => _goTo(_pageConnector),
-        ),
-        Divider(height: 1, thickness: 1, color: AppTheme.borderDim),
-        Expanded(child: child),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxHeroHeight = constraints.maxHeight.isFinite
+            ? constraints.maxHeight * 0.45
+            : double.infinity;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: maxHeroHeight),
+              child: FeaturedServerBanner(
+                partnerServersFuture: _partnerServersFuture,
+                ipController: _ipController,
+                portController: _portController,
+                onSelected: () => _goTo(_pageConnector),
+              ),
+            ),
+            Divider(height: 1, thickness: 1, color: AppTheme.borderDim),
+            Expanded(child: child),
+          ],
+        );
+      },
     );
   }
 
