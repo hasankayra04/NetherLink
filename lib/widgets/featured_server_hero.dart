@@ -55,20 +55,27 @@ class _FeaturedServerHeroState extends State<FeaturedServerHero> {
     return min(220.0, boxWidth - logoSlot - 22);
   }
 
-  double _descHeight(String text, double width, int? maxLines) {
+  double _descHeight(
+    BuildContext context,
+    String text,
+    double width,
+    int? maxLines,
+  ) {
     final painter = TextPainter(
       text: TextSpan(text: text, style: _descStyle),
       maxLines: maxLines,
       textDirection: TextDirection.ltr,
+      textScaler: MediaQuery.textScalerOf(context),
     )..layout(maxWidth: width);
     return painter.height;
   }
 
-  bool _descOverflows(String text, double width) {
+  bool _descOverflows(BuildContext context, String text, double width) {
     final painter = TextPainter(
       text: TextSpan(text: text, style: _descStyle),
       maxLines: 2,
       textDirection: TextDirection.ltr,
+      textScaler: MediaQuery.textScalerOf(context),
     )..layout(maxWidth: width);
     return painter.didExceedMaxLines;
   }
@@ -92,11 +99,11 @@ class _FeaturedServerHeroState extends State<FeaturedServerHero> {
     var anyOverflow = false;
     for (final server in pages) {
       final text = _descriptionFor(context, server);
-      if (!_descOverflows(text, width)) continue;
+      if (!_descOverflows(context, text, width)) continue;
       anyOverflow = true;
       if (!_descExpanded) continue;
-      final full = _descHeight(text, width, null);
-      final capped = _descHeight(text, width, 2);
+      final full = _descHeight(context, text, width, null);
+      final capped = _descHeight(context, text, width, 2);
       extra = max(extra, full - capped);
     }
     if (!anyOverflow) return 0;
@@ -330,7 +337,11 @@ class _FeaturedServerHeroState extends State<FeaturedServerHero> {
                             builder: (context) {
                               final descWidth = min(220.0, textWidth);
                               final text = _descriptionFor(context, server);
-                              final overflows = _descOverflows(text, descWidth);
+                              final overflows = _descOverflows(
+                                context,
+                                text,
+                                descWidth,
+                              );
                               final l = AppLocalizations.of(context)!;
                               return ConstrainedBox(
                                 constraints: BoxConstraints(

@@ -114,10 +114,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   int? _editingServerIndex;
 
-  final GlobalKey<NavigatorState> _desktopNavKey = GlobalKey<NavigatorState>();
-
-  NavigatorState get _contentNavigator =>
-      _desktopNavKey.currentState ?? Navigator.of(context);
+  NavigatorState get _contentNavigator => Navigator.of(context);
 
   @override
   void initState() {
@@ -419,7 +416,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   void _goTo(int page) {
-    _desktopNavKey.currentState?.popUntil((r) => r.isFirst);
+    _contentNavigator.popUntil((r) => r.isFirst);
     if (page == _pageConnector) {
       _connectorKey.currentState?.loadUserServers();
     }

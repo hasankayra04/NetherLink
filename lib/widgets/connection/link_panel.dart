@@ -254,7 +254,7 @@ class _LinkPanelState<T> extends State<LinkPanel<T>>
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           else if (enabled && widget.onPackChange != null)
-            GestureDetector(
+            InkWell(
               onTap: widget.onPackChange,
               child: _changeChip(false),
             ),
