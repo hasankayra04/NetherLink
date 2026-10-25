@@ -92,14 +92,7 @@ class _MCCompanionAppState extends State<MCCompanionApp> {
           home: const SplashScreen(),
           debugShowCheckedModeBanner: false,
           builder: (context, child) {
-            final isDesktop =
-                Platform.isMacOS || Platform.isWindows || Platform.isLinux;
-            return MediaQuery(
-              data: MediaQuery.of(
-                context,
-              ).copyWith(textScaler: TextScaler.linear(isDesktop ? 1.12 : 1.0)),
-              child: child!,
-            );
+            return child!;
           },
         );
       },
