@@ -31,7 +31,7 @@ permissions:
 # Releases are never cancelled halfway. Two pushes in a row cost two builds,
 # which is the right trade when the alternative is a torn release.
 concurrency:
-  group: main
+  group: ui
   cancel-in-progress: false
 
 jobs:
