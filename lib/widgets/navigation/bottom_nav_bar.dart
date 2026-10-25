@@ -157,13 +157,14 @@ class _NavItem extends StatelessWidget {
       child: Semantics(
         button: true,
         selected: isActive,
-        child: InkWell(
+        child: GestureDetector(
           onTap: onTap == null
               ? null
               : () {
                   HapticFeedback.selectionClick();
                   onTap!();
                 },
+          behavior: HitTestBehavior.opaque,
           child: Align(
             alignment: Alignment.center,
             heightFactor: 1.0,
