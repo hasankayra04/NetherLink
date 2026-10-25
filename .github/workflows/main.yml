@@ -22,7 +22,7 @@ name: Main
 on:
   push:
     branches:
-      - main
+      - ui
   workflow_dispatch:
 
 permissions:
