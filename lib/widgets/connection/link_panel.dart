@@ -254,9 +254,12 @@ class _LinkPanelState<T> extends State<LinkPanel<T>>
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           else if (enabled && widget.onPackChange != null)
-            InkWell(
-              onTap: widget.onPackChange,
-              child: _changeChip(false),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: widget.onPackChange,
+                child: _changeChip(false),
+              ),
             ),
         ],
       ),
