@@ -25,21 +25,24 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
 
       - name: Detect Upstream and Pull
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Fetch repository details from GitHub API unauthenticated
+          # Fetch repository details from GitHub API using the token to avoid rate limits
           REPO_API_URL="https://api.github.com/repos/${{ github.repository }}"
-          API_RESPONSE=$(curl -s "$REPO_API_URL")
+          API_RESPONSE=$(curl -s -H "Authorization: token $GH_PAT" "$REPO_API_URL")
           
           # Extract upstream parent/source clone URL
           UPSTREAM_URL=$(echo "$API_RESPONSE" | jq -r '.source.clone_url // .parent.clone_url // empty')
 
           if [ -z "$UPSTREAM_URL" ]; then
-            echo "::warning:: Fork metadata not found or rate-limited. API Response snippet:"
+            echo "::warning:: Fork metadata not found or unavailable. API Response snippet:"
             echo "$API_RESPONSE" | jq '{message: .message, fork: .fork, parent: .parent.full_name}' || echo "$API_RESPONSE"
             echo "This repository is not a fork or no upstream source was found. Skipping upstream sync."
             exit 0
@@ -75,6 +78,13 @@ jobs:
         env:
           GITLAB_PAT: ${{ secrets.GITLAB_PAT }}
         run: |
+          # Wait a few seconds for GitHub to fully index the newly pushed upstream commit
+          echo "Waiting 2 seconds for GitHub backend sync..."
+          sleep 2
+          
+          # Ensure local checkout pulls the absolute latest remote state before mirroring
+          git pull origin "${GITHUB_REF#refs/heads/}" || true
+
           GH_OWNER="${{ github.repository_owner }}"
           REPO_NAME="${{ github.event.repository.name }}"
 
@@ -85,7 +95,7 @@ jobs:
             GL_NAMESPACE="$GH_OWNER"
           fi
 
-          echo "Targeting GitLab namespace: $GL_NAMESPACE / $REPO_NAME"
+          echo "Targeting GitLab namespace: https://gitlab.com/$GL_NAMESPACE/$REPO_NAME"
 
           git remote add gitlab "https://oauth2:${GITLAB_PAT}@gitlab.com/${GL_NAMESPACE}/${REPO_NAME}.git"
           git push gitlab --all --force
@@ -109,13 +119,20 @@ jobs:
         env:
           CODEBERG_PAT: ${{ secrets.CODEBERG_PAT }}
         run: |
+          # Wait a few seconds for GitHub to fully index the newly pushed upstream commit
+          echo "Waiting 2 seconds for GitHub backend sync..."
+          sleep 2
+          
+          # Ensure local checkout pulls the absolute latest remote state before mirroring
+          git pull origin "${GITHUB_REF#refs/heads/}" || true
+
           GH_OWNER="${{ github.repository_owner }}"
           REPO_NAME="${{ github.event.repository.name }}"
 
           # Codeberg keeps the exact original GitHub owner name (no changes)
           CB_NAMESPACE="$GH_OWNER"
 
-          echo "Targeting Codeberg namespace: $CB_NAMESPACE / $REPO_NAME"
+          echo "Targeting Codeberg namespace: https://codeberg.org/$CB_NAMESPACE/$REPO_NAME"
 
           git remote add codeberg "https://${CODEBERG_PAT}@codeberg.org/${CB_NAMESPACE}/${REPO_NAME}.git"
           git push codeberg --all --force
