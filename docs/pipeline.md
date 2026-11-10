@@ -126,10 +126,10 @@ The APK on the release is for sideloading and for us. Play wants the bundle.
 | `ANDROID_KEYSTORE_BASE64` | signing Android | the build fails |
 | `KEYSTORE_PASSWORD`, `KEY_PASSWORD`, `KEY_ALIAS` | same | the build fails |
 | `ANDROID_SIGNING_SHA256` | checking the signing key | only a warning, but a wrong key ships |
-| `MACOS_CERTIFICATE_P12`, `MACOS_CERTIFICATE_PASSWORD` | signing macOS | falls back to ad-hoc, Gatekeeper blocks it |
-| `MACOS_SIGN_IDENTITY`, `APPLE_TEAM_ID` | same | same |
-| `APPLE_ID`, `APPLE_APP_PASSWORD` | notarizing | signed but not notarized |
-| `MACOS_PROVISIONING_PROFILE` | restricted entitlements | the app refuses to launch |
+| `MACOS_CERTIFICATE_P12`, `MACOS_CERTIFICATE_PASSWORD` | signing macOS | distribution build fails |
+| `MACOS_SIGN_IDENTITY`, `APPLE_TEAM_ID` | signing macOS | distribution build fails |
+| `APPLE_ID`, `APPLE_APP_PASSWORD` | notarizing macOS | distribution build fails |
+| `MACOS_PROVISIONING_PROFILE` | restricted macOS entitlements | distribution build fails |
 | `SNAPCRAFT_STORE_CREDENTIALS` | Snap upload | the job skips with a message |
 | `DISCORD_WEBHOOK_URL` | build notifications | no message |
 | `SNAP_CHANNEL` (variable) | Snap channel | defaults to `edge` |
@@ -138,6 +138,14 @@ The Developer ID certificate expires on 1 February 2027. Around then: request a
 new one, export it from Keychain Access as a `.p12`, and replace the first two
 macOS secrets. Apps already signed and notarized keep working, because signing
 includes a timestamp.
+
+Both dev and release DMGs require all macOS distribution secrets, including a
+Developer ID provisioning profile matching the bundle ID and restricted
+entitlements. Missing secrets fail the build rather than publishing an unusable
+app. Pull request builds instead ad-hoc sign the app without restricted
+entitlements; they are for CI only and are not Gatekeeper-approved. The build
+mounts the DMG, verifies the copied app and starts it briefly; distribution
+builds also check the notarization tickets and Gatekeeper assessment.
 
 ## Things that have already bitten us
 

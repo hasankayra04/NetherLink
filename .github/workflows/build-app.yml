@@ -30,8 +30,8 @@ on:
         type: boolean
       signed:
         description: >
-          Sign the Android build. Off for pull requests, which get no secrets
-          when they come from a fork and would otherwise fail on the keystore.
+          Sign builds for distribution. Off for pull requests, which may not
+          have access to signing secrets.
         required: false
         default: true
         type: boolean
@@ -294,30 +294,27 @@ jobs:
           EOF
           flutter pub get
 
-      - name: Build macOS
-        run: |
-          flutter build macos --release \
-            --build-name=${{ inputs.build-name }} \
-            --build-number=${{ inputs.build-number }}
-        env:
-          FLUTTER_XCODE_CODE_SIGNING_ALLOWED: "NO"
-          FLUTTER_XCODE_CODE_SIGN_IDENTITY: ""
-          FLUTTER_XCODE_CODE_SIGNING_REQUIRED: "NO"
+      - name: Test DMG verification
+        run: python3 -m unittest discover -s scripts/tests -p 'test_verify_macos_dmg.py' -v
 
-      # Without a Developer ID certificate the app still builds, it just gets
-      # an ad-hoc signature and Gatekeeper will warn. That keeps pull requests
-      # and forks working, where these secrets are not available.
       - name: Import Developer ID certificate
-        id: signing
+        if: ${{ inputs.signed }}
         env:
           CERTIFICATE_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
           CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          PROVISIONING_PROFILE: ${{ secrets.MACOS_PROVISIONING_PROFILE }}
         run: |
-          if [ -z "$CERTIFICATE_P12" ] || [ -z "$CERTIFICATE_PASSWORD" ]; then
-            echo "No Developer ID certificate configured. Falling back to ad-hoc signing."
-            echo "available=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
+          for name in CERTIFICATE_P12 CERTIFICATE_PASSWORD SIGN_IDENTITY APPLE_ID \
+                      APPLE_APP_PASSWORD APPLE_TEAM_ID PROVISIONING_PROFILE; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing macOS distribution setting: $name"
+              exit 1
+            fi
+          done
 
           KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
           KEYCHAIN_PASSWORD="$(openssl rand -base64 24)"
@@ -338,10 +335,18 @@ jobs:
             -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" >/dev/null
           security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
 
-          echo "available=true" >> "$GITHUB_OUTPUT"
+      - name: Build macOS
+        run: |
+          flutter build macos --release \
+            --build-name=${{ inputs.build-name }} \
+            --build-number=${{ inputs.build-number }}
+        env:
+          FLUTTER_XCODE_CODE_SIGNING_ALLOWED: "NO"
+          FLUTTER_XCODE_CODE_SIGN_IDENTITY: ""
+          FLUTTER_XCODE_CODE_SIGNING_REQUIRED: "NO"
 
       - name: Sign, notarize and staple
-        if: ${{ steps.signing.outputs.available == 'true' }}
+        if: ${{ inputs.signed }}
         env:
           SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -357,20 +362,19 @@ jobs:
           # "the application cannot be opened". Xcode embeds the profile when
           # you build by hand, which is why manual dmgs always worked and the
           # first signed build from here did not.
-          if [ -n "$PROVISIONING_PROFILE" ]; then
-            echo "$PROVISIONING_PROFILE" | base64 --decode \
-              > "$APP/Contents/embedded.provisionprofile"
-            echo "Embedded the provisioning profile."
-          else
-            echo "::warning::MACOS_PROVISIONING_PROFILE is not set. The app will"
-            echo "::warning::be signed and notarized but may refuse to launch."
-          fi
+          echo "$PROVISIONING_PROFILE" | base64 --decode \
+            > "$APP/Contents/embedded.provisionprofile"
 
           codesign --deep --force --verbose \
             --sign "$SIGN_IDENTITY" \
-            --options runtime \
+            --options runtime --timestamp \
+            "$APP"
+          codesign --force --verbose \
+            --sign "$SIGN_IDENTITY" \
+            --options runtime --timestamp \
             --entitlements macos/Runner/Release.entitlements \
             "$APP"
+          codesign --verify --deep --strict --verbose=2 "$APP"
 
           # Notarization takes a zip, but the staple goes onto the .app.
           ditto -c -k --keepParent "$APP" "$RUNNER_TEMP/MCCompanion.zip"
@@ -380,6 +384,18 @@ jobs:
             --team-id "$APPLE_TEAM_ID" \
             --wait
           xcrun stapler staple "$APP"
+
+      - name: Ad-hoc sign app for CI
+        if: ${{ !inputs.signed }}
+        run: |
+          APP="build/macos/Build/Products/Release/MCCompanion.app"
+          ENTITLEMENTS="$RUNNER_TEMP/ci.entitlements"
+          cp macos/Runner/Release.entitlements "$ENTITLEMENTS"
+          /usr/libexec/PlistBuddy -c 'Delete :com.apple.developer.applesignin' "$ENTITLEMENTS"
+          /usr/libexec/PlistBuddy -c 'Delete :keychain-access-groups' "$ENTITLEMENTS"
+          codesign --deep --force --sign - "$APP"
+          codesign --force --sign - --entitlements "$ENTITLEMENTS" "$APP"
+          codesign --verify --deep --strict --verbose=2 "$APP"
 
       - name: Create macOS DMG
         run: |
@@ -401,7 +417,7 @@ jobs:
       # The disk image is notarized separately from the app inside it, so
       # Gatekeeper stays quiet on the download itself.
       - name: Sign, notarize and staple the DMG
-        if: ${{ steps.signing.outputs.available == 'true' }}
+        if: ${{ inputs.signed }}
         env:
           SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -419,10 +435,15 @@ jobs:
           spctl --assess --type open --context context:primary-signature -v "$DMG"
 
       - name: Ad-hoc sign the DMG
-        if: ${{ steps.signing.outputs.available != 'true' }}
+        if: ${{ !inputs.signed }}
         run: |
           codesign --force --sign - "$GITHUB_WORKSPACE/MCCompanion-macos.dmg"
           codesign --verify --strict "$GITHUB_WORKSPACE/MCCompanion-macos.dmg"
+
+      - name: Verify the packaged macOS app
+        env:
+          DISTRIBUTION_BUILD: ${{ inputs.signed }}
+        run: bash scripts/verify_macos_dmg.sh "$GITHUB_WORKSPACE/MCCompanion-macos.dmg"
 
       - uses: actions/upload-artifact@v6
         with:
